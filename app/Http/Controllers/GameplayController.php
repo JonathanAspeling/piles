@@ -6,6 +6,7 @@ use App\Enums\GameStatus;
 use App\Events\CenterCardSwapped;
 use App\Events\GameEnded;
 use App\Events\GameResumed;
+use App\Events\LobbyUpdated;
 use App\Events\PilesClaimMade;
 use App\Events\PlayerPileCompleted;
 use App\Exceptions\StaleVersionException;
@@ -17,6 +18,7 @@ use App\Models\Pile;
 use App\Services\CardSwapService;
 use App\Services\GameVerifierService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 
 class GameplayController extends Controller
 {
@@ -100,5 +102,30 @@ class GameplayController extends Controller
         }
 
         return response()->json(['message' => 'Claim processed.'], 200);
+    }
+
+    public function forfeit(GameSession $game): Response
+    {
+        abort_unless(
+            in_array($game->status, [GameStatus::Playing, GameStatus::Verifying]),
+            422,
+            'You can only forfeit an active game.'
+        );
+
+        $player = $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->with('user')
+            ->firstOrFail();
+
+        $game->update([
+            'status' => GameStatus::Ended,
+            'winner_user_id' => null,
+            'ended_at' => now(),
+        ]);
+
+        broadcast(new GameEnded($game, winner: null, forfeitedBy: $player->user->name));
+        broadcast(new LobbyUpdated);
+
+        return response()->noContent();
     }
 }

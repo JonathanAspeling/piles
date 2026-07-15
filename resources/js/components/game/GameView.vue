@@ -35,6 +35,7 @@ const isEnded = computed(() => gameStore.session?.status === GameStatus.Ended);
 const isCountdown = computed(() => gameStore.session?.status === GameStatus.Countdown);
 const pendingClaim = computed(() => gameStore.pendingClaim);
 const winner = computed(() => gameStore.winner);
+const forfeitedBy = computed(() => gameStore.forfeitedBy);
 
 onMounted(() => {
     gameStore.initialize(props.game, props.currentPlayer, props.players, props.myPiles, props.centerPiles, props.opponents);
@@ -63,16 +64,22 @@ onUnmounted(() => {
             :is-current-player="pendingClaim.gamePlayerId === currentPlayer?.id"
         />
 
-        <!-- Winner announcement -->
+        <!-- Winner/forfeit announcement -->
         <div
-            v-if="isEnded && winner"
+            v-if="isEnded && (winner || forfeitedBy)"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
         >
             <div class="flex flex-col items-center gap-4 text-center text-white">
                 <p class="text-2xl font-semibold">Game Over!</p>
-                <p class="text-5xl font-black">{{ winner.name }} wins!</p>
+                <template v-if="forfeitedBy">
+                    <p class="text-5xl font-black">{{ forfeitedBy }} forfeited</p>
+                    <p class="text-lg text-white/70">No winner this time</p>
+                </template>
+                <template v-else-if="winner">
+                    <p class="text-5xl font-black">{{ winner.name }} wins!</p>
+                </template>
                 <button
-                    @click="router.visit(route('lobby.index'))"
+                    @click="emit('left')"
                     class="mt-4 rounded-lg bg-white px-6 py-2 text-sm font-bold text-black hover:bg-white/90"
                 >
                     Back to Lobby

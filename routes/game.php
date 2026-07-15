@@ -17,4 +17,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/games/{game}/swap', [GameplayController::class, 'swap'])->name('gameplay.swap');
     Route::post('/games/{game}/claim', [GameplayController::class, 'claimPiles'])->name('gameplay.claim');
+    Route::post('/games/{game}/forfeit', [GameplayController::class, 'forfeit'])->name('gameplay.forfeit');
 });

@@ -17,6 +17,7 @@ export const useGameStore = defineStore('game', () => {
     const countdownEndsAt = ref<string | null>(null);
     const pendingClaim = ref<{ gamePlayerId: number; playerName: string } | null>(null);
     const winner = ref<GameWinner | null>(null);
+    const forfeitedBy = ref<string | null>(null);
     const isSwapping = ref(false);
 
     function initialize(
@@ -155,12 +156,13 @@ export const useGameStore = defineStore('game', () => {
         pendingClaim.value = { gamePlayerId, playerName };
     }
 
-    function applyGameEnded(gameWinner: GameWinner) {
+    function applyGameEnded(gameWinner: GameWinner | null, forfeitBy?: string) {
         if (session.value) {
             session.value.status = GameStatus.Ended;
-            session.value.winner_user_id = gameWinner.user_id;
+            session.value.winner_user_id = gameWinner?.user_id ?? null;
         }
         winner.value = gameWinner;
+        forfeitedBy.value = forfeitBy ?? null;
         pendingClaim.value = null;
     }
 
@@ -179,6 +181,13 @@ export const useGameStore = defineStore('game', () => {
         await apiFetch(route('gameplay.claim', { game: session.value.id }), { method: 'POST' });
     }
 
+    async function forfeit() {
+        if (!session.value) {
+            return;
+        }
+        await apiFetch(route('gameplay.forfeit', { game: session.value.id }), { method: 'POST' });
+    }
+
     return {
         session,
         currentPlayer,
@@ -189,6 +198,7 @@ export const useGameStore = defineStore('game', () => {
         countdownEndsAt,
         pendingClaim,
         winner,
+        forfeitedBy,
         isSwapping,
         initialize,
         applyLobbyUpdate,
@@ -202,5 +212,6 @@ export const useGameStore = defineStore('game', () => {
         applyGameEnded,
         applyGameResumed,
         claimPiles,
+        forfeit,
     };
 });

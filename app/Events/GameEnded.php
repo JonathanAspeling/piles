@@ -17,9 +17,10 @@ class GameEnded implements ShouldBroadcastNow
 
     public function __construct(
         public readonly GameSession $game,
-        public readonly GamePlayer $winner,
+        public readonly ?GamePlayer $winner,
+        public readonly ?string $forfeitedBy = null,
     ) {
-        $this->winner->loadMissing('user');
+        $this->winner?->loadMissing('user');
     }
 
     /** @return array<int, Channel> */
@@ -34,11 +35,12 @@ class GameEnded implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'winner' => [
+            'winner' => $this->winner ? [
                 'game_player_id' => $this->winner->id,
                 'user_id' => $this->winner->user_id,
                 'name' => $this->winner->user->name,
-            ],
+            ] : null,
+            'forfeited_by' => $this->forfeitedBy,
         ];
     }
 }

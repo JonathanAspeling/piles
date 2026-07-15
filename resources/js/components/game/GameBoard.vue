@@ -15,6 +15,8 @@ const gameStore = useGameStore();
 
 const selectedPileId = ref<number | null>(null);
 const selectedCard = ref<Card | null>(null);
+const confirmingForfeit = ref(false);
+let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isDisabled = computed(() => gameStore.session?.status !== GameStatus.Playing || gameStore.isSwapping);
 
@@ -41,6 +43,19 @@ async function onSwap(centerPileId: number) {
 
 async function claimPiles() {
     await gameStore.claimPiles();
+}
+
+function handleForfeit() {
+    if (!confirmingForfeit.value) {
+        confirmingForfeit.value = true;
+        forfeitTimer = setTimeout(() => {
+            confirmingForfeit.value = false;
+        }, 3000);
+    } else {
+        if (forfeitTimer) clearTimeout(forfeitTimer);
+        confirmingForfeit.value = false;
+        gameStore.forfeit();
+    }
 }
 </script>
 
@@ -81,13 +96,23 @@ async function claimPiles() {
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Your Hand — {{ completedCount }}/6 piles done
                 </h3>
-                <button
-                    v-if="completedCount === 6 && gameStore.session?.status === GameStatus.Playing"
-                    @click="claimPiles"
-                    class="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white shadow hover:bg-emerald-700 active:scale-95"
-                >
-                    PILES!
-                </button>
+                <div class="flex items-center gap-2">
+                    <button
+                        v-if="completedCount === 6 && gameStore.session?.status === GameStatus.Playing"
+                        @click="claimPiles"
+                        class="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white shadow hover:bg-emerald-700 active:scale-95"
+                    >
+                        PILES!
+                    </button>
+                    <button
+                        v-if="gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying"
+                        @click="handleForfeit"
+                        class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="confirmingForfeit ? 'border-red-500 bg-red-500 text-white' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'"
+                    >
+                        {{ confirmingForfeit ? 'Confirm forfeit?' : 'Forfeit' }}
+                    </button>
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <PlayerPileComponent

@@ -39,8 +39,8 @@ export const useEchoStore = defineStore('echo', () => {
             .listen('PilesClaimMade', (event: { game_player_id: number; player_name: string }) => {
                 gameStore.applyClaimMade(event.game_player_id, event.player_name);
             })
-            .listen('GameEnded', (event: { winner: GameWinner }) => {
-                gameStore.applyGameEnded(event.winner);
+            .listen('GameEnded', (event: { winner: GameWinner | null; forfeited_by: string | null }) => {
+                gameStore.applyGameEnded(event.winner, event.forfeited_by ?? undefined);
             })
             .listen('GameResumed', (event: { claimant_name: string }) => {
                 gameStore.applyGameResumed(event.claimant_name);
