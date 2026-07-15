@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
 import type { LobbyGame } from '../../types/game';
@@ -8,8 +7,6 @@ import type { LobbyGame } from '../../types/game';
 const props = defineProps<{
     games: LobbyGame[];
 }>();
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Lobby', href: route('lobby.index') }];
 
 const games = ref<LobbyGame[]>(props.games);
 
@@ -78,7 +75,7 @@ onUnmounted(() => {
 <template>
     <Head title="Lobby" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout>
         <div class="flex flex-1 flex-col gap-6 p-6">
             <div class="grid gap-6 md:grid-cols-2">
                 <!-- Create Game -->

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted } from 'vue';
 import CountdownOverlay from '../../components/game/CountdownOverlay.vue';
@@ -26,10 +25,6 @@ const gameStore = useGameStore();
 const echoStore = useEchoStore();
 const notificationStore = useNotificationStore();
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Lobby', href: route('lobby.index') },
-    { title: props.game.code, href: route('games.show', { game: props.game.id }) },
-];
 
 const isPlaying = computed(
     () => gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying,
@@ -57,7 +52,7 @@ onUnmounted(() => {
 <template>
     <Head :title="`Game ${game.code}`" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout>
         <div class="flex h-full flex-1 flex-col">
             <!-- Countdown overlay -->
             <CountdownOverlay v-if="isCountdown && gameStore.countdownEndsAt" :ends-at="gameStore.countdownEndsAt" />
