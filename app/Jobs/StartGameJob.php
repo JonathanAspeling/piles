@@ -29,12 +29,29 @@ class StartGameJob implements ShouldQueue
         $dealer->deal($game);
         $game->update(['status' => GameStatus::Playing]);
 
-        $centerPiles = $game->centerPiles()->get()->map(fn (Pile $pile) => [
+        $centerPiles = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
             'id' => $pile->id,
             'pile_index' => $pile->pile_index,
+            'top_card' => $pile->pileCards->first() ? [
+                'id' => $pile->pileCards->first()->card->id,
+                'clothing_type' => $pile->pileCards->first()->card->clothing_type->value,
+                'color' => $pile->pileCards->first()->card->color->value,
+            ] : null,
         ])->all();
 
-        broadcast(new GameStarted($game, $centerPiles));
+        $allPlayers = $game->gamePlayers()->with('user', 'piles')->get()->map(fn ($player) => [
+            'id' => $player->id,
+            'user_id' => $player->user_id,
+            'name' => $player->user->name,
+            'seat_index' => $player->seat_index,
+            'piles' => $player->piles->map(fn (Pile $pile) => [
+                'id' => $pile->id,
+                'pile_index' => $pile->pile_index,
+                'is_completed' => $pile->is_completed,
+            ])->all(),
+        ])->all();
+
+        broadcast(new GameStarted($game, $centerPiles, $allPlayers));
 
         foreach ($game->gamePlayers()->with('piles.pileCards.card')->get() as $player) {
             $pilesData = $player->piles->map(fn (Pile $pile) => [

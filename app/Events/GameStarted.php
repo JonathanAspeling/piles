@@ -15,11 +15,13 @@ class GameStarted implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @param  array<int, array{id: int, pile_index: int}>  $centerPiles
+     * @param  array<int, array{id: int, pile_index: int, top_card: array<string, mixed>|null}>  $centerPiles
+     * @param  array<int, array{id: int, user_id: int, name: string, seat_index: int, piles: array<int, array{id: int, pile_index: int, is_completed: bool}>}>  $allPlayers
      */
     public function __construct(
         public readonly GameSession $game,
         public readonly array $centerPiles,
+        public readonly array $allPlayers,
     ) {}
 
     /** @return array<int, Channel> */
@@ -35,6 +37,7 @@ class GameStarted implements ShouldBroadcastNow
     {
         return [
             'center_piles' => $this->centerPiles,
+            'players' => $this->allPlayers,
         ];
     }
 }

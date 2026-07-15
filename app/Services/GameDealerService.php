@@ -30,9 +30,14 @@ class GameDealerService
             $setsCount += 1;
         }
 
-        // Pull exactly the cards we need, in random order
-        $cards = Card::inRandomOrder()
-            ->limit($setsCount * 4)
+        // Pick $setsCount random clothing types, then fetch all 4 cards per type
+        $clothingTypes = Card::select('clothing_type')
+            ->distinct()
+            ->inRandomOrder()
+            ->limit($setsCount)
+            ->pluck('clothing_type');
+
+        $cards = Card::whereIn('clothing_type', $clothingTypes)
             ->get()
             ->shuffle();
 

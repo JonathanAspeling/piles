@@ -9,6 +9,8 @@ use App\Http\Requests\CreateGameRequest;
 use App\Http\Requests\JoinGameRequest;
 use App\Jobs\StartGameJob;
 use App\Models\GameSession;
+use App\Models\Pile;
+use App\Models\PileCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -68,10 +70,66 @@ class GameSessionController extends Controller
             ->where('user_id', auth()->id())
             ->first();
 
-        return Inertia::render('Game/Show', [
+        $players = $game->gamePlayers()->with('user')->get()->map(fn ($player) => [
+            'id' => $player->id,
+            'user_id' => $player->user_id,
+            'name' => $player->user->name,
+            'seat_index' => $player->seat_index,
+            'is_ready' => $player->is_ready,
+        ])->values()->all();
+
+        $props = [
             'game' => $game,
             'currentPlayer' => $currentPlayer,
-        ]);
+            'players' => $players,
+            'myPiles' => [],
+            'centerPiles' => [],
+            'opponents' => [],
+        ];
+
+        $isActiveGame = $currentPlayer && in_array($game->status, [GameStatus::Playing, GameStatus::Verifying, GameStatus::Ended]);
+
+        if ($isActiveGame) {
+            $props['myPiles'] = $currentPlayer->piles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
+                'id' => $pile->id,
+                'pile_index' => $pile->pile_index,
+                'is_completed' => $pile->is_completed,
+                'cards' => $pile->pileCards->map(fn (PileCard $pc) => [
+                    'id' => $pc->card->id,
+                    'clothing_type' => $pc->card->clothing_type->value,
+                    'color' => $pc->card->color->value,
+                ])->values()->all(),
+            ])->values()->all();
+
+            $props['centerPiles'] = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
+                'id' => $pile->id,
+                'pile_index' => $pile->pile_index,
+                'version' => $pile->version,
+                'top_card' => $pile->pileCards->first() ? [
+                    'id' => $pile->pileCards->first()->card->id,
+                    'clothing_type' => $pile->pileCards->first()->card->clothing_type->value,
+                    'color' => $pile->pileCards->first()->card->color->value,
+                ] : null,
+            ])->values()->all();
+
+            $props['opponents'] = $game->gamePlayers()
+                ->where('id', '!=', $currentPlayer->id)
+                ->with('user', 'piles')
+                ->get()
+                ->map(fn ($player) => [
+                    'id' => $player->id,
+                    'user_id' => $player->user_id,
+                    'name' => $player->user->name,
+                    'seat_index' => $player->seat_index,
+                    'piles' => $player->piles->map(fn (Pile $pile) => [
+                        'id' => $pile->id,
+                        'pile_index' => $pile->pile_index,
+                        'is_completed' => $pile->is_completed,
+                    ])->values()->all(),
+                ])->values()->all();
+        }
+
+        return Inertia::render('Game/Show', $props);
     }
 
     public function ready(GameSession $game): RedirectResponse
