@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
 import type { GamePlayer, GameSession, LobbyPlayer } from '../../types/game';
@@ -8,6 +7,10 @@ const props = defineProps<{
     game: GameSession;
     currentPlayer: GamePlayer | null;
     players: LobbyPlayer[];
+}>();
+
+const emit = defineEmits<{
+    left: [];
 }>();
 
 const isHost = computed(() => props.currentPlayer?.user_id === props.game.host_user_id);
@@ -34,7 +37,7 @@ async function leaveGame() {
     if (isActing.value) return;
     isActing.value = true;
     await apiFetch(route('games.leave', { game: props.game.id }), { method: 'DELETE' });
-    router.visit(route('lobby.index'));
+    emit('left');
 }
 </script>
 

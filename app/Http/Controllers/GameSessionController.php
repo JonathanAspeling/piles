@@ -39,7 +39,33 @@ class GameSessionController extends Controller
         broadcast(new GameLobbyUpdated($game));
         broadcast(new LobbyUpdated);
 
-        return response()->json(['game_id' => $game->id])->header('X-Game-Id', (string) $game->id);
+        $player = $game->gamePlayers()->where('user_id', $request->user()->id)->first();
+
+        return response()->json([
+            'game' => [
+                'id' => $game->id,
+                'code' => $game->code,
+                'status' => $game->status->value,
+                'host_user_id' => $game->host_user_id,
+                'variant' => $game->variant,
+                'sets_count' => $game->sets_count ?? null,
+                'winner_user_id' => $game->winner_user_id ?? null,
+                'started_at' => $game->started_at ?? null,
+            ],
+            'current_player' => [
+                'id' => $player->id,
+                'user_id' => $player->user_id,
+                'seat_index' => $player->seat_index,
+                'is_ready' => $player->is_ready,
+            ],
+            'players' => $game->gamePlayers()->with('user')->get()->map(fn ($p) => [
+                'id' => $p->id,
+                'user_id' => $p->user_id,
+                'name' => $p->user->name,
+                'seat_index' => $p->seat_index,
+                'is_ready' => $p->is_ready,
+            ])->values()->all(),
+        ])->header('X-Game-Id', (string) $game->id);
     }
 
     public function join(JoinGameRequest $request): JsonResponse
@@ -64,7 +90,33 @@ class GameSessionController extends Controller
         broadcast(new GameLobbyUpdated($game));
         broadcast(new LobbyUpdated);
 
-        return response()->json(['game_id' => $game->id])->header('X-Game-Id', (string) $game->id);
+        $player = $game->gamePlayers()->where('user_id', $request->user()->id)->first();
+
+        return response()->json([
+            'game' => [
+                'id' => $game->id,
+                'code' => $game->code,
+                'status' => $game->status->value,
+                'host_user_id' => $game->host_user_id,
+                'variant' => $game->variant,
+                'sets_count' => $game->sets_count ?? null,
+                'winner_user_id' => $game->winner_user_id ?? null,
+                'started_at' => $game->started_at ?? null,
+            ],
+            'current_player' => [
+                'id' => $player->id,
+                'user_id' => $player->user_id,
+                'seat_index' => $player->seat_index,
+                'is_ready' => $player->is_ready,
+            ],
+            'players' => $game->gamePlayers()->with('user')->get()->map(fn ($p) => [
+                'id' => $p->id,
+                'user_id' => $p->user_id,
+                'name' => $p->user->name,
+                'seat_index' => $p->seat_index,
+                'is_ready' => $p->is_ready,
+            ])->values()->all(),
+        ])->header('X-Game-Id', (string) $game->id);
     }
 
     public function show(GameSession $game): Response
