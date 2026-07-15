@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { GamePlayer, GameSession, LobbyPlayer } from '../../types/game';
 
 const props = defineProps<{
@@ -13,16 +13,31 @@ const isHost = computed(() => props.currentPlayer?.user_id === props.game.host_u
 const allReady = computed(() => props.players.length >= 2 && props.players.every((p) => p.is_ready));
 const myPlayer = computed(() => props.players.find((p) => p.id === props.currentPlayer?.id));
 
-function toggleReady() {
-    router.post(route('games.ready', { game: props.game.id }), {}, { preserveScroll: true });
+const isActing = ref(false);
+
+function csrf(): string {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
 }
 
-function startGame() {
-    router.post(route('games.start', { game: props.game.id }), {}, { preserveScroll: true });
+async function toggleReady() {
+    if (isActing.value) return;
+    isActing.value = true;
+    await fetch(route('games.ready', { game: props.game.id }), { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf() } });
+    isActing.value = false;
 }
 
-function leaveGame() {
-    router.delete(route('games.leave', { game: props.game.id }));
+async function startGame() {
+    if (isActing.value) return;
+    isActing.value = true;
+    await fetch(route('games.start', { game: props.game.id }), { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf() } });
+    isActing.value = false;
+}
+
+async function leaveGame() {
+    if (isActing.value) return;
+    isActing.value = true;
+    await fetch(route('games.leave', { game: props.game.id }), { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrf() } });
+    router.visit(route('lobby.index'));
 }
 </script>
 
@@ -82,7 +97,8 @@ function leaveGame() {
                 <div class="flex gap-3">
                     <button
                         @click="toggleReady"
-                        class="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                        :disabled="isActing"
+                        class="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
                         :class="
                             myPlayer?.is_ready
                                 ? 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -95,13 +111,13 @@ function leaveGame() {
                     <button
                         v-if="isHost"
                         @click="startGame"
-                        :disabled="!allReady"
+                        :disabled="!allReady || isActing"
                         class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Start Game
                     </button>
 
-                    <button @click="leaveGame" class="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted">
+                    <button :disabled="isActing" @click="leaveGame" class="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50">
                         Leave
                     </button>
                 </div>

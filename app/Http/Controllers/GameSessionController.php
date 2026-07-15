@@ -5,20 +5,21 @@ namespace App\Http\Controllers;
 use App\Enums\GameStatus;
 use App\Events\GameCountdownStarted;
 use App\Events\GameLobbyUpdated;
+use App\Events\LobbyUpdated;
 use App\Http\Requests\CreateGameRequest;
 use App\Http\Requests\JoinGameRequest;
 use App\Jobs\StartGameJob;
 use App\Models\GameSession;
 use App\Models\Pile;
 use App\Models\PileCard;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class GameSessionController extends Controller
 {
-    public function store(CreateGameRequest $request): RedirectResponse
+    public function store(CreateGameRequest $request): JsonResponse
     {
         $code = strtoupper(Str::random(6));
 
@@ -36,11 +37,12 @@ class GameSessionController extends Controller
         ]);
 
         broadcast(new GameLobbyUpdated($game));
+        broadcast(new LobbyUpdated);
 
-        return redirect()->route('games.show', $game);
+        return response()->json(['game_id' => $game->id]);
     }
 
-    public function join(JoinGameRequest $request): RedirectResponse
+    public function join(JoinGameRequest $request): JsonResponse
     {
         $game = GameSession::where('code', strtoupper($request->input('code')))
             ->where('status', GameStatus::Lobby)
@@ -60,8 +62,9 @@ class GameSessionController extends Controller
         ]);
 
         broadcast(new GameLobbyUpdated($game));
+        broadcast(new LobbyUpdated);
 
-        return redirect()->route('games.show', $game);
+        return response()->json(['game_id' => $game->id]);
     }
 
     public function show(GameSession $game): Response
@@ -132,7 +135,7 @@ class GameSessionController extends Controller
         return Inertia::render('Game/Show', $props);
     }
 
-    public function ready(GameSession $game): RedirectResponse
+    public function ready(GameSession $game): \Illuminate\Http\Response
     {
         $player = $game->gamePlayers()
             ->where('user_id', auth()->id())
@@ -142,10 +145,10 @@ class GameSessionController extends Controller
 
         broadcast(new GameLobbyUpdated($game));
 
-        return redirect()->route('games.show', $game);
+        return response()->noContent();
     }
 
-    public function start(GameSession $game): RedirectResponse
+    public function start(GameSession $game): \Illuminate\Http\Response
     {
         abort_unless($game->host_user_id === auth()->id(), 403);
         abort_unless($game->status === GameStatus::Lobby, 422, 'Game is not in the lobby.');
@@ -160,13 +163,14 @@ class GameSessionController extends Controller
         $game->update(['status' => GameStatus::Countdown]);
 
         broadcast(new GameCountdownStarted($game, $startsAt));
+        broadcast(new LobbyUpdated);
 
         StartGameJob::dispatch($game)->delay($startsAt);
 
-        return redirect()->route('games.show', $game);
+        return response()->noContent();
     }
 
-    public function leave(GameSession $game): RedirectResponse
+    public function leave(GameSession $game): \Illuminate\Http\Response
     {
         abort_unless($game->status === GameStatus::Lobby, 422, 'You can only leave a game in the lobby.');
 
@@ -176,7 +180,8 @@ class GameSessionController extends Controller
             ->delete();
 
         broadcast(new GameLobbyUpdated($game));
+        broadcast(new LobbyUpdated);
 
-        return redirect()->route('lobby.index');
+        return response()->noContent();
     }
 }
