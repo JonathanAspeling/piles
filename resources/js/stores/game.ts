@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { apiFetch } from '../composables/useFetch';
 import type { Card, CenterPile, GamePlayer, GameSession, GameWinner, LobbyPlayer, OpponentState, PlayerPile } from '../types/game';
 import { GameStatus } from '../types/game';
 import { useNotificationStore } from './notification';
@@ -91,13 +92,8 @@ export const useGameStore = defineStore('game', () => {
         centerPile.top_card = myCard;
 
         try {
-            const response = await fetch(route('gameplay.swap', { game: session.value.id }), {
+            const response = await apiFetch(route('gameplay.swap', { game: session.value.id }), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
-                    Accept: 'application/json',
-                },
                 body: JSON.stringify({
                     pile_id: myPile.id,
                     my_card_id: myCardId,
@@ -180,13 +176,7 @@ export const useGameStore = defineStore('game', () => {
         if (!session.value) {
             return;
         }
-        await fetch(route('gameplay.claim', { game: session.value.id }), {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
-                Accept: 'application/json',
-            },
-        });
+        await apiFetch(route('gameplay.claim', { game: session.value.id }), { method: 'POST' });
     }
 
     return {

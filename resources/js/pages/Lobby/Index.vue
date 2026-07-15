@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
+import { apiFetch } from '../../composables/useFetch';
 import type { LobbyGame } from '../../types/game';
 
 const props = defineProps<{
@@ -17,21 +18,16 @@ const isCreating = ref(false);
 const isJoining = ref(false);
 const joiningGameId = ref<number | null>(null);
 
-function csrf(): string {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-}
-
 async function createGame() {
     if (isCreating.value) return;
     isCreating.value = true;
     try {
-        const res = await fetch(route('games.store'), {
+        const res = await apiFetch(route('games.store'), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
             body: JSON.stringify({ variant: variant.value }),
         });
-        const { game_id } = await res.json();
-        router.visit(route('games.show', { game: game_id }));
+        const gameId = res.headers.get('X-Game-Id');
+        router.visit(route('games.show', { game: gameId }));
     } finally {
         isCreating.value = false;
     }
@@ -43,9 +39,8 @@ async function joinGame(code: string, gameId?: number) {
     isJoining.value = true;
     joiningGameId.value = gameId ?? null;
     try {
-        const res = await fetch(route('games.join'), {
+        const res = await apiFetch(route('games.join'), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
             body: JSON.stringify({ code }),
         });
         if (res.status === 422) {
@@ -53,8 +48,8 @@ async function joinGame(code: string, gameId?: number) {
             joinError.value = data.message ?? 'Could not join game.';
             return;
         }
-        const { game_id } = await res.json();
-        router.visit(route('games.show', { game: game_id }));
+        const gameId = res.headers.get('X-Game-Id');
+        router.visit(route('games.show', { game: gameId }));
     } finally {
         isJoining.value = false;
         joiningGameId.value = null;

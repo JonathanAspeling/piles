@@ -39,7 +39,7 @@ class GameSessionController extends Controller
         broadcast(new GameLobbyUpdated($game));
         broadcast(new LobbyUpdated);
 
-        return response()->json(['game_id' => $game->id]);
+        return response()->json(['game_id' => $game->id])->header('X-Game-Id', (string) $game->id);
     }
 
     public function join(JoinGameRequest $request): JsonResponse
@@ -64,7 +64,7 @@ class GameSessionController extends Controller
         broadcast(new GameLobbyUpdated($game));
         broadcast(new LobbyUpdated);
 
-        return response()->json(['game_id' => $game->id]);
+        return response()->json(['game_id' => $game->id])->header('X-Game-Id', (string) $game->id);
     }
 
     public function show(GameSession $game): Response
@@ -179,7 +179,12 @@ class GameSessionController extends Controller
             ->firstOrFail()
             ->delete();
 
-        broadcast(new GameLobbyUpdated($game));
+        if ($game->gamePlayers()->count() === 0) {
+            $game->delete();
+        } else {
+            broadcast(new GameLobbyUpdated($game));
+        }
+
         broadcast(new LobbyUpdated);
 
         return response()->noContent();

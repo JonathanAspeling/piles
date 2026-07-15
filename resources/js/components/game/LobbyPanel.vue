@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { apiFetch } from '../../composables/useFetch';
 import type { GamePlayer, GameSession, LobbyPlayer } from '../../types/game';
 
 const props = defineProps<{
@@ -15,28 +16,24 @@ const myPlayer = computed(() => props.players.find((p) => p.id === props.current
 
 const isActing = ref(false);
 
-function csrf(): string {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-}
-
 async function toggleReady() {
     if (isActing.value) return;
     isActing.value = true;
-    await fetch(route('games.ready', { game: props.game.id }), { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf() } });
+    await apiFetch(route('games.ready', { game: props.game.id }), { method: 'POST' });
     isActing.value = false;
 }
 
 async function startGame() {
     if (isActing.value) return;
     isActing.value = true;
-    await fetch(route('games.start', { game: props.game.id }), { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf() } });
+    await apiFetch(route('games.start', { game: props.game.id }), { method: 'POST' });
     isActing.value = false;
 }
 
 async function leaveGame() {
     if (isActing.value) return;
     isActing.value = true;
-    await fetch(route('games.leave', { game: props.game.id }), { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrf() } });
+    await apiFetch(route('games.leave', { game: props.game.id }), { method: 'DELETE' });
     router.visit(route('lobby.index'));
 }
 </script>
