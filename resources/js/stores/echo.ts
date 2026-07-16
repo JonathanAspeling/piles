@@ -25,15 +25,24 @@ export const useEchoStore = defineStore('echo', () => {
             .listen('GameActivated', () => {
                 gameStore.applyGameActivated();
             })
-            .listen(
-                'CenterCardSwapped',
-                (event: { center_pile_id: number; center_pile_version: number; incoming_card: Card; outgoing_card_id: number }) => {
-                    gameStore.applyCenterCardSwapped(event.center_pile_id, event.center_pile_version, event.incoming_card);
+            .listenForWhisper('card-picked-up', (event: { game_player_id: number; card: Card }) => {
+                gameStore.applyCardPickedUp(event.game_player_id, event.card);
+            })
+            .listenForWhisper('card-pickup-cancelled', (event: { game_player_id: number }) => {
+                gameStore.applyCardPickupCancelled(event.game_player_id);
+            })
+            .listenForWhisper(
+                'center-card-swapped',
+                (event: { center_pile_id: number; center_pile_version: number; incoming_card: Card; outgoing_card_id: number; game_player_id: number }) => {
+                    gameStore.applyCenterCardSwapped(event.center_pile_id, event.center_pile_version, event.incoming_card, event.game_player_id);
                 },
             )
-            .listen('PlayerPilePickedUp', (_event: { game_player_id: number; pile_id: number }) => {
-                // Reserved for future animation
-            })
+            .listenForWhisper(
+                'swap-cancelled',
+                (event: { center_pile_id: number; previous_top_card: Card; previous_version: number; held_card: Card; game_player_id: number }) => {
+                    gameStore.applySwapCancelled(event.center_pile_id, event.previous_top_card, event.previous_version, event.held_card, event.game_player_id);
+                },
+            )
             .listen(
                 'PlayerPileCompleted',
                 (event: { game_player_id: number; pile_id: number; pile_index: number; cards: Card[] }) => {

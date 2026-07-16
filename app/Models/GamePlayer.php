@@ -19,6 +19,8 @@ class GamePlayer extends Model
         'seat_index',
         'is_ready',
         'is_game_ready',
+        'picked_up_card_id',
+        'picked_up_pile_id',
         'connected_at',
         'disconnected_at',
     ];

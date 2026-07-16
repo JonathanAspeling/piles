@@ -120,6 +120,7 @@ export interface OpponentState {
     name: string;
     seat_index: number;
     piles: OpponentPile[];
+    picked_up_card: Card | null;
 }
 
 export interface LobbyGame {

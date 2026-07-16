@@ -18,8 +18,6 @@ class SwapCardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pile_id' => 'required|integer',
-            'my_card_id' => 'required|integer',
             'center_pile_id' => 'required|integer',
             'center_card_id' => 'required|integer',
             'expected_version' => 'required|integer|min:0',

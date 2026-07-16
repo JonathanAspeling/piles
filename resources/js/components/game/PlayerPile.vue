@@ -1,56 +1,50 @@
 <script setup lang="ts">
-import type { Card, PlayerPile } from '../../types/game';
-import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
+import type { PlayerPile } from '../../types/game';
 
 const props = defineProps<{
     pile: PlayerPile;
-    selectedCard: Card | null;
+    isActive: boolean;
     disabled: boolean;
 }>();
 
 const emit = defineEmits<{
-    selectCard: [pileId: number, card: Card];
-    deselectCard: [];
+    open: [pileId: number];
 }>();
 
-function onCardClick(card: Card) {
+function onClick() {
     if (props.disabled || props.pile.is_completed) {
         return;
     }
-    if (props.selectedCard?.id === card.id) {
-        emit('deselectCard');
-    } else {
-        emit('selectCard', props.pile.id, card);
-    }
+    emit('open', props.pile.id);
 }
 </script>
 
 <template>
-    <div
-        class="flex flex-col gap-2 rounded-xl border-2 p-3 transition-colors"
-        :class="pile.is_completed ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-border bg-card'"
+    <button
+        @click="onClick"
+        :disabled="disabled || pile.is_completed"
+        class="relative flex flex-col items-center justify-center rounded-xl border-2 p-3 transition-all"
+        :class="[
+            pile.is_completed
+                ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                : isActive
+                  ? 'border-primary bg-primary/10 shadow-md'
+                  : 'border-border bg-card hover:border-primary/50 hover:bg-muted/50',
+            disabled && !pile.is_completed ? 'opacity-50' : '',
+        ]"
     >
-        <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-muted-foreground">Pile {{ pile.pile_index + 1 }}</span>
-            <span v-if="pile.is_completed" class="rounded-full bg-green-500 px-2 py-0.5 text-xs font-bold text-white">✓ Done</span>
+        <span class="mb-1 text-xs font-medium text-muted-foreground">Pile {{ pile.pile_index + 1 }}</span>
+
+        <!-- Face-down card stack -->
+        <div v-if="!pile.is_completed" class="relative flex h-12 w-9 items-center justify-center">
+            <div class="absolute left-1 top-1 h-10 w-7 rounded-md border-2 border-border bg-muted/60" />
+            <div class="absolute left-0.5 top-0.5 h-10 w-7 rounded-md border-2 border-border bg-muted/40" />
+            <div class="relative h-10 w-7 rounded-md border-2 border-border bg-muted/80 flex items-center justify-center">
+                <span class="text-lg font-black text-muted-foreground/40 select-none">?</span>
+            </div>
         </div>
 
-        <div class="flex flex-wrap gap-1.5">
-            <button
-                v-for="card in pile.cards"
-                :key="card.id"
-                @click="onCardClick(card)"
-                :disabled="disabled || pile.is_completed"
-                class="flex h-16 w-12 flex-col items-center justify-center rounded-lg border-2 text-white shadow-sm transition-all"
-                :class="[
-                    CARD_COLOR_CLASSES[card.color],
-                    pile.is_completed || disabled ? 'cursor-default opacity-70' : 'cursor-pointer hover:scale-105',
-                    selectedCard?.id === card.id ? 'scale-110 ring-2 ring-white ring-offset-1' : '',
-                ]"
-                :title="CLOTHING_TYPE_LABELS[card.clothing_type]"
-            >
-                <span class="px-1 text-center text-[9px] font-bold leading-tight">{{ CLOTHING_TYPE_LABELS[card.clothing_type] }}</span>
-            </button>
-        </div>
-    </div>
+        <span v-if="pile.is_completed" class="rounded-full bg-green-500 px-2 py-0.5 text-xs font-bold text-white">✓ Done</span>
+        <span v-else class="mt-1 text-xs text-muted-foreground">{{ pile.cards.length }} cards</span>
+    </button>
 </template>

@@ -19,6 +19,8 @@ export const useGameStore = defineStore('game', () => {
     const winner = ref<GameWinner | null>(null);
     const forfeitedBy = ref<string | null>(null);
     const isSwapping = ref(false);
+    const myPickedUpCard = ref<Card | null>(null);
+    const myPickedUpPileId = ref<number | null>(null);
 
     function initialize(
         gameData: GameSession,
@@ -64,7 +66,9 @@ export const useGameStore = defineStore('game', () => {
             version: 0,
             top_card: cp.top_card,
         }));
-        opponents.value = allPlayers.filter((p) => p.id !== currentPlayer.value?.id);
+        opponents.value = allPlayers
+            .filter((p) => p.id !== currentPlayer.value?.id)
+            .map((p) => ({ ...p, picked_up_card: null }));
     }
 
     function applyHandDealt(piles: PlayerPile[]) {
@@ -84,67 +88,154 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
-    async function swapCard(myPileId: number, myCardId: number, centerPileId: number) {
-        if (isSwapping.value || !session.value || !currentPlayer.value) {
+    async function pickUpCard(cardId: number, pileId: number) {
+        if (!session.value || !currentPlayer.value) {
             return;
         }
 
-        const myPile = myPiles.value.find((p) => p.id === myPileId);
+        const myPile = myPiles.value.find((p) => p.id === pileId);
+        const card = myPile?.cards.find((c) => c.id === cardId);
+        if (!myPile || !card) {
+            return;
+        }
+
+        const cardIndex = myPile.cards.findIndex((c) => c.id === cardId);
+        myPile.cards.splice(cardIndex, 1);
+        myPickedUpCard.value = card;
+        myPickedUpPileId.value = pileId;
+
+        window.Echo.join(`game.${session.value.id}`).whisper('card-picked-up', {
+            game_player_id: currentPlayer.value.id,
+            card,
+        });
+
+        try {
+            await apiFetch(route('gameplay.pickup', { game: session.value.id }), {
+                method: 'POST',
+                body: JSON.stringify({ card_id: cardId }),
+            });
+        } catch {
+            myPile.cards.splice(cardIndex, 0, card);
+            myPickedUpCard.value = null;
+            myPickedUpPileId.value = null;
+            window.Echo.join(`game.${session.value.id}`).whisper('card-pickup-cancelled', {
+                game_player_id: currentPlayer.value.id,
+            });
+            notificationStore.add('Failed to pick up card — check your connection.', 'error');
+        }
+    }
+
+    async function swapCard(centerPileId: number, centerCardId: number, expectedVersion: number) {
+        if (isSwapping.value || !session.value || !currentPlayer.value || !myPickedUpCard.value || myPickedUpPileId.value === null) {
+            return;
+        }
+
+        const myPile = myPiles.value.find((p) => p.id === myPickedUpPileId.value);
         const centerPile = centerPiles.value.find((p) => p.id === centerPileId);
-        if (!myPile || !centerPile || !centerPile.top_card) {
+        if (!centerPile || !centerPile.top_card) {
             return;
         }
 
-        const myCard = myPile.cards.find((c) => c.id === myCardId);
-        if (!myCard) {
-            return;
-        }
-
+        const heldCard = myPickedUpCard.value;
         const centerCard = { ...centerPile.top_card };
-        const cardIndex = myPile.cards.findIndex((c) => c.id === myCardId);
+        const previousVersion = centerPile.version;
+        const nextVersion = expectedVersion + 1;
+        const actorPlayerId = currentPlayer.value.id;
 
         isSwapping.value = true;
 
-        // Optimistic update
-        myPile.cards.splice(cardIndex, 1, centerCard);
-        centerPile.top_card = myCard;
+        if (myPile) {
+            myPile.cards.push(centerCard);
+        }
+        centerPile.top_card = heldCard;
+        centerPile.version = nextVersion;
+        myPickedUpCard.value = null;
+        myPickedUpPileId.value = null;
+
+        window.Echo.join(`game.${session.value.id}`).whisper('center-card-swapped', {
+            center_pile_id: centerPileId,
+            center_pile_version: nextVersion,
+            incoming_card: heldCard,
+            outgoing_card_id: centerCardId,
+            game_player_id: actorPlayerId,
+        });
+
+        const revert = () => {
+            if (myPile) {
+                myPile.cards.pop();
+            }
+            centerPile.top_card = centerCard;
+            centerPile.version = previousVersion;
+            myPickedUpCard.value = heldCard;
+            myPickedUpPileId.value = myPile?.id ?? null;
+            window.Echo.join(`game.${session.value!.id}`).whisper('swap-cancelled', {
+                center_pile_id: centerPileId,
+                previous_top_card: centerCard,
+                previous_version: previousVersion,
+                held_card: heldCard,
+                game_player_id: actorPlayerId,
+            });
+        };
 
         try {
             const response = await apiFetch(route('gameplay.swap', { game: session.value.id }), {
                 method: 'POST',
                 body: JSON.stringify({
-                    pile_id: myPile.id,
-                    my_card_id: myCardId,
                     center_pile_id: centerPileId,
-                    center_card_id: centerCard.id,
-                    expected_version: centerPile.version,
+                    center_card_id: centerCardId,
+                    expected_version: expectedVersion,
                 }),
             });
 
             if (response.status === 409) {
-                // Stale version — revert optimistic update
-                myPile.cards.splice(cardIndex, 1, myCard);
-                centerPile.top_card = centerCard;
+                revert();
                 notificationStore.add('Someone else swapped first — try again!', 'warning');
             }
         } catch {
-            // Network error — revert
-            myPile.cards.splice(cardIndex, 1, myCard);
-            centerPile.top_card = centerCard;
+            revert();
             notificationStore.add('Swap failed — check your connection.', 'error');
         } finally {
             isSwapping.value = false;
         }
     }
 
-    function applyCenterCardSwapped(centerPileId: number, version: number, incomingCard: Card) {
+    function applyCardPickedUp(gamePlayerId: number, card: Card) {
+        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
+        if (opponent) {
+            opponent.picked_up_card = card;
+        }
+    }
+
+    function applyCenterCardSwapped(centerPileId: number, version: number, incomingCard: Card, gamePlayerId: number) {
         const pile = centerPiles.value.find((p) => p.id === centerPileId);
         if (pile) {
             pile.version = version;
-            // Only update top_card if it differs — our optimistic update may have already set it
             if (!pile.top_card || pile.top_card.id !== incomingCard.id) {
                 pile.top_card = incomingCard;
             }
+        }
+        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
+        if (opponent) {
+            opponent.picked_up_card = null;
+        }
+    }
+
+    function applySwapCancelled(centerPileId: number, previousTopCard: Card, previousVersion: number, heldCard: Card, gamePlayerId: number) {
+        const pile = centerPiles.value.find((p) => p.id === centerPileId);
+        if (pile) {
+            pile.top_card = previousTopCard;
+            pile.version = previousVersion;
+        }
+        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
+        if (opponent) {
+            opponent.picked_up_card = heldCard;
+        }
+    }
+
+    function applyCardPickupCancelled(gamePlayerId: number) {
+        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
+        if (opponent) {
+            opponent.picked_up_card = null;
         }
     }
 
@@ -217,6 +308,8 @@ export const useGameStore = defineStore('game', () => {
         winner,
         forfeitedBy,
         isSwapping,
+        myPickedUpCard,
+        myPickedUpPileId,
         initialize,
         applyLobbyUpdate,
         applyCountdown,
@@ -224,8 +317,12 @@ export const useGameStore = defineStore('game', () => {
         applyHandDealt,
         confirmClientReady,
         applyGameActivated,
+        pickUpCard,
         swapCard,
+        applyCardPickedUp,
+        applyCardPickupCancelled,
         applyCenterCardSwapped,
+        applySwapCancelled,
         applyPileCompleted,
         applyClaimMade,
         applyGameEnded,
