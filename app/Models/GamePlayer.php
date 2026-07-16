@@ -18,6 +18,7 @@ class GamePlayer extends Model
         'user_id',
         'seat_index',
         'is_ready',
+        'is_game_ready',
         'connected_at',
         'disconnected_at',
     ];
@@ -26,6 +27,7 @@ class GamePlayer extends Model
     {
         return [
             'is_ready' => 'boolean',
+            'is_game_ready' => 'boolean',
             'connected_at' => 'datetime',
             'disconnected_at' => 'datetime',
         ];

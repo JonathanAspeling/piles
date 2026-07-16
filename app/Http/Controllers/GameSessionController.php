@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\GameStatus;
 use App\Events\GameCountdownStarted;
 use App\Events\GameLobbyUpdated;
+use App\Events\GameStarted;
 use App\Events\LobbyUpdated;
+use App\Events\PlayerHandDealt;
 use App\Http\Requests\CreateGameRequest;
 use App\Http\Requests\JoinGameRequest;
 use App\Jobs\StartGameJob;
 use App\Models\GameSession;
 use App\Models\Pile;
 use App\Models\PileCard;
+use App\Services\GameDealerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -142,7 +145,7 @@ class GameSessionController extends Controller
             'opponents' => [],
         ];
 
-        $isActiveGame = $currentPlayer && in_array($game->status, [GameStatus::Playing, GameStatus::Verifying, GameStatus::Ended]);
+        $isActiveGame = $currentPlayer && in_array($game->status, [GameStatus::Countdown, GameStatus::Playing, GameStatus::Verifying, GameStatus::Ended]);
 
         if ($isActiveGame) {
             $props['myPiles'] = $currentPlayer->piles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
@@ -200,7 +203,7 @@ class GameSessionController extends Controller
         return response()->noContent();
     }
 
-    public function start(GameSession $game): \Illuminate\Http\Response
+    public function start(GameSession $game, GameDealerService $dealer): \Illuminate\Http\Response
     {
         abort_unless($game->host_user_id === auth()->id(), 403);
         abort_unless($game->status === GameStatus::Lobby, 422, 'Game is not in the lobby.');
@@ -210,14 +213,70 @@ class GameSessionController extends Controller
         abort_if($players->count() < 2, 422, 'At least 2 players are required to start.');
         abort_unless($players->every(fn ($player) => $player->is_ready), 422, 'Not all players are ready.');
 
-        $startsAt = now()->addSeconds(3);
-
         $game->update(['status' => GameStatus::Countdown]);
+        $game->gamePlayers()->update(['is_game_ready' => false]);
 
-        broadcast(new GameCountdownStarted($game, $startsAt));
+        $dealer->deal($game);
+
+        $centerPiles = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
+            'id' => $pile->id,
+            'pile_index' => $pile->pile_index,
+            'top_card' => $pile->pileCards->first() ? [
+                'id' => $pile->pileCards->first()->card->id,
+                'clothing_type' => $pile->pileCards->first()->card->clothing_type->value,
+                'color' => $pile->pileCards->first()->card->color->value,
+            ] : null,
+        ])->all();
+
+        $allPlayers = $game->gamePlayers()->with('user', 'piles')->get()->map(fn ($player) => [
+            'id' => $player->id,
+            'user_id' => $player->user_id,
+            'name' => $player->user->name,
+            'seat_index' => $player->seat_index,
+            'piles' => $player->piles->map(fn (Pile $pile) => [
+                'id' => $pile->id,
+                'pile_index' => $pile->pile_index,
+                'is_completed' => $pile->is_completed,
+            ])->all(),
+        ])->all();
+
         broadcast(new LobbyUpdated);
+        broadcast(new GameStarted($game, $centerPiles, $allPlayers));
 
-        StartGameJob::dispatch($game)->delay($startsAt);
+        foreach ($game->gamePlayers()->with('piles.pileCards.card')->get() as $player) {
+            $pilesData = $player->piles->map(fn (Pile $pile) => [
+                'id' => $pile->id,
+                'pile_index' => $pile->pile_index,
+                'is_completed' => $pile->is_completed,
+                'cards' => $pile->pileCards->map(fn (PileCard $pc) => [
+                    'id' => $pc->card->id,
+                    'clothing_type' => $pc->card->clothing_type->value,
+                    'color' => $pc->card->color->value,
+                ])->all(),
+            ])->all();
+
+            broadcast(new PlayerHandDealt($player, $pilesData));
+        }
+
+        return response()->noContent();
+    }
+
+    public function clientReady(GameSession $game): \Illuminate\Http\Response
+    {
+        abort_unless($game->status === GameStatus::Countdown, 422, 'Game is not in the countdown phase.');
+
+        $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->firstOrFail()
+            ->update(['is_game_ready' => true]);
+
+        $allReady = $game->gamePlayers()->where('is_game_ready', false)->doesntExist();
+
+        if ($allReady) {
+            $startsAt = now()->addSeconds(3);
+            broadcast(new GameCountdownStarted($game, $startsAt));
+            StartGameJob::dispatch($game)->delay($startsAt);
+        }
 
         return response()->noContent();
     }

@@ -54,8 +54,8 @@ onUnmounted(() => {
 
 <template>
     <div class="flex h-full flex-1 flex-col">
-        <!-- Countdown overlay -->
-        <CountdownOverlay v-if="isCountdown && gameStore.countdownEndsAt" :ends-at="gameStore.countdownEndsAt" />
+        <!-- Countdown overlay: loading until all clients ready, then 3-2-1-GO! -->
+        <CountdownOverlay v-if="isCountdown" :ends-at="gameStore.countdownEndsAt" @ended="gameStore.applyGameActivated()" />
 
         <!-- PILES! claim overlay -->
         <PilesClaimOverlay

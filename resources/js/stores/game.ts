@@ -34,6 +34,10 @@ export const useGameStore = defineStore('game', () => {
         myPiles.value = myPilesData;
         centerPiles.value = centerPilesData;
         opponents.value = opponentsData;
+        // Rejoin mid-countdown: data already dealt server-side, confirm immediately
+        if (gameData.status === GameStatus.Countdown && myPilesData.length > 0) {
+            confirmClientReady();
+        }
     }
 
     function applyLobbyUpdate(newPlayers: LobbyPlayer[], status: string) {
@@ -52,7 +56,7 @@ export const useGameStore = defineStore('game', () => {
 
     function applyGameStarted(newCenterPiles: { id: number; pile_index: number; top_card: Card | null }[], allPlayers: OpponentState[]) {
         if (session.value) {
-            session.value.status = GameStatus.Playing;
+            session.value.status = GameStatus.Countdown;
         }
         centerPiles.value = newCenterPiles.map((cp) => ({
             id: cp.id,
@@ -65,6 +69,19 @@ export const useGameStore = defineStore('game', () => {
 
     function applyHandDealt(piles: PlayerPile[]) {
         myPiles.value = piles;
+    }
+
+    async function confirmClientReady() {
+        if (!session.value) {
+            return;
+        }
+        await apiFetch(route('games.client-ready', { game: session.value.id }), { method: 'POST' });
+    }
+
+    function applyGameActivated() {
+        if (session.value) {
+            session.value.status = GameStatus.Playing;
+        }
     }
 
     async function swapCard(myPileId: number, myCardId: number, centerPileId: number) {
@@ -205,6 +222,8 @@ export const useGameStore = defineStore('game', () => {
         applyCountdown,
         applyGameStarted,
         applyHandDealt,
+        confirmClientReady,
+        applyGameActivated,
         swapCard,
         applyCenterCardSwapped,
         applyPileCompleted,

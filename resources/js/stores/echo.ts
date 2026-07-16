@@ -20,6 +20,10 @@ export const useEchoStore = defineStore('echo', () => {
             })
             .listen('GameStarted', (event: { center_piles: { id: number; pile_index: number; top_card: Card | null }[]; players: OpponentState[] }) => {
                 gameStore.applyGameStarted(event.center_piles, event.players);
+                gameStore.confirmClientReady();
+            })
+            .listen('GameActivated', () => {
+                gameStore.applyGameActivated();
             })
             .listen(
                 'CenterCardSwapped',

@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/games/{game}', [GameSessionController::class, 'show'])->name('games.show');
     Route::post('/games/{game}/ready', [GameSessionController::class, 'ready'])->name('games.ready');
     Route::post('/games/{game}/start', [GameSessionController::class, 'start'])->name('games.start');
+    Route::post('/games/{game}/client-ready', [GameSessionController::class, 'clientReady'])->name('games.client-ready');
     Route::delete('/games/{game}/leave', [GameSessionController::class, 'leave'])->name('games.leave');
 
     Route::post('/games/{game}/swap', [GameplayController::class, 'swap'])->name('gameplay.swap');
