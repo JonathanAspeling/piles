@@ -54,6 +54,7 @@ RUN apk add --no-cache \
         icu-dev \
         oniguruma-dev \
         libzip-dev \
+        linux-headers \
         $PHPIZE_DEPS \
     && docker-php-ext-install \
         pdo_sqlite \
@@ -63,7 +64,7 @@ RUN apk add --no-cache \
         sockets \
         intl \
         zip \
-    && apk del $PHPIZE_DEPS icu-dev oniguruma-dev libzip-dev sqlite-dev \
+    && apk del $PHPIZE_DEPS icu-dev oniguruma-dev libzip-dev sqlite-dev linux-headers \
     && rm -rf /var/cache/apk/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
