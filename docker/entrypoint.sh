@@ -13,6 +13,7 @@ fi
 
 if [ "${RUN_MIGRATIONS:-false}" = "true" ]; then
     php artisan migrate --force
+    php artisan db:seed --class=CardSeeder --force
 fi
 
 php artisan config:cache
