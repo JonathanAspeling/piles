@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Card, CenterPile } from '../../types/game';
+import type { CenterPile } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
 
 const props = defineProps<{
@@ -23,28 +23,28 @@ function onPileClick() {
     <button
         @click="onPileClick"
         :disabled="disabled || !hasCardInHand || !pile.top_card"
-        class="flex flex-col items-center gap-2"
+        class="flex flex-col items-center gap-1 sm:gap-2"
     >
         <!-- Card face -->
         <div
             v-if="pile.top_card"
-            class="relative flex h-28 w-20 flex-col items-center justify-center rounded-xl border-2 p-2 text-center text-white shadow-md transition-all"
+            class="relative flex h-24 w-16 flex-col items-center justify-center rounded-xl border-2 p-2 text-center text-white shadow-md transition-all sm:h-28 sm:w-20"
             :class="[
                 CARD_COLOR_CLASSES[pile.top_card.color],
-                hasCardInHand && !disabled ? 'cursor-pointer ring-2 ring-white ring-offset-2 hover:scale-105' : 'cursor-default',
+                hasCardInHand && !disabled ? 'cursor-pointer ring-2 ring-white ring-offset-2 hover:scale-105 active:scale-95' : 'cursor-default',
             ]"
         >
-            <span class="text-xs font-bold leading-tight">{{ CLOTHING_TYPE_LABELS[pile.top_card.clothing_type] }}</span>
+            <span class="text-[11px] font-bold leading-tight sm:text-xs">{{ CLOTHING_TYPE_LABELS[pile.top_card.clothing_type] }}</span>
         </div>
 
         <!-- Empty placeholder -->
         <div
             v-else
-            class="flex h-28 w-20 items-center justify-center rounded-xl border-2 border-dashed border-muted bg-muted/20 text-xs text-muted-foreground"
+            class="flex h-24 w-16 items-center justify-center rounded-xl border-2 border-dashed border-muted bg-muted/20 text-[11px] text-muted-foreground sm:h-28 sm:w-20 sm:text-xs"
         >
             Empty
         </div>
 
-        <span class="text-xs text-muted-foreground">Center {{ pile.pile_index + 1 }}</span>
+        <span class="text-[10px] text-muted-foreground sm:text-xs">Center {{ pile.pile_index + 1 }}</span>
     </button>
 </template>

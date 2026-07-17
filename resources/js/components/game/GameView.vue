@@ -69,14 +69,14 @@ onUnmounted(() => {
             v-if="isEnded && (winner || forfeitedBy)"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
         >
-            <div class="flex flex-col items-center gap-4 text-center text-white">
-                <p class="text-2xl font-semibold">Game Over!</p>
+            <div class="flex flex-col items-center gap-4 px-6 text-center text-white">
+                <p class="text-xl font-semibold sm:text-2xl">Game Over!</p>
                 <template v-if="forfeitedBy">
-                    <p class="text-5xl font-black">{{ forfeitedBy }} forfeited</p>
+                    <p class="text-3xl font-black sm:text-5xl">{{ forfeitedBy }} forfeited</p>
                     <p class="text-lg text-white/70">No winner this time</p>
                 </template>
                 <template v-else-if="winner">
-                    <p class="text-5xl font-black">{{ winner.name }} wins!</p>
+                    <p class="text-3xl font-black sm:text-5xl">{{ winner.name }} wins!</p>
                 </template>
                 <button
                     @click="emit('left')"
@@ -87,8 +87,8 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <!-- Toast notifications -->
-        <div class="fixed bottom-4 right-4 z-40 flex flex-col gap-2">
+        <!-- Toast notifications: pushed above sticky hand on mobile -->
+        <div class="fixed bottom-32 right-2 z-40 flex flex-col gap-2 sm:bottom-4 sm:right-4">
             <div
                 v-for="notification in notificationStore.notifications"
                 :key="notification.id"

@@ -42,7 +42,7 @@ async function leaveGame() {
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+    <div class="flex flex-1 flex-col items-center justify-center gap-6 p-3 sm:p-6">
         <div class="w-full max-w-md rounded-xl border border-border bg-card shadow-sm">
             <!-- Header -->
             <div class="border-b border-border px-6 py-4">

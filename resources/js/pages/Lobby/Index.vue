@@ -115,10 +115,10 @@ onUnmounted(() => {
         </template>
 
         <template v-else>
-            <div class="flex flex-1 flex-col gap-6 p-6">
-                <div class="grid gap-6 md:grid-cols-2">
+            <div class="flex flex-1 flex-col gap-4 p-3 sm:gap-6 sm:p-6">
+                <div class="grid gap-4 md:grid-cols-2 md:gap-6">
                     <!-- Create Game -->
-                    <div class="rounded-xl border border-sidebar-border/70 bg-card p-6 dark:border-sidebar-border">
+                    <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border sm:p-6">
                         <h2 class="mb-4 text-lg font-semibold">Create a Game</h2>
                         <form @submit.prevent="createGame" class="space-y-4">
                             <label class="flex cursor-pointer items-center gap-3">
@@ -140,7 +140,7 @@ onUnmounted(() => {
                     </div>
 
                     <!-- Join by Code -->
-                    <div class="rounded-xl border border-sidebar-border/70 bg-card p-6 dark:border-sidebar-border">
+                    <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border sm:p-6">
                         <h2 class="mb-4 text-lg font-semibold">Join with Code</h2>
                         <form @submit.prevent="joinGame(joinCode)" class="space-y-4">
                             <div>
@@ -165,7 +165,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Open Games -->
-                <div class="rounded-xl border border-sidebar-border/70 bg-card p-6 dark:border-sidebar-border">
+                <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold">Open Games</h2>
                     <div v-if="games.length === 0" class="py-8 text-center text-sm text-muted-foreground">No open games right now. Create one!</div>
                     <div v-else class="space-y-2">
