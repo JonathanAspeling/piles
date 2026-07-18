@@ -132,7 +132,7 @@ onUnmounted(() => {
                             <button
                                 type="submit"
                                 :disabled="isCreating"
-                                class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                class="w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 sm:py-2"
                             >
                                 {{ isCreating ? 'Creating…' : 'Create Game' }}
                             </button>
@@ -147,16 +147,18 @@ onUnmounted(() => {
                                 <input
                                     type="text"
                                     v-model="joinCode"
-                                    placeholder="Enter 6-letter code"
+                                    placeholder="6-letter code"
                                     maxlength="6"
-                                    class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-ring"
+                                    autocapitalize="characters"
+                                    autocomplete="off"
+                                    class="w-full rounded-lg border border-input bg-background px-3 py-3 text-center text-lg uppercase tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-ring sm:py-2 sm:text-sm sm:tracking-widest"
                                 />
                                 <p v-if="joinError" class="mt-1 text-sm text-destructive">{{ joinError }}</p>
                             </div>
                             <button
                                 type="submit"
                                 :disabled="isJoining || !joinCode"
-                                class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                class="w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 sm:py-2"
                             >
                                 {{ isJoining && !joiningGameId ? 'Joining…' : 'Join Game' }}
                             </button>
@@ -172,21 +174,21 @@ onUnmounted(() => {
                         <div
                             v-for="game in games"
                             :key="game.id"
-                            class="flex items-center justify-between rounded-lg border border-border px-4 py-3"
+                            class="flex flex-col gap-2 rounded-lg border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4"
                         >
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-3 sm:gap-4">
                                 <span class="font-mono text-lg font-bold tracking-widest">{{ game.code }}</span>
-                                <div class="text-sm text-muted-foreground">
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground sm:text-sm">
                                     <span>{{ game.host_name }}</span>
-                                    <span class="mx-1">·</span>
+                                    <span class="text-muted-foreground/50">·</span>
                                     <span>{{ game.player_count }}/7 players</span>
-                                    <span v-if="game.variant" class="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">Variant</span>
+                                    <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Variant</span>
                                 </div>
                             </div>
                             <button
                                 @click="joinGame(game.code, game.id)"
                                 :disabled="isJoining"
-                                class="rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50"
+                                class="rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-transform hover:bg-secondary/80 active:scale-[0.98] disabled:opacity-50 sm:px-3 sm:py-1.5"
                             >
                                 {{ isJoining && joiningGameId === game.id ? 'Joining…' : 'Join' }}
                             </button>

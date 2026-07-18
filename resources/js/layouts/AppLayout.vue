@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref } from 'vue';
 import type { SharedData, User } from '@/types';
 
@@ -34,7 +34,9 @@ if (typeof window !== 'undefined') {
 <template>
     <div class="flex min-h-screen flex-col bg-background text-foreground">
         <header class="hidden h-12 shrink-0 items-center justify-between border-b border-border px-4 md:flex">
-            <span class="text-sm font-bold uppercase tracking-widest">Piles!</span>
+            <Link :href="route('lobby.index')" class="text-sm font-bold uppercase tracking-widest hover:text-primary">
+                Piles!
+            </Link>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-muted-foreground">{{ user.name }}</span>
                 <button
@@ -91,9 +93,18 @@ if (typeof window !== 'undefined') {
                 class="absolute right-2 top-12 flex w-52 flex-col gap-3 rounded-lg border border-border bg-card p-3 shadow-lg"
             >
                 <div class="flex items-center justify-between">
-                    <span class="text-sm font-bold uppercase tracking-widest">Piles!</span>
+                    <Link :href="route('lobby.index')" @click="closeMenu" class="text-sm font-bold uppercase tracking-widest">
+                        Piles!
+                    </Link>
                     <span class="text-xs text-muted-foreground">{{ user.name }}</span>
                 </div>
+                <Link
+                    :href="route('lobby.index')"
+                    @click="closeMenu"
+                    class="rounded-md border border-border px-3 py-2 text-center text-sm text-foreground transition-colors hover:bg-muted"
+                >
+                    Lobby
+                </Link>
                 <button
                     @click="logout"
                     class="rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
