@@ -181,7 +181,6 @@ lobby ──► countdown (3 s) ──► playing ──► verifying ──► 
 | `PlayerPilePickedUp` | presence | Player picks up a pile |
 | `CenterCardSwapped` | presence | Successful swap; reveals the discarded card, hides the taken card |
 | `PlayerPileCompleted` | presence | Player's pile becomes a matching set (cards revealed) |
-| `PilesClaimMade` | presence | Player shouts "PILES!" |
 | `GameEnded` | presence | Claim verified; includes winner info |
 | `GameResumed` | presence | Claim rejected; game continues |
 | `PlayerDisconnected` | presence | Player goes offline mid-game |
@@ -201,10 +200,13 @@ POST /games/{game}/ready       → toggle ready state
 POST /games/{game}/start       → host starts countdown
 DELETE /games/{game}/leave     → leave a session
 
-POST /games/{game}/pickup      → pick up one of your piles
-POST /games/{game}/swap        → swap a card with a centre pile (atomic)
-POST /games/{game}/putdown     → set your held pile down
-POST /games/{game}/claim       → claim "PILES!"
+POST /games/{game}/client-ready → mark client fully loaded (all-ready gate for countdown)
+GET  /games/{game}/status      → poll current status (safety fallback for stuck clients)
+
+POST /games/{game}/pickup      → pick up a card from one of your piles into your hand
+POST /games/{game}/swap        → swap the held card with a centre pile (atomic)
+POST /games/{game}/claim       → claim "PILES!" (verified server-side)
+POST /games/{game}/forfeit     → forfeit the game (ends the session)
 ```
 
 ---
@@ -232,11 +234,23 @@ Only the specific centre pile row is locked, so players can simultaneously inter
 ## Win Verification
 
 1. `POST /games/{game}/claim` received.
-2. `PilesClaimMade` broadcast immediately (all players see the announcement).
+2. Server atomically transitions `playing → verifying` using a conditional `UPDATE ... WHERE status = 'playing'`. If zero rows are affected, a concurrent claim already won — return 409 and stop.
 3. `GameVerifierService::verify()` loads all 6 of the claimant's piles with their cards.
 4. Checks: exactly 4 cards per pile, all cards in each pile share the same `clothing_type`, all 4 colours (0–3) present.
-5. If valid: `UPDATE game_sessions SET status = 'ended', winner_user_id = ? WHERE id = ? AND status = 'playing'` (conditional update prevents double-end if two claims arrive simultaneously). Broadcast `GameEnded`.
-6. If invalid: broadcast `GameResumed`, game continues.
+5. If valid: mark `status = 'ended'`, set `winner_user_id`, broadcast `GameEnded`. The client jumps straight from `playing` to `ended` — no interstitial "PILES!" announcement.
+6. If invalid: revert `verifying → playing`, broadcast `GameResumed`, game continues.
+
+The `verifying` state is retained server-side as a concurrency guard but is deliberately invisible to clients. `games.status` remains as a polling endpoint so a client that missed the terminal broadcast can recover.
+
+---
+
+## Win-state UX
+
+Three deliberate design choices sit on top of the state machine to make the ending feel decisive:
+
+- **Ready-to-claim CTA.** At 6/6 completed piles, the sticky-hand header swaps to "You're ready — call PILES! to win! ↓" and a full-width pulsing emerald bar CTA appears above the pile grid. The pulse is a scoped keyframed `box-shadow` (not `animate-pulse`, which would fade the text). Forfeit stays visible but visually demoted.
+- **Face-up completed piles.** Once a pile is completed it renders as a 4-card colour fan (cards slightly offset via `translateX`). On desktop, the pile's clothing silhouette is overlaid via `CardArt.vue`. `PileViewer` gates all interactions on `is_completed`, and `GameBoard` watches `activePile.is_completed` to auto-close the viewer when the completing swap arrives asynchronously.
+- **Winner-only celebration.** `GameView.vue` watches an `iWon` computed (`isEnded && winner.user_id === currentPlayer.user_id`). On the false → true transition it calls `celebrate()` from `resources/js/utils/celebrate.ts`, which fires an initial `canvas-confetti` burst and then repeats every 2 s until `stopCelebrating()` runs (Back-to-Lobby click or `onUnmounted`). The winner's modal reads "Congratulations, {name}! 🎉"; every other player sees the plain "{name} wins!" copy. Because `watch` defaults to non-immediate, reloading during the ended state does *not* re-trigger the confetti.
 
 ---
 
@@ -261,14 +275,16 @@ The authoritative client-side game state. Everything the board UI renders derive
 
 ```typescript
 state: {
-  gameSessionId: number | null
-  status: GameStatus
-  myPlayerId: number | null          // game_player_id
-  myPiles: ClientPile[]              // 6 piles with full card data (private)
-  heldPileIndex: number | null
+  session: GameSession | null
+  currentPlayer: GamePlayer | null
+  players: LobbyPlayer[]             // lobby-view player list
+  myPiles: PlayerPile[]              // 6 piles with full card data (private)
+  myPickedUpCard: Card | null        // card currently in hand
   centerPiles: CenterPile[]          // 4 or 8 piles
-  otherPlayers: OpponentState[]
-  verifyingClaimant: string | null
+  opponents: OpponentState[]
+  winner: GameWinner | null
+  forfeitedBy: string | null
+  isSwapping: boolean                // guards optimistic swap
 }
 ```
 
@@ -278,7 +294,7 @@ Manages Reverb channel subscriptions and bridges incoming events into `useGameSt
 
 ### `useNotificationStore`
 
-Toast/alert queue for in-game events ("Alice claimed PILES!", "Claim rejected — resume!").
+Transient toast queue for in-game events ("Swap failed — try again", "Claim rejected — resume!") with auto-dismiss.
 
 ---
 
@@ -297,7 +313,6 @@ app/
     PlayerPilePickedUp.php
     CenterCardSwapped.php
     PlayerPileCompleted.php
-    PilesClaimMade.php
     GameEnded.php
     GameResumed.php
   Http/
@@ -346,8 +361,10 @@ resources/js/
       CenterPile.vue
       OpponentRow.vue
       CountdownOverlay.vue
-      PilesClaimOverlay.vue
       LobbyPanel.vue
+      GameView.vue          # top-level shell that swaps lobby ↔ board on status
+      PileViewer.vue
+      CardArt.vue
   stores/
     lobby.ts
     game.ts
@@ -355,6 +372,9 @@ resources/js/
     notification.ts
   types/
     game.ts
+  utils/
+    celebrate.ts        # canvas-confetti wrapper for the winner-only burst
+    cardArt.ts          # base64-inlined card silhouettes
 ```
 
 ---
