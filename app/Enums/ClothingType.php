@@ -48,4 +48,7 @@ enum ClothingType: int
     case BowTie = 41;
     case Suspenders = 42;
     case Mittens = 43;
+    case Sneakers = 44;
+    case JoggingShoes = 45;
+    case FormalShoes = 46;
 }

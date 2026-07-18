@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Card, PlayerPile } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
+import CardArt from './CardArt.vue';
 
 const props = withDefaults(
     defineProps<{
@@ -41,7 +42,7 @@ function onCardClick(card: Card) {
                 :key="card.id"
                 @click="onCardClick(card)"
                 :disabled="disabled"
-                class="flex h-24 w-16 flex-col items-center justify-center rounded-xl border-2 text-white shadow transition-all active:scale-95 sm:h-20 sm:w-14"
+                class="relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-xl border-2 p-1.5 text-white shadow transition-all active:scale-95 sm:h-20 sm:w-14"
                 :class="[
                     CARD_COLOR_CLASSES[card.color],
                     disabled ? 'cursor-default opacity-60' : 'cursor-pointer hover:scale-105',
@@ -51,8 +52,8 @@ function onCardClick(card: Card) {
                 ]"
                 :title="CLOTHING_TYPE_LABELS[card.clothing_type]"
             >
-                <span class="px-1 text-center text-[11px] font-bold leading-tight sm:text-[10px]">{{ CLOTHING_TYPE_LABELS[card.clothing_type] }}</span>
-                <span v-if="pendingCard?.id === card.id" class="mt-1 text-[9px] font-semibold opacity-90">Pick up?</span>
+                <CardArt :type="card.clothing_type" />
+                <span v-if="pendingCard?.id === card.id" class="absolute bottom-1 rounded-sm bg-black/40 px-1.5 py-0.5 text-[9px] font-semibold">Pick up?</span>
             </button>
         </div>
     </div>

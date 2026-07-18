@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import type { Card, GameSession } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
 import { useGameStore } from '../../stores/game';
+import CardArt from './CardArt.vue';
 import CenterPileComponent from './CenterPile.vue';
 import OpponentRow from './OpponentRow.vue';
 import PileViewer from './PileViewer.vue';
@@ -105,11 +106,11 @@ function handleForfeit() {
             <h3 class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Your card</h3>
             <div
                 v-if="gameStore.myPickedUpCard"
-                class="flex h-14 w-11 flex-col items-center justify-center rounded-lg border-2 border-white/50 text-white shadow ring-2 ring-amber-400 sm:w-10"
+                class="flex h-14 w-11 items-center justify-center overflow-hidden rounded-lg border-2 border-white/50 p-1 text-white shadow ring-2 ring-amber-400 sm:w-10"
                 :class="CARD_COLOR_CLASSES[gameStore.myPickedUpCard.color]"
                 :title="CLOTHING_TYPE_LABELS[gameStore.myPickedUpCard.clothing_type]"
             >
-                <span class="px-1 text-center text-[10px] font-bold leading-tight">{{ CLOTHING_TYPE_LABELS[gameStore.myPickedUpCard.clothing_type] }}</span>
+                <CardArt :type="gameStore.myPickedUpCard.clothing_type" />
             </div>
             <div
                 v-else

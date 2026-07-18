@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { OpponentState } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
+import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     opponent: OpponentState;
@@ -22,11 +23,11 @@ const completedCount = computed(() => props.opponent.piles.filter((p) => p.is_co
         <!-- Held card slot -->
         <div
             v-if="opponent.picked_up_card"
-            class="flex h-8 w-6 flex-col items-center justify-center rounded border-2 border-white/50 text-white shadow ring-2 ring-amber-400 sm:h-10 sm:w-7"
+            class="flex h-8 w-6 items-center justify-center overflow-hidden rounded border-2 border-white/50 p-0.5 text-white shadow ring-2 ring-amber-400 sm:h-10 sm:w-7"
             :class="CARD_COLOR_CLASSES[opponent.picked_up_card.color]"
             :title="CLOTHING_TYPE_LABELS[opponent.picked_up_card.clothing_type]"
         >
-            <span class="px-0.5 text-center text-[7px] font-bold leading-tight">{{ CLOTHING_TYPE_LABELS[opponent.picked_up_card.clothing_type] }}</span>
+            <CardArt :type="opponent.picked_up_card.clothing_type" />
         </div>
         <div
             v-else

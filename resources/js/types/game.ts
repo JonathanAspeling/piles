@@ -58,6 +58,9 @@ export enum ClothingType {
     BowTie = 41,
     Suspenders = 42,
     Mittens = 43,
+    Sneakers = 44,
+    JoggingShoes = 45,
+    FormalShoes = 46,
 }
 
 export interface Card {
@@ -189,4 +192,7 @@ export const CLOTHING_TYPE_LABELS: Record<ClothingType, string> = {
     [ClothingType.BowTie]: 'Bow Tie',
     [ClothingType.Suspenders]: 'Suspenders',
     [ClothingType.Mittens]: 'Mittens',
+    [ClothingType.Sneakers]: 'Sneakers',
+    [ClothingType.JoggingShoes]: 'Jogging Shoes',
+    [ClothingType.FormalShoes]: 'Formal Shoes',
 };

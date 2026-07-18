@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CenterPile } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
+import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     pile: CenterPile;
@@ -28,13 +29,14 @@ function onPileClick() {
         <!-- Card face -->
         <div
             v-if="pile.top_card"
-            class="relative flex h-24 w-16 flex-col items-center justify-center rounded-xl border-2 p-2 text-center text-white shadow-md transition-all sm:h-28 sm:w-20"
+            class="relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-xl border-2 p-2 text-center text-white shadow-md transition-all sm:h-28 sm:w-20"
             :class="[
                 CARD_COLOR_CLASSES[pile.top_card.color],
                 hasCardInHand && !disabled ? 'cursor-pointer ring-2 ring-white ring-offset-2 hover:scale-105 active:scale-95' : 'cursor-default',
             ]"
+            :title="CLOTHING_TYPE_LABELS[pile.top_card.clothing_type]"
         >
-            <span class="text-[11px] font-bold leading-tight sm:text-xs">{{ CLOTHING_TYPE_LABELS[pile.top_card.clothing_type] }}</span>
+            <CardArt :type="pile.top_card.clothing_type" />
         </div>
 
         <!-- Empty placeholder -->
