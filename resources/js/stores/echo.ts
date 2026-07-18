@@ -49,9 +49,6 @@ export const useEchoStore = defineStore('echo', () => {
                     gameStore.applyPileCompleted(event.game_player_id, event.pile_id, event.cards);
                 },
             )
-            .listen('PilesClaimMade', (event: { game_player_id: number; player_name: string }) => {
-                gameStore.applyClaimMade(event.game_player_id, event.player_name);
-            })
             .listen('GameEnded', (event: { winner: GameWinner | null; forfeited_by: string | null }) => {
                 gameStore.applyGameEnded(event.winner, event.forfeited_by ?? undefined);
             })

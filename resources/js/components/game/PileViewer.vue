@@ -19,7 +19,7 @@ const emit = defineEmits<{
 }>();
 
 function onCardClick(card: Card) {
-    if (props.disabled) {
+    if (props.disabled || props.pile.is_completed) {
         return;
     }
     if (props.pendingCard?.id === card.id) {
@@ -41,7 +41,7 @@ function onCardClick(card: Card) {
                 v-for="card in pile.cards"
                 :key="card.id"
                 @click="onCardClick(card)"
-                :disabled="disabled"
+                :disabled="disabled || pile.is_completed"
                 class="relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-xl border-2 p-1.5 text-white shadow transition-all active:scale-95 sm:h-20 sm:w-14"
                 :class="[
                     CARD_COLOR_CLASSES[card.color],

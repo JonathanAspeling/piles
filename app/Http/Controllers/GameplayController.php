@@ -6,7 +6,6 @@ use App\Enums\GameStatus;
 use App\Events\GameEnded;
 use App\Events\GameResumed;
 use App\Events\LobbyUpdated;
-use App\Events\PilesClaimMade;
 use App\Events\PlayerPileCompleted;
 use App\Exceptions\StaleVersionException;
 use App\Http\Requests\ClaimPilesRequest;
@@ -113,8 +112,6 @@ class GameplayController extends Controller
         // reset as no-op (original attribute was still Playing) and silently
         // skips the SQL UPDATE, leaving the game stuck in Verifying.
         $game->refresh();
-
-        broadcast(new PilesClaimMade($game, $player));
 
         $isValid = $verifier->verify($player);
 

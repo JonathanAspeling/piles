@@ -3,7 +3,6 @@
 use App\Enums\GameStatus;
 use App\Events\GameEnded;
 use App\Events\GameResumed;
-use App\Events\PilesClaimMade;
 use App\Models\Card;
 use App\Models\GameSession;
 use App\Models\Pile;
@@ -68,7 +67,7 @@ function seedPiles(GameSession $game, User $claimant, bool $valid): void
 }
 
 test('a valid PILES claim ends the game and broadcasts a populated winner', function () {
-    Event::fake([PilesClaimMade::class, GameEnded::class, GameResumed::class]);
+    Event::fake([GameEnded::class, GameResumed::class]);
 
     $host = User::factory()->create(['name' => 'Winston']);
     $joiner = User::factory()->create();
@@ -83,7 +82,6 @@ test('a valid PILES claim ends the game and broadcasts a populated winner', func
     expect($game->status)->toBe(GameStatus::Ended);
     expect($game->winner_user_id)->toBe($host->id);
 
-    Event::assertDispatched(PilesClaimMade::class);
     Event::assertDispatched(GameEnded::class, function (GameEnded $event) use ($host) {
         return $event->winner !== null
             && $event->winner->user_id === $host->id
@@ -94,7 +92,7 @@ test('a valid PILES claim ends the game and broadcasts a populated winner', func
 });
 
 test('an invalid PILES claim broadcasts GameResumed and returns the game to Playing', function () {
-    Event::fake([PilesClaimMade::class, GameEnded::class, GameResumed::class]);
+    Event::fake([GameEnded::class, GameResumed::class]);
 
     $host = User::factory()->create(['name' => 'Willow']);
     $joiner = User::factory()->create();
@@ -109,7 +107,6 @@ test('an invalid PILES claim broadcasts GameResumed and returns the game to Play
     expect($game->status)->toBe(GameStatus::Playing);
     expect($game->winner_user_id)->toBeNull();
 
-    Event::assertDispatched(PilesClaimMade::class);
     Event::assertDispatched(GameResumed::class, function (GameResumed $event) {
         return $event->claimantName === 'Willow';
     });

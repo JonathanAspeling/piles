@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Card, GameSession } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
 import { useGameStore } from '../../stores/game';
@@ -23,6 +23,18 @@ let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
 const isDisabled = computed(() => gameStore.session?.status !== GameStatus.Playing || gameStore.isSwapping);
 const completedCount = computed(() => gameStore.myPiles.filter((p) => p.is_completed).length);
 const activePile = computed(() => gameStore.myPiles.find((p) => p.id === activePileId.value) ?? null);
+const readyToClaim = computed(() => completedCount.value === 6 && gameStore.session?.status === GameStatus.Playing);
+
+// Close the pile viewer as soon as the pile it's showing becomes completed —
+// the completing swap arrives asynchronously via broadcast.
+watch(
+    () => activePile.value?.is_completed,
+    (completed) => {
+        if (completed) {
+            closePileViewer();
+        }
+    },
+);
 
 function onOpenPile(pileId: number) {
     if (activePileId.value === pileId) {
@@ -168,27 +180,30 @@ function handleForfeit() {
         <!-- Player hand: sticky bottom on mobile, flow on desktop -->
         <div class="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/95 p-2 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] backdrop-blur-sm sm:static sm:flex-1 sm:border-t-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-0">
             <div class="mb-2 flex items-center justify-between sm:mb-3">
-                <h3 class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                    Your Piles — {{ completedCount }}/6 done
+                <h3
+                    class="text-[10px] font-semibold uppercase tracking-wider sm:text-xs"
+                    :class="readyToClaim ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'"
+                >
+                    <template v-if="readyToClaim">You're ready — call PILES! to win! ↓</template>
+                    <template v-else>Your Piles — {{ completedCount }}/6 done</template>
                 </h3>
-                <div class="flex items-center gap-2">
-                    <button
-                        v-if="completedCount === 6 && gameStore.session?.status === GameStatus.Playing"
-                        @click="claimPiles"
-                        class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white shadow transition-transform hover:bg-emerald-700 active:scale-95 sm:px-4"
-                    >
-                        PILES!
-                    </button>
-                    <button
-                        v-if="gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying"
-                        @click="handleForfeit"
-                        class="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors active:scale-95 sm:px-3 sm:text-xs"
-                        :class="confirmingForfeit ? 'border-red-500 bg-red-500 text-white' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'"
-                    >
-                        {{ confirmingForfeit ? 'Confirm forfeit?' : 'Forfeit' }}
-                    </button>
-                </div>
+                <button
+                    v-if="gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying"
+                    @click="handleForfeit"
+                    class="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors active:scale-95 sm:px-3 sm:text-xs"
+                    :class="confirmingForfeit ? 'border-red-500 bg-red-500 text-white' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'"
+                >
+                    {{ confirmingForfeit ? 'Confirm forfeit?' : 'Forfeit' }}
+                </button>
             </div>
+
+            <button
+                v-if="readyToClaim"
+                @click="claimPiles"
+                class="claim-cta mb-2 w-full rounded-xl bg-emerald-600 px-4 py-3 text-lg font-black tracking-wider text-white shadow-lg transition-transform hover:bg-emerald-700 active:scale-[0.98] sm:mb-3 sm:py-4 sm:text-xl"
+            >
+                PILES!
+            </button>
             <div class="grid grid-cols-6 gap-1.5 sm:gap-3">
                 <PlayerPileComponent
                     v-for="pile in gameStore.myPiles"
@@ -202,3 +217,18 @@ function handleForfeit() {
         </div>
     </div>
 </template>
+
+<style scoped>
+.claim-cta {
+    animation: claim-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes claim-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+    }
+    50% {
+        box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+    }
+}
+</style>

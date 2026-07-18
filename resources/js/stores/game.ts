@@ -16,46 +16,11 @@ export const useGameStore = defineStore('game', () => {
     const opponents = ref<OpponentState[]>([]);
     const countdownDurationMs = ref<number | null>(null);
     const countdownStartedAtLocalMs = ref<number | null>(null);
-    const pendingClaim = ref<{ gamePlayerId: number; playerName: string } | null>(null);
     const winner = ref<GameWinner | null>(null);
     const forfeitedBy = ref<string | null>(null);
     const isSwapping = ref(false);
     const myPickedUpCard = ref<Card | null>(null);
     const myPickedUpPileId = ref<number | null>(null);
-    let verifyingTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
-
-    function clearVerifyingTimeout() {
-        if (verifyingTimeoutHandle) {
-            clearTimeout(verifyingTimeoutHandle);
-            verifyingTimeoutHandle = null;
-        }
-    }
-
-    async function reconcileStatus() {
-        if (!session.value) {
-            return;
-        }
-        if (session.value.status !== GameStatus.Verifying) {
-            return;
-        }
-        try {
-            const response = await apiFetch(route('games.status', { game: session.value.id }));
-            if (!response.ok) {
-                notificationStore.add('Sync issue — please refresh.', 'error');
-                return;
-            }
-            const data: { status: string; winner: GameWinner | null } = await response.json();
-            if (data.status === GameStatus.Playing) {
-                applyGameResumed(pendingClaim.value?.playerName ?? 'A player');
-            } else if (data.status === GameStatus.Ended) {
-                applyGameEnded(data.winner);
-            } else {
-                notificationStore.add('Sync issue — please refresh.', 'error');
-            }
-        } catch {
-            notificationStore.add('Sync issue — please refresh.', 'error');
-        }
-    }
 
     function initialize(
         gameData: GameSession,
@@ -295,17 +260,6 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
-    function applyClaimMade(gamePlayerId: number, playerName: string) {
-        if (session.value) {
-            session.value.status = GameStatus.Verifying;
-        }
-        pendingClaim.value = { gamePlayerId, playerName };
-        clearVerifyingTimeout();
-        verifyingTimeoutHandle = setTimeout(() => {
-            void reconcileStatus();
-        }, 15000);
-    }
-
     function applyGameEnded(gameWinner: GameWinner | null, forfeitBy?: string) {
         if (session.value) {
             session.value.status = GameStatus.Ended;
@@ -313,16 +267,12 @@ export const useGameStore = defineStore('game', () => {
         }
         winner.value = gameWinner;
         forfeitedBy.value = forfeitBy ?? null;
-        pendingClaim.value = null;
-        clearVerifyingTimeout();
     }
 
     function applyGameResumed(claimantName: string) {
         if (session.value) {
             session.value.status = GameStatus.Playing;
         }
-        pendingClaim.value = null;
-        clearVerifyingTimeout();
         notificationStore.add(`${claimantName}'s PILES! claim was invalid — game resumes!`, 'warning');
     }
 
@@ -349,7 +299,6 @@ export const useGameStore = defineStore('game', () => {
         opponents,
         countdownDurationMs,
         countdownStartedAtLocalMs,
-        pendingClaim,
         winner,
         forfeitedBy,
         isSwapping,
@@ -369,7 +318,6 @@ export const useGameStore = defineStore('game', () => {
         applyCenterCardSwapped,
         applySwapCancelled,
         applyPileCompleted,
-        applyClaimMade,
         applyGameEnded,
         applyGameResumed,
         claimPiles,

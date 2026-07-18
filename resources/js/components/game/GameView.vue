@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { useEchoStore } from '../../stores/echo';
 import { useGameStore } from '../../stores/game';
 import { useNotificationStore } from '../../stores/notification';
 import type { CenterPile, GamePlayer, GameSession, LobbyPlayer, OpponentState, PlayerPile } from '../../types/game';
 import { GameStatus } from '../../types/game';
+import { celebrate, stopCelebrating } from '../../utils/celebrate';
 import CountdownOverlay from './CountdownOverlay.vue';
 import GameBoard from './GameBoard.vue';
 import LobbyPanel from './LobbyPanel.vue';
-import PilesClaimOverlay from './PilesClaimOverlay.vue';
 
 const props = defineProps<{
     game: GameSession;
@@ -33,9 +33,17 @@ const isPlaying = computed(
 );
 const isEnded = computed(() => gameStore.session?.status === GameStatus.Ended);
 const isCountdown = computed(() => gameStore.session?.status === GameStatus.Countdown);
-const pendingClaim = computed(() => gameStore.pendingClaim);
 const winner = computed(() => gameStore.winner);
 const forfeitedBy = computed(() => gameStore.forfeitedBy);
+const iWon = computed(() => isEnded.value && !!winner.value && winner.value.user_id === props.currentPlayer?.user_id);
+
+// Fires only on the false→true transition, so a page reload during Ended
+// does not re-trigger confetti.
+watch(iWon, (won) => {
+    if (won) {
+        celebrate();
+    }
+});
 
 onMounted(() => {
     gameStore.initialize(props.game, props.currentPlayer, props.players, props.myPiles, props.centerPiles, props.opponents);
@@ -46,10 +54,16 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    stopCelebrating();
     if (props.currentPlayer) {
         echoStore.unsubscribe(props.game.id, props.currentPlayer.id);
     }
 });
+
+function onBackToLobby() {
+    stopCelebrating();
+    emit('left');
+}
 </script>
 
 <template>
@@ -60,13 +74,6 @@ onUnmounted(() => {
             :duration-ms="gameStore.countdownDurationMs"
             :started-at-local-ms="gameStore.countdownStartedAtLocalMs"
             @ended="gameStore.applyGameActivated()"
-        />
-
-        <!-- PILES! claim overlay -->
-        <PilesClaimOverlay
-            v-if="pendingClaim"
-            :player-name="pendingClaim.playerName"
-            :is-current-player="pendingClaim.gamePlayerId === currentPlayer?.id"
         />
 
         <!-- Winner/forfeit announcement — always shows on Ended so players are never stuck -->
@@ -81,14 +88,15 @@ onUnmounted(() => {
                     <p class="text-lg text-white/70">No winner this time</p>
                 </template>
                 <template v-else-if="winner">
-                    <p class="text-3xl font-black sm:text-5xl">{{ winner.name }} wins!</p>
+                    <p v-if="iWon" class="text-3xl font-black sm:text-5xl">Congratulations, {{ winner.name }}! 🎉</p>
+                    <p v-else class="text-3xl font-black sm:text-5xl">{{ winner.name }} wins!</p>
                 </template>
                 <template v-else>
                     <p class="text-3xl font-black sm:text-5xl">Game ended</p>
                     <p class="text-lg text-white/70">Result unavailable — return to lobby</p>
                 </template>
                 <button
-                    @click="emit('left')"
+                    @click="onBackToLobby"
                     class="mt-4 rounded-lg bg-white px-6 py-2 text-sm font-bold text-black hover:bg-white/90"
                 >
                     Back to Lobby
