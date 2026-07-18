@@ -55,7 +55,12 @@ onUnmounted(() => {
 <template>
     <div class="flex h-full flex-1 flex-col">
         <!-- Countdown overlay: loading until all clients ready, then 3-2-1-GO! -->
-        <CountdownOverlay v-if="isCountdown" :ends-at="gameStore.countdownEndsAt" @ended="gameStore.applyGameActivated()" />
+        <CountdownOverlay
+            v-if="isCountdown"
+            :duration-ms="gameStore.countdownDurationMs"
+            :started-at-local-ms="gameStore.countdownStartedAtLocalMs"
+            @ended="gameStore.applyGameActivated()"
+        />
 
         <!-- PILES! claim overlay -->
         <PilesClaimOverlay
@@ -64,9 +69,9 @@ onUnmounted(() => {
             :is-current-player="pendingClaim.gamePlayerId === currentPlayer?.id"
         />
 
-        <!-- Winner/forfeit announcement -->
+        <!-- Winner/forfeit announcement — always shows on Ended so players are never stuck -->
         <div
-            v-if="isEnded && (winner || forfeitedBy)"
+            v-if="isEnded"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
         >
             <div class="flex flex-col items-center gap-4 px-6 text-center text-white">
@@ -77,6 +82,10 @@ onUnmounted(() => {
                 </template>
                 <template v-else-if="winner">
                     <p class="text-3xl font-black sm:text-5xl">{{ winner.name }} wins!</p>
+                </template>
+                <template v-else>
+                    <p class="text-3xl font-black sm:text-5xl">Game ended</p>
+                    <p class="text-lg text-white/70">Result unavailable — return to lobby</p>
                 </template>
                 <button
                     @click="emit('left')"

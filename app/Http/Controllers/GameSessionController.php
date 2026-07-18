@@ -261,6 +261,20 @@ class GameSessionController extends Controller
         return response()->noContent();
     }
 
+    public function status(GameSession $game): JsonResponse
+    {
+        $game->loadMissing('winner');
+
+        return response()->json([
+            'status' => $game->status->value,
+            'winner' => $game->winner ? [
+                'game_player_id' => $game->gamePlayers()->where('user_id', $game->winner_user_id)->value('id'),
+                'user_id' => $game->winner_user_id,
+                'name' => $game->winner->name,
+            ] : null,
+        ]);
+    }
+
     public function clientReady(GameSession $game): \Illuminate\Http\Response
     {
         abort_unless($game->status === GameStatus::Countdown, 422, 'Game is not in the countdown phase.');
@@ -273,9 +287,8 @@ class GameSessionController extends Controller
         $allReady = $game->gamePlayers()->where('is_game_ready', false)->doesntExist();
 
         if ($allReady) {
-            $startsAt = now()->addSeconds(3);
-            broadcast(new GameCountdownStarted($game, $startsAt));
-            StartGameJob::dispatch($game)->delay($startsAt);
+            broadcast(new GameCountdownStarted($game, 3000));
+            StartGameJob::dispatch($game)->delay(now()->addSeconds(3));
         }
 
         return response()->noContent();

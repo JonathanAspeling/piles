@@ -2,23 +2,24 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 const props = defineProps<{
-    endsAt: string | null;
+    durationMs: number | null;
+    startedAtLocalMs: number | null;
 }>();
 
 const emit = defineEmits<{ ended: [] }>();
 
-const secondsLeft = ref(0);
+const msLeft = ref(0);
 let timer: ReturnType<typeof setInterval> | null = null;
 let ended = false;
 
 function tick() {
-    if (!props.endsAt) {
+    if (props.durationMs === null || props.startedAtLocalMs === null) {
         return;
     }
-    const ms = new Date(props.endsAt).getTime() - Date.now();
-    secondsLeft.value = Math.max(0, Math.ceil(ms / 1000));
+    const elapsed = Date.now() - props.startedAtLocalMs;
+    msLeft.value = Math.max(0, props.durationMs - elapsed);
 
-    if (ms <= 0 && !ended) {
+    if (msLeft.value <= 0 && !ended) {
         ended = true;
         setTimeout(() => emit('ended'), 600);
     }
@@ -27,7 +28,7 @@ function tick() {
 function startTimer() {
     ended = false;
     tick();
-    timer = setInterval(tick, 250);
+    timer = setInterval(tick, 100);
 }
 
 function stopTimer() {
@@ -38,7 +39,7 @@ function stopTimer() {
 }
 
 onMounted(() => {
-    if (props.endsAt) {
+    if (props.durationMs !== null && props.startedAtLocalMs !== null) {
         startTimer();
     }
 });
@@ -46,22 +47,27 @@ onMounted(() => {
 onUnmounted(stopTimer);
 
 watch(
-    () => props.endsAt,
-    (val) => {
+    () => [props.durationMs, props.startedAtLocalMs],
+    ([dur, start]) => {
         stopTimer();
-        if (val) {
+        if (dur !== null && start !== null) {
             startTimer();
         }
     },
 );
 
-const display = computed(() => (secondsLeft.value > 0 ? String(secondsLeft.value) : 'GO!'));
+const display = computed(() => {
+    if (msLeft.value <= 0) {
+        return 'GO!';
+    }
+    return String(Math.ceil(msLeft.value / 1000));
+});
 </script>
 
 <template>
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
         <div class="flex flex-col items-center gap-6 text-white">
-            <template v-if="endsAt">
+            <template v-if="durationMs !== null && startedAtLocalMs !== null">
                 <p class="text-xl font-semibold tracking-wide">Game starting in…</p>
                 <span class="text-9xl font-black tabular-nums">{{ display }}</span>
             </template>

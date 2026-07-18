@@ -3,7 +3,6 @@
 namespace App\Events;
 
 use App\Models\GameSession;
-use Carbon\Carbon;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -17,7 +16,7 @@ class GameCountdownStarted implements ShouldBroadcastNow
 
     public function __construct(
         public readonly GameSession $game,
-        public readonly Carbon $startsAt,
+        public readonly int $durationMs,
     ) {}
 
     /** @return array<int, Channel> */
@@ -32,7 +31,7 @@ class GameCountdownStarted implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'starts_at' => $this->startsAt->toISOString(),
+            'duration_ms' => $this->durationMs,
         ];
     }
 }

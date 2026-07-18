@@ -38,7 +38,7 @@ class GameEnded implements ShouldBroadcastNow
             'winner' => $this->winner ? [
                 'game_player_id' => $this->winner->id,
                 'user_id' => $this->winner->user_id,
-                'name' => $this->winner->user->name,
+                'name' => $this->winner->user?->name ?? 'Unknown player',
             ] : null,
             'forfeited_by' => $this->forfeitedBy,
         ];

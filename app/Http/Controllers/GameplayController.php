@@ -108,7 +108,11 @@ class GameplayController extends Controller
             return response()->json(['message' => 'A claim is already being verified.'], 422);
         }
 
-        $game->status = GameStatus::Verifying;
+        // Resync so subsequent $game->update() calls treat Verifying as the
+        // baseline. Without this, Eloquent's dirty check treats a Verifying→Playing
+        // reset as no-op (original attribute was still Playing) and silently
+        // skips the SQL UPDATE, leaving the game stuck in Verifying.
+        $game->refresh();
 
         broadcast(new PilesClaimMade($game, $player));
 

@@ -15,8 +15,8 @@ export const useEchoStore = defineStore('echo', () => {
             .listen('GameLobbyUpdated', (event: { players: LobbyPlayer[]; status: string }) => {
                 gameStore.applyLobbyUpdate(event.players, event.status);
             })
-            .listen('GameCountdownStarted', (event: { starts_at: string }) => {
-                gameStore.applyCountdown(event.starts_at);
+            .listen('GameCountdownStarted', (event: { duration_ms: number }) => {
+                gameStore.applyCountdown(event.duration_ms);
             })
             .listen('GameStarted', (event: { center_piles: { id: number; pile_index: number; top_card: Card | null }[]; players: OpponentState[] }) => {
                 gameStore.applyGameStarted(event.center_piles, event.players);
