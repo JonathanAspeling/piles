@@ -141,10 +141,10 @@ export interface GameWinner {
 }
 
 export const CARD_COLOR_CLASSES: Record<CardColor, string> = {
-    [CardColor.Red]: 'bg-red-400 border-red-600',
-    [CardColor.Blue]: 'bg-blue-400 border-blue-600',
-    [CardColor.Green]: 'bg-green-400 border-green-600',
-    [CardColor.Yellow]: 'bg-yellow-300 border-yellow-500',
+    [CardColor.Red]: 'bg-rose-400 border-rose-600',
+    [CardColor.Blue]: 'bg-sky-400 border-sky-600',
+    [CardColor.Green]: 'bg-emerald-400 border-emerald-600',
+    [CardColor.Yellow]: 'bg-amber-400 border-amber-600',
 };
 
 export const CLOTHING_TYPE_LABELS: Record<ClothingType, string> = {

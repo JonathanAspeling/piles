@@ -1,11 +1,26 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
+import { useAppearance } from '@/composables/useAppearance';
 import type { SharedData, User } from '@/types';
 
 const user = usePage<SharedData>().props.auth.user as User;
 
 const menuOpen = ref(false);
+
+const { appearance, updateAppearance } = useAppearance();
+
+// Treat "system" as whatever it currently resolves to. Clicking always
+// pins an explicit choice — light or dark — so the toggle stays predictable.
+const isDark = computed(() => {
+    if (appearance.value === 'dark') return true;
+    if (appearance.value === 'light') return false;
+    return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+});
+
+function toggleTheme() {
+    updateAppearance(isDark.value ? 'light' : 'dark');
+}
 
 function toggleMenu() {
     menuOpen.value = !menuOpen.value;
@@ -39,6 +54,23 @@ if (typeof window !== 'undefined') {
             </Link>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-muted-foreground">{{ user.name }}</span>
+                <button
+                    @click="toggleTheme"
+                    :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+                    :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+                    class="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                    <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2" /><path d="M12 20v2" />
+                        <path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
+                        <path d="M2 12h2" /><path d="M20 12h2" />
+                        <path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
                 <button
                     @click="logout"
                     class="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -105,6 +137,22 @@ if (typeof window !== 'undefined') {
                 >
                     Lobby
                 </Link>
+                <button
+                    @click="toggleTheme"
+                    class="flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+                >
+                    <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2" /><path d="M12 20v2" />
+                        <path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
+                        <path d="M2 12h2" /><path d="M20 12h2" />
+                        <path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                    {{ isDark ? 'Light mode' : 'Dark mode' }}
+                </button>
                 <button
                     @click="logout"
                     class="rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"

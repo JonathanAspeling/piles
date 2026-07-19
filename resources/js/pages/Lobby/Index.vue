@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
 import GameView from '../../components/game/GameView.vue';
+import HowToPlayModal from '../../components/game/HowToPlayModal.vue';
 import type { CenterPile, GamePlayer, GameSession, LobbyGame, LobbyPlayer, OpponentState, PlayerPile } from '../../types/game';
 
 const props = defineProps<{
@@ -13,6 +14,7 @@ const props = defineProps<{
 
 const games = ref<LobbyGame[]>(props.games);
 const isRejoining = ref(false);
+const showHowToPlay = ref(false);
 
 const variant = ref(false);
 const joinCode = ref('');
@@ -124,6 +126,21 @@ onUnmounted(() => {
 
         <template v-else>
             <div class="flex flex-1 flex-col gap-4 p-3 sm:gap-6 sm:p-6">
+                <!-- Top row: How to play trigger -->
+                <div class="flex justify-end">
+                    <button
+                        @click="showHowToPlay = true"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary active:scale-95 sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        How to play
+                    </button>
+                </div>
+
                 <!-- Rejoin banner: shown when the current user has an active game (playing/countdown/verifying) -->
                 <div
                     v-if="activeGame"
@@ -230,5 +247,7 @@ onUnmounted(() => {
                 </div>
             </div>
         </template>
+
+        <HowToPlayModal v-if="showHowToPlay" @close="showHowToPlay = false" />
     </AppLayout>
 </template>

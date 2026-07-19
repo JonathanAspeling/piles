@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
 import type { GamePlayer, GameSession, LobbyPlayer } from '../../types/game';
+import HowToPlayModal from './HowToPlayModal.vue';
 
 const props = defineProps<{
     game: GameSession;
@@ -18,6 +19,7 @@ const allReady = computed(() => props.players.length >= 2 && props.players.every
 const myPlayer = computed(() => props.players.find((p) => p.id === props.currentPlayer?.id));
 
 const isActing = ref(false);
+const showHowToPlay = ref(false);
 
 async function toggleReady() {
     if (isActing.value) return;
@@ -53,9 +55,22 @@ async function leaveGame() {
                         <span class="font-mono text-xl font-bold tracking-widest">{{ game.code }}</span>
                     </div>
                 </div>
-                <div class="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>{{ players.length }}/7 players</span>
-                    <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Variant</span>
+                <div class="mt-1 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                    <div class="flex items-center gap-3">
+                        <span>{{ players.length }}/7 players</span>
+                        <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Variant</span>
+                    </div>
+                    <button
+                        @click="showHowToPlay = true"
+                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        How to play
+                    </button>
                 </div>
             </div>
 
@@ -123,5 +138,7 @@ async function leaveGame() {
                 </div>
             </div>
         </div>
+
+        <HowToPlayModal v-if="showHowToPlay" @close="showHowToPlay = false" />
     </div>
 </template>
