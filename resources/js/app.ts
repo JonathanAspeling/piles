@@ -47,7 +47,7 @@ window.Echo = new Echo({
     enabledTransports: ['ws', 'wss'],
 });
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Piles!';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
