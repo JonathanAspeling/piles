@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\GameStatus;
 use App\Models\GameSession;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LobbyController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $games = GameSession::where('status', GameStatus::Lobby)
             ->with('host', 'gamePlayers')
@@ -23,6 +24,22 @@ class LobbyController extends Controller
                 'variant' => $game->variant,
             ]);
 
-        return Inertia::render('Lobby/Index', ['games' => $games]);
+        $activeGame = GameSession::whereIn('status', [
+            GameStatus::Countdown,
+            GameStatus::Playing,
+            GameStatus::Verifying,
+        ])
+            ->whereHas('gamePlayers', fn ($q) => $q->where('user_id', $request->user()->id))
+            ->latest('updated_at')
+            ->first();
+
+        return Inertia::render('Lobby/Index', [
+            'games' => $games,
+            'activeGame' => $activeGame ? [
+                'id' => $activeGame->id,
+                'code' => $activeGame->code,
+                'status' => $activeGame->status,
+            ] : null,
+        ]);
     }
 }

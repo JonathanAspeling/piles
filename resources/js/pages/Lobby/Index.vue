@@ -8,9 +8,11 @@ import type { CenterPile, GamePlayer, GameSession, LobbyGame, LobbyPlayer, Oppon
 
 const props = defineProps<{
     games: LobbyGame[];
+    activeGame: { id: number; code: string; status: string } | null;
 }>();
 
 const games = ref<LobbyGame[]>(props.games);
+const isRejoining = ref(false);
 
 const variant = ref(false);
 const joinCode = ref('');
@@ -36,6 +38,12 @@ function enterGame(data: { game: GameSession; current_player: GamePlayer; player
     opponentsData.value = [];
     window.history.pushState({}, '', route('games.show', { game: gameId }));
     inGame.value = true;
+}
+
+function rejoinActiveGame() {
+    if (!props.activeGame || isRejoining.value) return;
+    isRejoining.value = true;
+    router.visit(route('games.show', { game: props.activeGame.id }));
 }
 
 function leaveGame() {
@@ -116,6 +124,31 @@ onUnmounted(() => {
 
         <template v-else>
             <div class="flex flex-1 flex-col gap-4 p-3 sm:gap-6 sm:p-6">
+                <!-- Rejoin banner: shown when the current user has an active game (playing/countdown/verifying) -->
+                <div
+                    v-if="activeGame"
+                    class="flex flex-col gap-3 rounded-xl border border-emerald-500/50 bg-emerald-50 p-4 dark:bg-emerald-950/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
+                >
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
+                        <div>
+                            <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-100 sm:text-base">
+                                You're in an active game
+                            </p>
+                            <p class="text-xs text-emerald-800/80 dark:text-emerald-200/70 sm:text-sm">
+                                Code <span class="font-mono font-bold">{{ activeGame.code }}</span> — jump back in
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        @click="rejoinActiveGame"
+                        :disabled="isRejoining"
+                        class="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition-transform hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 sm:w-auto sm:py-2"
+                    >
+                        {{ isRejoining ? 'Rejoining…' : 'Rejoin game' }}
+                    </button>
+                </div>
+
                 <div class="grid gap-4 md:grid-cols-2 md:gap-6">
                     <!-- Create Game -->
                     <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border sm:p-6">

@@ -70,6 +70,15 @@ test('the final client-ready broadcasts GameCountdownStarted with duration_ms=30
         return $event->game->id === $game->id && $event->durationMs === 3000;
     });
 
+    $payload = (new GameCountdownStarted($game, 3000))->broadcastWith();
+    expect($payload)->toHaveKeys(['duration_ms', 'server_time_ms']);
+    expect($payload['duration_ms'])->toBe(3000);
+    expect($payload['server_time_ms'])->toBeInt();
+    // Server timestamp should be within a small window of now — used by clients
+    // to reason about the countdown in server time and stay visually aligned.
+    $nowMs = (int) round(microtime(true) * 1000);
+    expect(abs($payload['server_time_ms'] - $nowMs))->toBeLessThan(1000);
+
     Queue::assertPushed(StartGameJob::class, function (StartGameJob $job) use ($game) {
         return $job->game->id === $game->id
             && $job->delay !== null

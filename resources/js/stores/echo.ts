@@ -9,14 +9,21 @@ export const useEchoStore = defineStore('echo', () => {
 
     function subscribe(gameId: number, playerId: number) {
         window.Echo.join(`game.${gameId}`)
-            .here(() => {
+            .here((users: { id: number }[]) => {
                 isConnected.value = true;
+                gameStore.setConnectedUsers(users.map((u) => u.id));
+            })
+            .joining((user: { id: number }) => {
+                gameStore.markConnected(user.id);
+            })
+            .leaving((user: { id: number }) => {
+                gameStore.markDisconnected(user.id);
             })
             .listen('GameLobbyUpdated', (event: { players: LobbyPlayer[]; status: string }) => {
                 gameStore.applyLobbyUpdate(event.players, event.status);
             })
-            .listen('GameCountdownStarted', (event: { duration_ms: number }) => {
-                gameStore.applyCountdown(event.duration_ms);
+            .listen('GameCountdownStarted', (event: { duration_ms: number; server_time_ms?: number }) => {
+                gameStore.applyCountdown(event.duration_ms, event.server_time_ms);
             })
             .listen('GameStarted', (event: { center_piles: { id: number; pile_index: number; top_card: Card | null }[]; players: OpponentState[] }) => {
                 gameStore.applyGameStarted(event.center_piles, event.players);

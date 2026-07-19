@@ -68,12 +68,16 @@ function onBackToLobby() {
 
 <template>
     <div class="flex h-full flex-1 flex-col">
-        <!-- Countdown overlay: loading until all clients ready, then 3-2-1-GO! -->
+        <!-- Countdown overlay: loading until all clients ready, then 3-2-1-GO!
+             Status transition to Playing is driven by the GameActivated broadcast
+             from StartGameJob (see echo.ts) — never by the local timer ending. That
+             way a fast/slow local clock cannot flash the board before the server
+             declares the game live. -->
         <CountdownOverlay
             v-if="isCountdown"
             :duration-ms="gameStore.countdownDurationMs"
             :started-at-local-ms="gameStore.countdownStartedAtLocalMs"
-            @ended="gameStore.applyGameActivated()"
+            :server-offset-ms="gameStore.countdownServerOffsetMs"
         />
 
         <!-- Winner/forfeit announcement — always shows on Ended so players are never stuck -->

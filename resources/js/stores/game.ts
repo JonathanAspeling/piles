@@ -16,11 +16,19 @@ export const useGameStore = defineStore('game', () => {
     const opponents = ref<OpponentState[]>([]);
     const countdownDurationMs = ref<number | null>(null);
     const countdownStartedAtLocalMs = ref<number | null>(null);
+    // Server clock minus local clock at the moment GameCountdownStarted arrived.
+    // Added to Date.now() to reason about the countdown in server time and
+    // keep all clients visually aligned regardless of receipt latency.
+    const countdownServerOffsetMs = ref<number>(0);
     const winner = ref<GameWinner | null>(null);
     const forfeitedBy = ref<string | null>(null);
     const isSwapping = ref(false);
     const myPickedUpCard = ref<Card | null>(null);
     const myPickedUpPileId = ref<number | null>(null);
+    // User IDs currently subscribed to the presence channel. Seeded from
+    // .here() on subscribe and kept live by .joining() / .leaving() in
+    // useEchoStore. Not persisted — Reverb-restart-tolerant by design.
+    const connectedUserIds = ref<number[]>([]);
 
     function initialize(
         gameData: GameSession,
@@ -36,10 +44,26 @@ export const useGameStore = defineStore('game', () => {
         myPiles.value = myPilesData;
         centerPiles.value = centerPilesData;
         opponents.value = opponentsData;
+        // Reset presence — the fresh subscribe's .here() will repopulate.
+        connectedUserIds.value = [];
         // Rejoin mid-countdown: data already dealt server-side, confirm immediately
         if (gameData.status === GameStatus.Countdown && myPilesData.length > 0) {
             confirmClientReady();
         }
+    }
+
+    function setConnectedUsers(userIds: number[]) {
+        connectedUserIds.value = [...new Set(userIds)];
+    }
+
+    function markConnected(userId: number) {
+        if (!connectedUserIds.value.includes(userId)) {
+            connectedUserIds.value = [...connectedUserIds.value, userId];
+        }
+    }
+
+    function markDisconnected(userId: number) {
+        connectedUserIds.value = connectedUserIds.value.filter((id) => id !== userId);
     }
 
     function applyLobbyUpdate(newPlayers: LobbyPlayer[], status: string) {
@@ -49,9 +73,11 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
-    function applyCountdown(durationMs: number) {
+    function applyCountdown(durationMs: number, serverTimeMs?: number) {
+        const now = Date.now();
         countdownDurationMs.value = durationMs;
-        countdownStartedAtLocalMs.value = Date.now();
+        countdownStartedAtLocalMs.value = now;
+        countdownServerOffsetMs.value = typeof serverTimeMs === 'number' ? serverTimeMs - now : 0;
         // Do not downgrade an already-Playing client back into Countdown —
         // handles a late-arriving GameCountdownStarted after GameActivated.
         if (session.value && session.value.status !== GameStatus.Playing && session.value.status !== GameStatus.Ended) {
@@ -299,12 +325,17 @@ export const useGameStore = defineStore('game', () => {
         opponents,
         countdownDurationMs,
         countdownStartedAtLocalMs,
+        countdownServerOffsetMs,
         winner,
         forfeitedBy,
         isSwapping,
         myPickedUpCard,
         myPickedUpPileId,
+        connectedUserIds,
         initialize,
+        setConnectedUsers,
+        markConnected,
+        markDisconnected,
         applyLobbyUpdate,
         applyCountdown,
         applyGameStarted,

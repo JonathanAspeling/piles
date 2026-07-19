@@ -4,37 +4,52 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 const props = defineProps<{
     durationMs: number | null;
     startedAtLocalMs: number | null;
+    // (serverNow - localNow) at the moment GameCountdownStarted arrived. Adding
+    // this to Date.now() gives us the *server* clock, so every client counts
+    // down against the same reference and lands on GO! together regardless of
+    // per-client receipt latency.
+    serverOffsetMs?: number;
 }>();
 
 const emit = defineEmits<{ ended: [] }>();
 
 const msLeft = ref(0);
-let timer: ReturnType<typeof setInterval> | null = null;
+let rafHandle: number | null = null;
+let endTimeout: ReturnType<typeof setTimeout> | null = null;
 let ended = false;
 
 function tick() {
     if (props.durationMs === null || props.startedAtLocalMs === null) {
         return;
     }
-    const elapsed = Date.now() - props.startedAtLocalMs;
-    msLeft.value = Math.max(0, props.durationMs - elapsed);
+    const offset = props.serverOffsetMs ?? 0;
+    const serverStart = props.startedAtLocalMs + offset;
+    const serverNow = Date.now() + offset;
+    msLeft.value = Math.max(0, props.durationMs - (serverNow - serverStart));
 
     if (msLeft.value <= 0 && !ended) {
         ended = true;
-        setTimeout(() => emit('ended'), 600);
+        endTimeout = setTimeout(() => emit('ended'), 600);
+        return;
     }
+
+    rafHandle = requestAnimationFrame(tick);
 }
 
 function startTimer() {
+    stopTimer();
     ended = false;
     tick();
-    timer = setInterval(tick, 100);
 }
 
 function stopTimer() {
-    if (timer) {
-        clearInterval(timer);
-        timer = null;
+    if (rafHandle !== null) {
+        cancelAnimationFrame(rafHandle);
+        rafHandle = null;
+    }
+    if (endTimeout !== null) {
+        clearTimeout(endTimeout);
+        endTimeout = null;
     }
 }
 

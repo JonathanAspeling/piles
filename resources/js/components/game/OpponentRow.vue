@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useGameStore } from '../../stores/game';
 import type { OpponentState } from '../../types/game';
 import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
 import CardArt from './CardArt.vue';
@@ -8,7 +9,10 @@ const props = defineProps<{
     opponent: OpponentState;
 }>();
 
+const gameStore = useGameStore();
+
 const completedCount = computed(() => props.opponent.piles.filter((p) => p.is_completed).length);
+const isOnline = computed(() => gameStore.connectedUserIds.includes(props.opponent.user_id));
 </script>
 
 <template>
@@ -16,7 +20,15 @@ const completedCount = computed(() => props.opponent.piles.filter((p) => p.is_co
     <div
         class="flex shrink-0 snap-start items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-2 sm:w-auto sm:shrink sm:gap-3 sm:px-4 sm:py-3"
     >
-        <span class="max-w-[6rem] truncate text-xs font-medium sm:min-w-0 sm:max-w-none sm:flex-1 sm:text-sm">
+        <span
+            class="h-1.5 w-1.5 shrink-0 rounded-full transition-colors sm:h-2 sm:w-2"
+            :class="isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/40'"
+            :title="isOnline ? 'Online' : 'Disconnected'"
+        />
+        <span
+            class="max-w-[6rem] truncate text-xs font-medium sm:min-w-0 sm:max-w-none sm:flex-1 sm:text-sm"
+            :class="{ 'text-muted-foreground/70': !isOnline }"
+        >
             {{ opponent.name }}
         </span>
 

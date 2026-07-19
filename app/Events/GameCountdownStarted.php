@@ -32,6 +32,7 @@ class GameCountdownStarted implements ShouldBroadcastNow
     {
         return [
             'duration_ms' => $this->durationMs,
+            'server_time_ms' => (int) round(microtime(true) * 1000),
         ];
     }
 }
