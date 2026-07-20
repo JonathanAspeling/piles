@@ -131,6 +131,26 @@ class GameplayController extends Controller
         return response()->json(['message' => 'Claim processed.'], 200);
     }
 
+    public function centerPiles(GameSession $game): JsonResponse
+    {
+        $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $centerPiles = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
+            'id' => $pile->id,
+            'pile_index' => $pile->pile_index,
+            'version' => $pile->version,
+            'top_card' => $pile->pileCards->first() ? [
+                'id' => $pile->pileCards->first()->card->id,
+                'clothing_type' => $pile->pileCards->first()->card->clothing_type->value,
+                'color' => $pile->pileCards->first()->card->color->value,
+            ] : null,
+        ])->values()->all();
+
+        return response()->json($centerPiles);
+    }
+
     public function forfeit(GameSession $game): Response
     {
         abort_unless(

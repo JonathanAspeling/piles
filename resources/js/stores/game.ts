@@ -23,6 +23,7 @@ export const useGameStore = defineStore('game', () => {
     const winner = ref<GameWinner | null>(null);
     const forfeitedBy = ref<string | null>(null);
     const isSwapping = ref(false);
+    const resyncInFlight = ref(false);
     const myPickedUpCard = ref<Card | null>(null);
     const myPickedUpPileId = ref<number | null>(null);
     // User IDs currently subscribed to the presence channel. Seeded from
@@ -219,12 +220,38 @@ export const useGameStore = defineStore('game', () => {
             if (response.status === 409) {
                 revert();
                 notificationStore.add('Someone else swapped first — try again!', 'warning');
+                resyncCenterPiles();
             }
         } catch {
             revert();
             notificationStore.add('Swap failed — check your connection.', 'error');
         } finally {
             isSwapping.value = false;
+        }
+    }
+
+    async function resyncCenterPiles() {
+        if (resyncInFlight.value || !session.value) {
+            return;
+        }
+        resyncInFlight.value = true;
+        try {
+            const response = await apiFetch(route('gameplay.center-piles', { game: session.value.id }));
+            if (!response.ok) {
+                return;
+            }
+            const fresh: { id: number; pile_index: number; version: number; top_card: Card | null }[] = await response.json();
+            for (const pile of fresh) {
+                const existing = centerPiles.value.find((p) => p.id === pile.id);
+                if (existing) {
+                    existing.version = pile.version;
+                    existing.top_card = pile.top_card;
+                }
+            }
+        } catch {
+            // Silent — next swap or manual refresh will recover.
+        } finally {
+            resyncInFlight.value = false;
         }
     }
 
@@ -344,6 +371,7 @@ export const useGameStore = defineStore('game', () => {
         applyGameActivated,
         pickUpCard,
         swapCard,
+        resyncCenterPiles,
         applyCardPickedUp,
         applyCardPickupCancelled,
         applyCenterCardSwapped,
