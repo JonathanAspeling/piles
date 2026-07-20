@@ -13,6 +13,8 @@ class Pile extends Model
     /** @use HasFactory<PileFactory> */
     use HasFactory;
 
+    protected $touches = ['gameSession'];
+
     protected $fillable = [
         'game_session_id',
         'game_player_id',

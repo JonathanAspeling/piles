@@ -13,6 +13,8 @@ class GamePlayer extends Model
     /** @use HasFactory<GamePlayerFactory> */
     use HasFactory;
 
+    protected $touches = ['gameSession'];
+
     protected $fillable = [
         'game_session_id',
         'user_id',

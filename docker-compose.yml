@@ -58,6 +58,34 @@ services:
       - piles-storage:/app/storage
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
 
+  scheduler:
+    image: ghcr.io/jonathanaspeling/piles:latest
+    restart: unless-stopped
+    environment:
+      RUN_MIGRATIONS: "false"
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${APP_URL}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+      DB_CONNECTION: ${DB_CONNECTION:-sqlite}
+      DB_DATABASE: ${DB_DATABASE:-/app/database/database.sqlite}
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+      SESSION_DRIVER: ${SESSION_DRIVER:-database}
+      CACHE_STORE: ${CACHE_STORE:-database}
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+      REVERB_HOST: ${REVERB_HOST}
+      REVERB_PORT: ${REVERB_PORT:-443}
+      REVERB_SCHEME: ${REVERB_SCHEME:-https}
+    volumes:
+      - piles-db:/app/database
+      - piles-storage:/app/storage
+    command: ["php", "artisan", "schedule:work"]
+
   reverb:
     image: ghcr.io/jonathanaspeling/piles:latest
     restart: unless-stopped
