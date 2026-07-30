@@ -22,7 +22,6 @@ export const useGameStore = defineStore('game', () => {
     const countdownServerOffsetMs = ref<number>(0);
     const winner = ref<GameWinner | null>(null);
     const forfeitedBy = ref<string | null>(null);
-    const isSwapping = ref(false);
     const resyncInFlight = ref(false);
     const myPickedUpCard = ref<Card | null>(null);
     const myPickedUpPileId = ref<number | null>(null);
@@ -30,6 +29,21 @@ export const useGameStore = defineStore('game', () => {
     // .here() on subscribe and kept live by .joining() / .leaving() in
     // useEchoStore. Not persisted — Reverb-restart-tolerant by design.
     const connectedUserIds = ref<number[]>([]);
+    // Serializes gameplay HTTP so the server always sees requests in the
+    // exact order the user made them. Parallel fetches let a swap arrive
+    // before its pickup (or before a prior swap), which the server rejects
+    // as "you have not picked up a card" or corrupts state.
+    let gameplayChain: Promise<unknown> = Promise.resolve();
+
+    function serializeGameplay<T>(fn: () => Promise<T>): Promise<T> {
+        const result = gameplayChain.then(fn, fn);
+        // Prevent a rejected chain from poisoning future requests.
+        gameplayChain = result.then(
+            () => undefined,
+            () => undefined,
+        );
+        return result;
+    }
 
     function initialize(
         gameData: GameSession,
@@ -139,24 +153,34 @@ export const useGameStore = defineStore('game', () => {
             card,
         });
 
-        try {
-            await apiFetch(route('gameplay.pickup', { game: session.value.id }), {
-                method: 'POST',
-                body: JSON.stringify({ card_id: cardId }),
-            });
-        } catch {
+        const revert = () => {
             myPile.cards.splice(cardIndex, 0, card);
             myPickedUpCard.value = null;
             myPickedUpPileId.value = null;
-            window.Echo.join(`game.${session.value.id}`).whisper('card-pickup-cancelled', {
-                game_player_id: currentPlayer.value.id,
+            window.Echo.join(`game.${session.value!.id}`).whisper('card-pickup-cancelled', {
+                game_player_id: currentPlayer.value!.id,
             });
+        };
+
+        try {
+            const response = await serializeGameplay(() =>
+                apiFetch(route('gameplay.pickup', { game: session.value!.id }), {
+                    method: 'POST',
+                    body: JSON.stringify({ card_id: cardId }),
+                }),
+            );
+            if (!response.ok) {
+                revert();
+                notificationStore.add('Pickup rejected — please try again.', 'warning');
+            }
+        } catch {
+            revert();
             notificationStore.add('Failed to pick up card — check your connection.', 'error');
         }
     }
 
     async function swapCard(centerPileId: number, centerCardId: number, expectedVersion: number) {
-        if (isSwapping.value || !session.value || !currentPlayer.value || !myPickedUpCard.value || myPickedUpPileId.value === null) {
+        if (!session.value || !currentPlayer.value || !myPickedUpCard.value || myPickedUpPileId.value === null) {
             return;
         }
 
@@ -171,8 +195,6 @@ export const useGameStore = defineStore('game', () => {
         const previousVersion = centerPile.version;
         const nextVersion = expectedVersion + 1;
         const actorPlayerId = currentPlayer.value.id;
-
-        isSwapping.value = true;
 
         if (myPile) {
             myPile.cards.push(centerCard);
@@ -208,25 +230,29 @@ export const useGameStore = defineStore('game', () => {
         };
 
         try {
-            const response = await apiFetch(route('gameplay.swap', { game: session.value.id }), {
-                method: 'POST',
-                body: JSON.stringify({
-                    center_pile_id: centerPileId,
-                    center_card_id: centerCardId,
-                    expected_version: expectedVersion,
+            const response = await serializeGameplay(() =>
+                apiFetch(route('gameplay.swap', { game: session.value!.id }), {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        center_pile_id: centerPileId,
+                        center_card_id: centerCardId,
+                        expected_version: expectedVersion,
+                    }),
                 }),
-            });
+            );
 
             if (response.status === 409) {
                 revert();
                 notificationStore.add('Someone else swapped first — try again!', 'warning');
                 resyncCenterPiles();
+            } else if (!response.ok) {
+                revert();
+                notificationStore.add('Swap failed — try again.', 'error');
+                resyncCenterPiles();
             }
         } catch {
             revert();
             notificationStore.add('Swap failed — check your connection.', 'error');
-        } finally {
-            isSwapping.value = false;
         }
     }
 
@@ -355,7 +381,6 @@ export const useGameStore = defineStore('game', () => {
         countdownServerOffsetMs,
         winner,
         forfeitedBy,
-        isSwapping,
         myPickedUpCard,
         myPickedUpPileId,
         connectedUserIds,

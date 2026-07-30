@@ -19,7 +19,7 @@ const activePileId = ref<number | null>(null);
 const confirmingForfeit = ref(false);
 let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
 
-const isDisabled = computed(() => gameStore.session?.status !== GameStatus.Playing || gameStore.isSwapping);
+const isDisabled = computed(() => gameStore.session?.status !== GameStatus.Playing);
 const completedCount = computed(() => gameStore.myPiles.filter((p) => p.is_completed).length);
 const activePile = computed(() => gameStore.myPiles.find((p) => p.id === activePileId.value) ?? null);
 const readyToClaim = computed(() => completedCount.value === 6 && gameStore.session?.status === GameStatus.Playing);

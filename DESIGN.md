@@ -289,7 +289,6 @@ state: {
   opponents: OpponentState[]
   winner: GameWinner | null
   forfeitedBy: string | null
-  isSwapping: boolean                // guards optimistic swap
 }
 ```
 
