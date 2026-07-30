@@ -231,7 +231,7 @@ onUnmounted(() => {
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground sm:text-sm">
                                     <span>{{ game.host_name }}</span>
                                     <span class="text-muted-foreground/50">·</span>
-                                    <span>{{ game.player_count }}/7 players</span>
+                                    <span>{{ game.player_count }}/10 players</span>
                                     <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Variant</span>
                                 </div>
                             </div>

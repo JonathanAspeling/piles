@@ -1,6 +1,6 @@
 # Piles!
 
-A real-time multiplayer web adaptation of the fast-paced card game [Piles!](https://foxmind.co.il/) by Lost Boy Entertainment. 2–7 players race simultaneously to sort their piles into matching clothing sets.
+A real-time multiplayer web adaptation of the fast-paced card game [Piles!](https://foxmind.co.il/) by Lost Boy Entertainment. 2–10 players race simultaneously to sort their piles into matching clothing sets.
 
 ## Tech Stack
 

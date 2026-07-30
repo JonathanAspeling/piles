@@ -58,6 +58,22 @@ FILENAME_TO_ID: dict[str, int] = {
     "sneakers": 44,
     "joggingshoes": 45,
     "formalshoes": 46,
+    "iceskates": 47,
+    "bikehelmet": 48,
+    "sunhat": 49,
+    "backpack": 50,
+    "sunglasses": 51,
+    "umbrella": 52,
+    "wristwatch": 53,
+    "rainboots": 54,
+    "sandals": 55,
+    "highheels": 56,
+    "apron": 57,
+    "cowboyhat": 58,
+    "tophat": 59,
+    "handbag": 60,
+    "chefhat": 61,
+    "balletflat": 62,
 }
 
 

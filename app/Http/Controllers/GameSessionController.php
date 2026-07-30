@@ -80,7 +80,7 @@ class GameSessionController extends Controller
         $alreadyJoined = $game->gamePlayers()->where('user_id', $request->user()->id)->exists();
 
         abort_if($alreadyJoined, 422, 'You are already in this game.');
-        abort_if($game->gamePlayers()->count() >= 7, 422, 'This game is full.');
+        abort_if($game->gamePlayers()->count() >= 10, 422, 'This game is full.');
 
         $nextSeat = $game->gamePlayers()->max('seat_index') + 1;
 

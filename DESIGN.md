@@ -6,19 +6,24 @@ Original game by Lost Boy Entertainment / FoxMind (2024). Rules are summarised h
 
 ### Components
 
-- 44 sets of clothing cards. Each set = 4 cards of the **same clothing item** in different colours.
-- Total: 176 cards.
+- 63 sets of clothing cards. Each set = 4 cards of the **same clothing item** in different colours.
+- Total: 252 cards.
 
 ### Sets per Player Count
 
-| Players | Sets used | Total cards |
-|---------|-----------|-------------|
-| 2 | 13 | 52 + 4 center = 56 |
-| 3 | 19 | 76 + 4 center = 80 |
-| 4 | 25 | 100 + 4 center = 104 |
-| 5 | 31 | 124 + 4 center = 128 |
-| 6 | 37 | 148 + 4 center = 152 |
-| 7 | 43 | 172 + 4 center = 176 |
+Base games with 2–7 players use 4 centre cards; 8–10 player games use 8 centre cards to keep contention manageable.
+
+| Players | Centre | Sets used | Total cards |
+|---------|--------|-----------|-------------|
+| 2 | 4 | 13 | 52 + 4 centre = 56 |
+| 3 | 4 | 19 | 76 + 4 centre = 80 |
+| 4 | 4 | 25 | 100 + 4 centre = 104 |
+| 5 | 4 | 31 | 124 + 4 centre = 128 |
+| 6 | 4 | 37 | 148 + 4 centre = 152 |
+| 7 | 4 | 43 | 172 + 4 centre = 176 |
+| 8 | 8 | 50 | 192 + 8 centre = 200 |
+| 9 | 8 | 56 | 216 + 8 centre = 224 |
+| 10 | 8 | 62 | 240 + 8 centre = 248 |
 
 ### Setup
 
@@ -46,7 +51,7 @@ The first player to have all 6 piles face-up (all sets complete) shouts **"PILES
 
 ### Variant (Chaos Mode)
 
-Add 1 extra set to the deck and deal **8 cards to the centre** instead of 4.
+For 2–7 player games, variant deals **8 cards to the centre** instead of 4 (with one extra set added to the deck to cover the additional centre cards). Variant has no effect at 8–10 players because those counts already use 8 centre cards by default.
 
 ---
 

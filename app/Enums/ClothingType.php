@@ -51,4 +51,20 @@ enum ClothingType: int
     case Sneakers = 44;
     case JoggingShoes = 45;
     case FormalShoes = 46;
+    case IceSkates = 47;
+    case BikeHelmet = 48;
+    case SunHat = 49;
+    case Backpack = 50;
+    case Sunglasses = 51;
+    case Umbrella = 52;
+    case Wristwatch = 53;
+    case RainBoots = 54;
+    case Sandals = 55;
+    case HighHeels = 56;
+    case Apron = 57;
+    case CowboyHat = 58;
+    case TopHat = 59;
+    case Handbag = 60;
+    case ChefHat = 61;
+    case BalletFlat = 62;
 }

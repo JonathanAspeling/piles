@@ -57,7 +57,7 @@ async function leaveGame() {
                 </div>
                 <div class="mt-1 flex items-center justify-between gap-3 text-sm text-muted-foreground">
                     <div class="flex items-center gap-3">
-                        <span>{{ players.length }}/7 players</span>
+                        <span>{{ players.length }}/10 players</span>
                         <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Variant</span>
                     </div>
                     <button

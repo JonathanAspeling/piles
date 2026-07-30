@@ -9,26 +9,16 @@ use App\Models\PileCard;
 
 class GameDealerService
 {
-    /** @var array<int, int> */
-    private const SETS_PER_PLAYER_COUNT = [
-        2 => 13,
-        3 => 19,
-        4 => 25,
-        5 => 31,
-        6 => 37,
-        7 => 43,
-    ];
+    private const CARDS_PER_PILE = 4;
+
+    private const PILES_PER_PLAYER = 6;
 
     public function deal(GameSession $game): void
     {
         $players = $game->gamePlayers()->get();
         $playerCount = $players->count();
-        $setsCount = self::SETS_PER_PLAYER_COUNT[$playerCount];
-        $centerCardCount = $game->centerCardCount();
-
-        if ($game->variant) {
-            $setsCount += 1;
-        }
+        $centerCardCount = $game->centerCardCount($playerCount);
+        $setsCount = self::setsForGame($playerCount, $centerCardCount);
 
         // Pick $setsCount random clothing types, then fetch all 4 cards per type
         $clothingTypes = Card::select('clothing_type')
@@ -83,8 +73,14 @@ class GameDealerService
         ]);
     }
 
-    public static function setsForPlayerCount(int $playerCount): int
+    private static function setsForGame(int $playerCount, int $centerCardCount): int
     {
-        return self::SETS_PER_PLAYER_COUNT[$playerCount] ?? throw new \InvalidArgumentException("Unsupported player count: {$playerCount}");
+        if ($playerCount < 2 || $playerCount > 10) {
+            throw new \InvalidArgumentException("Unsupported player count: {$playerCount}");
+        }
+
+        $cardsNeeded = $playerCount * self::PILES_PER_PLAYER * self::CARDS_PER_PILE + $centerCardCount;
+
+        return intdiv($cardsNeeded, self::CARDS_PER_PILE);
     }
 }

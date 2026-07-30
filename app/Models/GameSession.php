@@ -60,8 +60,8 @@ class GameSession extends Model
         return $this->hasMany(Pile::class)->whereNull('game_player_id')->orderBy('pile_index');
     }
 
-    public function centerCardCount(): int
+    public function centerCardCount(int $playerCount): int
     {
-        return $this->variant ? 8 : 4;
+        return ($this->variant || $playerCount >= 8) ? 8 : 4;
     }
 }
