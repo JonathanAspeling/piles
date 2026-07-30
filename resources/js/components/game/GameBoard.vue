@@ -16,7 +16,6 @@ defineProps<{
 const gameStore = useGameStore();
 
 const activePileId = ref<number | null>(null);
-const pendingCard = ref<Card | null>(null);
 const confirmingForfeit = ref(false);
 let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -37,22 +36,11 @@ watch(
 );
 
 function onOpenPile(pileId: number) {
-    if (activePileId.value === pileId) {
-        activePileId.value = null;
-        pendingCard.value = null;
-    } else {
-        activePileId.value = pileId;
-        pendingCard.value = null;
-    }
+    activePileId.value = activePileId.value === pileId ? null : pileId;
 }
 
 function closePileViewer() {
     activePileId.value = null;
-    pendingCard.value = null;
-}
-
-function onPendingCard(card: Card) {
-    pendingCard.value = card;
 }
 
 async function onPickupCard(card: Card) {
@@ -60,7 +48,6 @@ async function onPickupCard(card: Card) {
         return;
     }
     await gameStore.pickUpCard(card.id, activePileId.value);
-    pendingCard.value = null;
     // pile stays open — activePileId intentionally not cleared
 }
 
@@ -132,7 +119,7 @@ function handleForfeit() {
             </div>
             <p class="flex-1 text-[11px] leading-tight text-muted-foreground sm:text-xs">
                 <template v-if="gameStore.myPickedUpCard">Tap a center pile to swap</template>
-                <template v-else-if="activePile">Tap a card once to select, again to pick up</template>
+                <template v-else-if="activePile">Tap a card to pick it up</template>
                 <template v-else>Tap a pile to open it</template>
             </p>
         </div>
@@ -158,10 +145,8 @@ function handleForfeit() {
                 </div>
                 <PileViewer
                     :pile="activePile"
-                    :pending-card="pendingCard"
                     :disabled="isDisabled || !!gameStore.myPickedUpCard"
                     :bare="true"
-                    @pending="onPendingCard"
                     @pickup="onPickupCard"
                 />
             </div>
@@ -169,9 +154,7 @@ function handleForfeit() {
             <div class="hidden sm:block">
                 <PileViewer
                     :pile="activePile"
-                    :pending-card="pendingCard"
                     :disabled="isDisabled || !!gameStore.myPickedUpCard"
-                    @pending="onPendingCard"
                     @pickup="onPickupCard"
                 />
             </div>

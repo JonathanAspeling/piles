@@ -78,8 +78,9 @@ onUnmounted(() => {
                 <section>
                     <h3 class="mb-2 text-sm font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 sm:text-xs">Setup</h3>
                     <ul class="list-disc space-y-1 pl-5">
+                        <li>Playable with <strong>2 to 10 players</strong>.</li>
                         <li>Each player is dealt <strong>6 piles of 4 cards</strong>, face-down.</li>
-                        <li>Four extra cards are dealt <strong>face-up in the centre</strong>, shared by everyone.</li>
+                        <li>A few extra cards are dealt <strong>face-up in the centre</strong>, shared by everyone — 4 for smaller games, 8 for 8+ player games or variant mode.</li>
                         <li>When the countdown ends, everyone starts at once — <strong>no turns</strong>.</li>
                     </ul>
                 </section>
