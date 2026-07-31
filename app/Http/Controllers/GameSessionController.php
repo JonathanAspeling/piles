@@ -8,6 +8,7 @@ use App\Events\GameLobbyUpdated;
 use App\Events\GameStarted;
 use App\Events\LobbyUpdated;
 use App\Events\PlayerHandDealt;
+use App\Exceptions\NotEnoughCardsException;
 use App\Http\Requests\CreateGameRequest;
 use App\Http\Requests\JoinGameRequest;
 use App\Jobs\StartGameJob;
@@ -16,6 +17,7 @@ use App\Models\Pile;
 use App\Models\PileCard;
 use App\Services\GameDealerService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,27 +75,29 @@ class GameSessionController extends Controller
 
     public function join(JoinGameRequest $request): JsonResponse
     {
-        $game = GameSession::where('code', strtoupper($request->input('code')))
-            ->where('status', GameStatus::Lobby)
-            ->firstOrFail();
+        $game = GameSession::where('code', strtoupper($request->input('code')))->firstOrFail();
 
-        $alreadyJoined = $game->gamePlayers()->where('user_id', $request->user()->id)->exists();
+        $player = DB::transaction(function () use ($game, $request) {
+            $locked = $this->lockGame($game);
 
-        abort_if($alreadyJoined, 422, 'You are already in this game.');
-        abort_if($game->gamePlayers()->count() >= 10, 422, 'This game is full.');
+            abort_unless($locked->status === GameStatus::Lobby, 422, 'This game has already started.');
 
-        $nextSeat = $game->gamePlayers()->max('seat_index') + 1;
+            $alreadyJoined = $locked->gamePlayers()->where('user_id', $request->user()->id)->exists();
 
-        $game->gamePlayers()->create([
-            'user_id' => $request->user()->id,
-            'seat_index' => $nextSeat,
-            'is_ready' => false,
-        ]);
+            abort_if($alreadyJoined, 422, 'You are already in this game.');
+            abort_if($locked->gamePlayers()->count() >= 10, 422, 'This game is full.');
+
+            $nextSeat = $locked->gamePlayers()->max('seat_index') + 1;
+
+            return $locked->gamePlayers()->create([
+                'user_id' => $request->user()->id,
+                'seat_index' => $nextSeat,
+                'is_ready' => false,
+            ]);
+        }, 3);
 
         broadcast(new GameLobbyUpdated($game));
         broadcast(new LobbyUpdated);
-
-        $player = $game->gamePlayers()->where('user_id', $request->user()->id)->first();
 
         return response()->json([
             'game' => [
@@ -206,17 +210,28 @@ class GameSessionController extends Controller
     public function start(GameSession $game, GameDealerService $dealer): \Illuminate\Http\Response
     {
         abort_unless($game->host_user_id === auth()->id(), 403);
-        abort_unless($game->status === GameStatus::Lobby, 422, 'Game is not in the lobby.');
 
-        $players = $game->gamePlayers()->get();
+        try {
+            DB::transaction(function () use ($game, $dealer) {
+                $locked = $this->lockGame($game);
 
-        abort_if($players->count() < 2, 422, 'At least 2 players are required to start.');
-        abort_unless($players->every(fn ($player) => $player->is_ready), 422, 'Not all players are ready.');
+                abort_unless($locked->status === GameStatus::Lobby, 422, 'Game is not in the lobby.');
 
-        $game->update(['status' => GameStatus::Countdown]);
-        $game->gamePlayers()->update(['is_game_ready' => false]);
+                $players = $locked->gamePlayers()->get();
 
-        $dealer->deal($game);
+                abort_if($players->count() < 2, 422, 'At least 2 players are required to start.');
+                abort_unless($players->every(fn ($player) => $player->is_ready), 422, 'Not all players are ready.');
+
+                $locked->update(['status' => GameStatus::Countdown]);
+                $locked->gamePlayers()->update(['is_game_ready' => false]);
+
+                $dealer->deal($locked);
+            }, 3);
+        } catch (NotEnoughCardsException $e) {
+            abort(422, $e->getMessage());
+        }
+
+        $game->refresh();
 
         $centerPiles = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
             'id' => $pile->id,
@@ -296,21 +311,49 @@ class GameSessionController extends Controller
 
     public function leave(GameSession $game): \Illuminate\Http\Response
     {
-        abort_unless($game->status === GameStatus::Lobby, 422, 'You can only leave a game in the lobby.');
+        $gameRemains = DB::transaction(function () use ($game) {
+            $locked = $this->lockGame($game);
 
-        $game->gamePlayers()
-            ->where('user_id', auth()->id())
-            ->firstOrFail()
-            ->delete();
+            abort_unless($locked->status === GameStatus::Lobby, 422, 'You can only leave a game in the lobby.');
 
-        if ($game->gamePlayers()->count() === 0) {
-            $game->delete();
-        } else {
+            $locked->gamePlayers()
+                ->where('user_id', auth()->id())
+                ->firstOrFail()
+                ->delete();
+
+            if ($locked->gamePlayers()->count() === 0) {
+                $locked->delete();
+
+                return false;
+            }
+
+            return true;
+        }, 3);
+
+        if ($gameRemains) {
             broadcast(new GameLobbyUpdated($game));
         }
 
         broadcast(new LobbyUpdated);
 
         return response()->noContent();
+    }
+
+    /**
+     * Claim the game row's write lock and return its freshly committed state.
+     *
+     * Must be called inside a transaction. Lobby transitions (join, start, leave)
+     * are otherwise a check-then-act race: a join that reads "lobby" microseconds
+     * before the host starts still inserts its player row, and if that row lands
+     * after the deal, that player sits in a live game holding no cards. SQLite
+     * ignores `SELECT ... FOR UPDATE`, so the row is claimed by writing to it —
+     * concurrent transactions then block here, and the read below is guaranteed
+     * to see committed state rather than the caller's stale snapshot.
+     */
+    private function lockGame(GameSession $game): GameSession
+    {
+        GameSession::whereKey($game->getKey())->update(['updated_at' => now()]);
+
+        return GameSession::whereKey($game->getKey())->firstOrFail();
     }
 }

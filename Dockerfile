@@ -44,18 +44,27 @@ RUN npm run build
 # ---------- Stage 3: Runtime ----------
 FROM php:8.3-fpm-alpine AS runtime
 
+# icu-libs, libzip and sqlite-libs are installed as first-class packages, not
+# left to arrive as dependencies of the -dev packages: apk garbage-collects
+# orphaned dependencies on `apk del`, which strips the shared libraries out from
+# under intl.so/zip.so and leaves PHP warning at every startup.
 RUN apk add --no-cache \
         nginx \
         supervisor \
         sqlite \
-        sqlite-dev \
+        sqlite-libs \
         bash \
+        nano \
         tini \
+        icu-libs \
+        libzip \
+    && apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
         icu-dev \
         oniguruma-dev \
         libzip-dev \
+        sqlite-dev \
         linux-headers \
-        $PHPIZE_DEPS \
     && docker-php-ext-install \
         pdo_sqlite \
         bcmath \
@@ -64,7 +73,7 @@ RUN apk add --no-cache \
         sockets \
         intl \
         zip \
-    && apk del $PHPIZE_DEPS icu-dev oniguruma-dev libzip-dev sqlite-dev linux-headers \
+    && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -76,9 +85,9 @@ COPY --from=assets /app/public/build ./public/build
 COPY . .
 
 RUN composer dump-autoload --optimize --no-dev --no-scripts \
-    && mkdir -p /app/database /app/storage/framework/{cache,sessions,views,testing} /app/storage/logs /app/bootstrap/cache \
-    && chown -R www-data:www-data /app/storage /app/bootstrap/cache /app/database \
-    && chmod -R 775 /app/storage /app/bootstrap/cache /app/database
+    && mkdir -p /data /app/storage/framework/{cache,sessions,views,testing} /app/storage/logs /app/bootstrap/cache \
+    && chown -R www-data:www-data /app/storage /app/bootstrap/cache /data \
+    && chmod -R 775 /app/storage /app/bootstrap/cache /data
 
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf

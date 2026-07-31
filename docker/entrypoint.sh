@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DB_PATH="${DB_DATABASE:-/app/database/database.sqlite}"
+# The SQLite file lives on its own volume at /data, deliberately outside the
+# app's database/ directory: a named volume mounted over /app/database would
+# shadow the migrations and seeders shipped in the image with whatever copy the
+# volume was first initialised from, silently freezing them at that version.
+DB_PATH="${DB_DATABASE:-/data/database.sqlite}"
 
 if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
     mkdir -p "$(dirname "$DB_PATH")"
