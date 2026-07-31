@@ -11,7 +11,7 @@ services:
       LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
       DB_CONNECTION: ${DB_CONNECTION:-sqlite}
-      DB_DATABASE: ${DB_DATABASE:-/data/database.sqlite}
+      DB_DATABASE: /data/database.sqlite
       BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
@@ -42,7 +42,7 @@ services:
       LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
       DB_CONNECTION: ${DB_CONNECTION:-sqlite}
-      DB_DATABASE: ${DB_DATABASE:-/data/database.sqlite}
+      DB_DATABASE: /data/database.sqlite
       BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
@@ -70,7 +70,7 @@ services:
       LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
       DB_CONNECTION: ${DB_CONNECTION:-sqlite}
-      DB_DATABASE: ${DB_DATABASE:-/data/database.sqlite}
+      DB_DATABASE: /data/database.sqlite
       BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
@@ -98,7 +98,7 @@ services:
       LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
       LOG_LEVEL: ${LOG_LEVEL:-warning}
       DB_CONNECTION: ${DB_CONNECTION:-sqlite}
-      DB_DATABASE: ${DB_DATABASE:-/data/database.sqlite}
+      DB_DATABASE: /data/database.sqlite
       BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
