@@ -52,12 +52,14 @@ function onCardClick(card: Card) {
             >
                 <CardArt :type="card.clothing_type" />
 
-                <!-- Marked for discard. Mobile has no hover, so the idle label stands alone there. -->
+                <!-- Marked for discard; the label names the way out, since tapping
+                     the card again clears the pick. Mobile has no hover, so the
+                     idle label has to stand alone there. -->
                 <span
                     v-if="card.id === selectedCardId"
                     class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 bg-black/55 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white"
                 >
-                    <span class="sm:group-hover:hidden">Discard?</span>
+                    <span class="sm:group-hover:hidden">Cancel?</span>
                     <span class="hidden sm:group-hover:inline">Yes</span>
                 </span>
             </button>
