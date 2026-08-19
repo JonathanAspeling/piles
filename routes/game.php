@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/games/{game}/leave', [GameSessionController::class, 'leave'])->name('games.leave');
 
     Route::post('/games/{game}/pickup', [GameplayController::class, 'pickup'])->name('gameplay.pickup');
+    Route::post('/games/{game}/release', [GameplayController::class, 'release'])->name('gameplay.release');
     Route::post('/games/{game}/swap', [GameplayController::class, 'swap'])->name('gameplay.swap');
     Route::get('/games/{game}/center-piles', [GameplayController::class, 'centerPiles'])->name('gameplay.center-piles');
     Route::post('/games/{game}/claim', [GameplayController::class, 'claimPiles'])->name('gameplay.claim');

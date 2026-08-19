@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { Card, GameSession } from '../../types/game';
-import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
+import { GameStatus } from '../../types/game';
 import { useGameStore } from '../../stores/game';
-import CardArt from './CardArt.vue';
 import CenterPileComponent from './CenterPile.vue';
 import OpponentRow from './OpponentRow.vue';
 import PileViewer from './PileViewer.vue';
@@ -35,18 +34,28 @@ watch(
     },
 );
 
-function onOpenPile(pileId: number) {
+// A selection never survives leaving the pile it belongs to — every pile opens
+// with all four cards unselected.
+async function onOpenPile(pileId: number) {
     activePileId.value = activePileId.value === pileId ? null : pileId;
+    await gameStore.releaseCard();
 }
 
-function closePileViewer() {
+async function closePileViewer() {
     activePileId.value = null;
+    await gameStore.releaseCard();
 }
 
-async function onPickupCard(card: Card) {
+async function onSelectCard(card: Card) {
     if (!activePileId.value) {
         return;
     }
+    if (gameStore.myPickedUpCard?.id === card.id) {
+        await gameStore.releaseCard();
+        return;
+    }
+    // Picking up a different card overwrites the selection server-side, so
+    // there's no release round-trip when switching.
     await gameStore.pickUpCard(card.id, activePileId.value);
     // pile stays open — activePileId intentionally not cleared
 }
@@ -100,30 +109,6 @@ function handleForfeit() {
             </div>
         </div>
 
-        <!-- My held card slot -->
-        <div class="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 sm:gap-4 sm:px-4 sm:py-3">
-            <h3 class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Your card</h3>
-            <div
-                v-if="gameStore.myPickedUpCard"
-                class="flex h-14 w-11 items-center justify-center overflow-hidden rounded-lg border-2 border-white/50 p-1 text-white shadow ring-2 ring-amber-400 sm:w-10"
-                :class="CARD_COLOR_CLASSES[gameStore.myPickedUpCard.color]"
-                :title="CLOTHING_TYPE_LABELS[gameStore.myPickedUpCard.clothing_type]"
-            >
-                <CardArt :type="gameStore.myPickedUpCard.clothing_type" />
-            </div>
-            <div
-                v-else
-                class="flex h-14 w-11 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-[10px] text-muted-foreground sm:w-10"
-            >
-                Empty
-            </div>
-            <p class="flex-1 text-[11px] leading-tight text-muted-foreground sm:text-xs">
-                <template v-if="gameStore.myPickedUpCard">Tap a center pile to swap</template>
-                <template v-else-if="activePile">Tap a card to pick it up</template>
-                <template v-else>Tap a pile to open it</template>
-            </p>
-        </div>
-
         <!-- Pile viewer: bottom sheet on mobile, inline card on desktop -->
         <template v-if="activePile">
             <!-- Mobile: fixed bottom sheet above sticky hand -->
@@ -145,17 +130,19 @@ function handleForfeit() {
                 </div>
                 <PileViewer
                     :pile="activePile"
-                    :disabled="isDisabled || !!gameStore.myPickedUpCard"
+                    :disabled="isDisabled"
+                    :selected-card-id="gameStore.myPickedUpCard?.id ?? null"
                     :bare="true"
-                    @pickup="onPickupCard"
+                    @select="onSelectCard"
                 />
             </div>
             <!-- Desktop: inline card -->
             <div class="hidden sm:block">
                 <PileViewer
                     :pile="activePile"
-                    :disabled="isDisabled || !!gameStore.myPickedUpCard"
-                    @pickup="onPickupCard"
+                    :disabled="isDisabled"
+                    :selected-card-id="gameStore.myPickedUpCard?.id ?? null"
+                    @select="onSelectCard"
                 />
             </div>
         </template>
@@ -193,7 +180,7 @@ function handleForfeit() {
                     :key="pile.id"
                     :pile="pile"
                     :is-active="activePileId === pile.id"
-                    :disabled="isDisabled || !!gameStore.myPickedUpCard"
+                    :disabled="isDisabled"
                     @open="onOpenPile"
                 />
             </div>

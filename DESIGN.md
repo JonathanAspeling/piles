@@ -183,7 +183,6 @@ lobby ──► countdown (3 s) ──► playing ──► verifying ──► 
 | `GameLobbyUpdated` | presence | Player joins, leaves, or toggles ready |
 | `GameCountdownStarted` | presence | Host triggers start |
 | `GameStarted` | presence + private | Countdown ends; private carries this player's 6 piles + card data |
-| `PlayerPilePickedUp` | presence | Player picks up a pile |
 | `CenterCardSwapped` | presence | Successful swap; reveals the discarded card, hides the taken card |
 | `PlayerPileCompleted` | presence | Player's pile becomes a matching set (cards revealed) |
 | `GameEnded` | presence | Claim verified; includes winner info |
@@ -314,7 +313,6 @@ app/
     GameLobbyUpdated.php
     GameCountdownStarted.php
     GameStarted.php
-    PlayerPilePickedUp.php
     CenterCardSwapped.php
     PlayerPileCompleted.php
     GameEnded.php

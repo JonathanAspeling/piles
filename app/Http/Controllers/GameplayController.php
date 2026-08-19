@@ -45,6 +45,27 @@ class GameplayController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * Put a picked-up card back down without swapping it.
+     *
+     * Deliberately has no "game is in progress" guard: a release firing as the
+     * game ends is a harmless state clear, and a 422 there would surface a
+     * spurious error to the player.
+     */
+    public function release(GameSession $game): Response
+    {
+        $player = $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $player->update([
+            'picked_up_card_id' => null,
+            'picked_up_pile_id' => null,
+        ]);
+
+        return response()->noContent();
+    }
+
     public function swap(GameSession $game, SwapCardRequest $request, CardSwapService $cardSwapService): JsonResponse
     {
         abort_unless($game->status === GameStatus::Playing, 422, 'Game is not in progress.');

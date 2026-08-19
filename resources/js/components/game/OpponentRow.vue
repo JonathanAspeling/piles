@@ -2,8 +2,6 @@
 import { computed } from 'vue';
 import { useGameStore } from '../../stores/game';
 import type { OpponentState } from '../../types/game';
-import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
-import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     opponent: OpponentState;
@@ -31,21 +29,6 @@ const isOnline = computed(() => gameStore.connectedUserIds.includes(props.oppone
         >
             {{ opponent.name }}
         </span>
-
-        <!-- Held card slot -->
-        <div
-            v-if="opponent.picked_up_card"
-            class="flex h-8 w-6 items-center justify-center overflow-hidden rounded border-2 border-white/50 p-0.5 text-white shadow ring-2 ring-amber-400 sm:h-10 sm:w-7"
-            :class="CARD_COLOR_CLASSES[opponent.picked_up_card.color]"
-            :title="CLOTHING_TYPE_LABELS[opponent.picked_up_card.clothing_type]"
-        >
-            <CardArt :type="opponent.picked_up_card.clothing_type" />
-        </div>
-        <div
-            v-else
-            class="flex h-8 w-6 items-center justify-center rounded border-2 border-dashed border-muted-foreground/30 sm:h-10 sm:w-7"
-            title="No card held"
-        />
 
         <!-- Desktop: individual pile indicators. Mobile: just the count. -->
         <div class="hidden gap-1 sm:flex">

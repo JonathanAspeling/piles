@@ -110,9 +110,7 @@ export const useGameStore = defineStore('game', () => {
             version: 0,
             top_card: cp.top_card,
         }));
-        opponents.value = allPlayers
-            .filter((p) => p.id !== currentPlayer.value?.id)
-            .map((p) => ({ ...p, picked_up_card: null }));
+        opponents.value = allPlayers.filter((p) => p.id !== currentPlayer.value?.id);
     }
 
     function applyHandDealt(piles: PlayerPile[]) {
@@ -132,6 +130,11 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
+    /**
+     * Mark a card as the one to discard. The card deliberately stays in its
+     * pile — the UI raises it in place rather than moving it to a hand slot —
+     * so only the selection refs change here.
+     */
     async function pickUpCard(cardId: number, pileId: number) {
         if (!session.value || !currentPlayer.value) {
             return;
@@ -143,23 +146,14 @@ export const useGameStore = defineStore('game', () => {
             return;
         }
 
-        const cardIndex = myPile.cards.findIndex((c) => c.id === cardId);
-        myPile.cards.splice(cardIndex, 1);
+        const previousCard = myPickedUpCard.value;
+        const previousPileId = myPickedUpPileId.value;
         myPickedUpCard.value = card;
         myPickedUpPileId.value = pileId;
 
-        window.Echo.join(`game.${session.value.id}`).whisper('card-picked-up', {
-            game_player_id: currentPlayer.value.id,
-            card,
-        });
-
         const revert = () => {
-            myPile.cards.splice(cardIndex, 0, card);
-            myPickedUpCard.value = null;
-            myPickedUpPileId.value = null;
-            window.Echo.join(`game.${session.value!.id}`).whisper('card-pickup-cancelled', {
-                game_player_id: currentPlayer.value!.id,
-            });
+            myPickedUpCard.value = previousCard;
+            myPickedUpPileId.value = previousPileId;
         };
 
         try {
@@ -179,6 +173,35 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
+    /**
+     * Put the selected card back down. Fired by tapping the raised card again,
+     * or by opening a different pile / closing the pile viewer.
+     */
+    async function releaseCard() {
+        if (!session.value || !myPickedUpCard.value) {
+            return;
+        }
+
+        const previousCard = myPickedUpCard.value;
+        const previousPileId = myPickedUpPileId.value;
+        myPickedUpCard.value = null;
+        myPickedUpPileId.value = null;
+
+        try {
+            const response = await serializeGameplay(() =>
+                apiFetch(route('gameplay.release', { game: session.value!.id }), { method: 'POST' }),
+            );
+            if (!response.ok) {
+                myPickedUpCard.value = previousCard;
+                myPickedUpPileId.value = previousPileId;
+            }
+        } catch {
+            myPickedUpCard.value = previousCard;
+            myPickedUpPileId.value = previousPileId;
+            notificationStore.add('Failed to put the card back — check your connection.', 'error');
+        }
+    }
+
     async function swapCard(centerPileId: number, centerCardId: number, expectedVersion: number) {
         if (!session.value || !currentPlayer.value || !myPickedUpCard.value || myPickedUpPileId.value === null) {
             return;
@@ -194,10 +217,12 @@ export const useGameStore = defineStore('game', () => {
         const centerCard = { ...centerPile.top_card };
         const previousVersion = centerPile.version;
         const nextVersion = expectedVersion + 1;
-        const actorPlayerId = currentPlayer.value.id;
+        // The held card never left its pile, so the incoming card takes its
+        // exact slot — cards don't jump position mid-game.
+        const heldCardIndex = myPile?.cards.findIndex((c) => c.id === heldCard.id) ?? -1;
 
-        if (myPile) {
-            myPile.cards.push(centerCard);
+        if (myPile && heldCardIndex !== -1) {
+            myPile.cards.splice(heldCardIndex, 1, centerCard);
         }
         centerPile.top_card = heldCard;
         centerPile.version = nextVersion;
@@ -209,12 +234,11 @@ export const useGameStore = defineStore('game', () => {
             center_pile_version: nextVersion,
             incoming_card: heldCard,
             outgoing_card_id: centerCardId,
-            game_player_id: actorPlayerId,
         });
 
         const revert = () => {
-            if (myPile) {
-                myPile.cards.pop();
+            if (myPile && heldCardIndex !== -1) {
+                myPile.cards.splice(heldCardIndex, 1, heldCard);
             }
             centerPile.top_card = centerCard;
             centerPile.version = previousVersion;
@@ -224,8 +248,6 @@ export const useGameStore = defineStore('game', () => {
                 center_pile_id: centerPileId,
                 previous_top_card: centerCard,
                 previous_version: previousVersion,
-                held_card: heldCard,
-                game_player_id: actorPlayerId,
             });
         };
 
@@ -281,14 +303,7 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
-    function applyCardPickedUp(gamePlayerId: number, card: Card) {
-        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
-        if (opponent) {
-            opponent.picked_up_card = card;
-        }
-    }
-
-    function applyCenterCardSwapped(centerPileId: number, version: number, incomingCard: Card, gamePlayerId: number) {
+    function applyCenterCardSwapped(centerPileId: number, version: number, incomingCard: Card) {
         const pile = centerPiles.value.find((p) => p.id === centerPileId);
         if (pile) {
             pile.version = version;
@@ -296,28 +311,13 @@ export const useGameStore = defineStore('game', () => {
                 pile.top_card = incomingCard;
             }
         }
-        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
-        if (opponent) {
-            opponent.picked_up_card = null;
-        }
     }
 
-    function applySwapCancelled(centerPileId: number, previousTopCard: Card, previousVersion: number, heldCard: Card, gamePlayerId: number) {
+    function applySwapCancelled(centerPileId: number, previousTopCard: Card, previousVersion: number) {
         const pile = centerPiles.value.find((p) => p.id === centerPileId);
         if (pile) {
             pile.top_card = previousTopCard;
             pile.version = previousVersion;
-        }
-        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
-        if (opponent) {
-            opponent.picked_up_card = heldCard;
-        }
-    }
-
-    function applyCardPickupCancelled(gamePlayerId: number) {
-        const opponent = opponents.value.find((o) => o.id === gamePlayerId);
-        if (opponent) {
-            opponent.picked_up_card = null;
         }
     }
 
@@ -395,10 +395,9 @@ export const useGameStore = defineStore('game', () => {
         confirmClientReady,
         applyGameActivated,
         pickUpCard,
+        releaseCard,
         swapCard,
         resyncCenterPiles,
-        applyCardPickedUp,
-        applyCardPickupCancelled,
         applyCenterCardSwapped,
         applySwapCancelled,
         applyPileCompleted,
