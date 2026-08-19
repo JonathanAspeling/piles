@@ -16,6 +16,12 @@ vendor
 
 tests
 phpunit.xml
+# Locally-generated package-discovery manifests reference dev-only providers
+# (e.g. Laravel Boost) that composer --no-dev strips from the image, crashing
+# every container on boot. Gitignored, so CI never sees them — but a local
+# `docker build` would copy them straight in.
+bootstrap/cache/*.php
+
 storage/logs/*.log
 storage/framework/cache/*
 storage/framework/sessions/*

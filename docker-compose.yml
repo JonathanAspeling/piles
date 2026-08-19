@@ -29,6 +29,15 @@ services:
     expose:
       - "80"
     command: ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+    healthcheck:
+      # Exercises the whole request path — nginx, php-fpm, and Laravel booting
+      # far enough to answer the /up health route.
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      # Generous: this is the container that runs migrations on boot.
+      start_period: 90s
 
   queue:
     image: ghcr.io/jonathanaspeling/piles:latest
@@ -57,6 +66,15 @@ services:
       - piles-db:/data
       - piles-storage:/app/storage
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    healthcheck:
+      # Exec form, deliberately not CMD-SHELL: a shell wrapper carries the
+      # pattern in its own cmdline, which `pgrep -f` then matches, so the
+      # check passes even when no worker is running.
+      test: ["CMD", "pgrep", "-f", "artisan queue:work"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   scheduler:
     image: ghcr.io/jonathanaspeling/piles:latest
@@ -85,6 +103,12 @@ services:
       - piles-db:/data
       - piles-storage:/app/storage
     command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "artisan schedule:work"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   reverb:
     image: ghcr.io/jonathanaspeling/piles:latest
@@ -117,6 +141,14 @@ services:
     expose:
       - "8080"
     command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    healthcheck:
+      # Reverb serves its own /up route on the websocket port, so this proves
+      # the server is accepting connections rather than merely still running.
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:8080/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   piles-db:
