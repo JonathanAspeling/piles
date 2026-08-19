@@ -131,6 +131,8 @@ export interface OpponentPile {
     id: number;
     pile_index: number;
     is_completed: boolean;
+    /** The clothing type this pile was completed with. Null while in progress — an unfinished pile's contents stay private. */
+    completed_type: ClothingType | null;
 }
 
 export interface OpponentState {

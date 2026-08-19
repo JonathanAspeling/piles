@@ -176,7 +176,7 @@ class GameSessionController extends Controller
 
             $props['opponents'] = $game->gamePlayers()
                 ->where('id', '!=', $currentPlayer->id)
-                ->with('user', 'piles')
+                ->with('user', 'piles.pileCards.card')
                 ->get()
                 ->map(fn ($player) => [
                     'id' => $player->id,
@@ -187,6 +187,13 @@ class GameSessionController extends Controller
                         'id' => $pile->id,
                         'pile_index' => $pile->pile_index,
                         'is_completed' => $pile->is_completed,
+                        // Completed piles are public — they're revealed by
+                        // PlayerPileCompleted the moment they finish. An
+                        // in-progress pile's contents stay private to its owner,
+                        // so only the completed ones surrender a clothing type.
+                        'completed_type' => $pile->is_completed
+                            ? $pile->pileCards->first()?->card->clothing_type->value
+                            : null,
                     ])->values()->all(),
                 ])->values()->all();
         }
@@ -252,6 +259,9 @@ class GameSessionController extends Controller
                 'id' => $pile->id,
                 'pile_index' => $pile->pile_index,
                 'is_completed' => $pile->is_completed,
+                // Nothing is complete at deal time; kept for shape parity with
+                // the payload Game/Show renders on a refresh.
+                'completed_type' => null,
             ])->all(),
         ])->all();
 

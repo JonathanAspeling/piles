@@ -334,6 +334,9 @@ export const useGameStore = defineStore('game', () => {
                 const pile = opponent.piles.find((p) => p.id === pileId);
                 if (pile) {
                     pile.is_completed = true;
+                    // All four cards share a clothing type by definition of a
+                    // completed pile, so the first one names the set.
+                    pile.completed_type = cards[0]?.clothing_type ?? null;
                 }
             }
         }
