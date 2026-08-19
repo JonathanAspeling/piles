@@ -17,7 +17,7 @@ const props = defineProps<{
 <template>
     <Head :title="`Game ${props.game.code}`" />
 
-    <AppLayout>
+    <AppLayout :show-version="false">
         <GameView
             :game="props.game"
             :current-player="props.currentPlayer"

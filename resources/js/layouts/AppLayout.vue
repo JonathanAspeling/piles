@@ -4,6 +4,10 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { useAppearance } from '@/composables/useAppearance';
 import type { SharedData, User } from '@/types';
 
+// Hidden during play: the game board's sticky hand bar is fixed to the bottom
+// of the viewport on mobile and would sit on top of the footer.
+withDefaults(defineProps<{ showVersion?: boolean }>(), { showVersion: true });
+
 const page = usePage<SharedData>();
 const user = page.props.auth.user as User;
 const appVersion = computed(() => page.props.appVersion);
@@ -168,7 +172,7 @@ if (typeof window !== 'undefined') {
             <slot />
         </main>
 
-        <footer class="shrink-0 py-2 text-center">
+        <footer v-if="showVersion" class="shrink-0 py-2 text-center">
             <span class="text-[10px] tracking-wider text-muted-foreground/70 sm:text-xs">{{ appVersion }}</span>
         </footer>
     </div>

@@ -111,7 +111,7 @@ onUnmounted(() => {
 <template>
     <Head :title="inGame && gameData ? `Game ${gameData.code}` : 'Lobby'" />
 
-    <AppLayout>
+    <AppLayout :show-version="!inGame">
         <template v-if="inGame && gameData && currentPlayerData">
             <GameView
                 :game="gameData"
