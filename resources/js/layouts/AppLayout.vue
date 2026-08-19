@@ -4,7 +4,9 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { useAppearance } from '@/composables/useAppearance';
 import type { SharedData, User } from '@/types';
 
-const user = usePage<SharedData>().props.auth.user as User;
+const page = usePage<SharedData>();
+const user = page.props.auth.user as User;
+const appVersion = computed(() => page.props.appVersion);
 
 const menuOpen = ref(false);
 
@@ -165,5 +167,9 @@ if (typeof window !== 'undefined') {
         <main class="flex flex-1 flex-col overflow-auto">
             <slot />
         </main>
+
+        <footer class="shrink-0 py-2 text-center">
+            <span class="text-[10px] tracking-wider text-muted-foreground/70 sm:text-xs">{{ appVersion }}</span>
+        </footer>
     </div>
 </template>

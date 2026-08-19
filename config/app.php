@@ -17,6 +17,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | Displayed in the UI so a running instance can be identified at a glance.
+    | Baked into the image at build time from the release tag, deliberately not
+    | supplied through compose: Coolify turns every compose variable into a
+    | managed row and then serves that row's first value forever, which would
+    | pin the footer to whichever version was deployed first.
+    |
+    */
+
+    'version' => env('APP_VERSION', 'dev'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
