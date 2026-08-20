@@ -320,6 +320,54 @@ export const useGameStore = defineStore('game', () => {
     }
 
     /**
+     * Rearrange your own piles. Presentational only — nothing in the rules reads
+     * pile order — but it is persisted so it survives a refresh.
+     */
+    async function reorderPiles(orderedPileIds: number[]) {
+        if (!session.value) {
+            return;
+        }
+
+        // Copy the array but keep the same pile objects, so a card mutation
+        // landing mid-flight isn't thrown away by the rollback below.
+        const snapshot = [...myPiles.value];
+
+        const reordered = orderedPileIds
+            .map((id) => myPiles.value.find((p) => p.id === id))
+            .filter((p): p is PlayerPile => p !== undefined);
+
+        if (reordered.length !== myPiles.value.length) {
+            return;
+        }
+
+        const renumber = (piles: PlayerPile[]) => piles.forEach((pile, index) => (pile.pile_index = index));
+
+        renumber(reordered);
+        myPiles.value = reordered;
+
+        const revert = (message: string) => {
+            myPiles.value = snapshot;
+            renumber(snapshot);
+            notificationStore.add(message, 'error');
+        };
+
+        try {
+            const response = await serializeGameplay(() =>
+                apiFetch(route('gameplay.reorder-piles', { game: session.value!.id }), {
+                    method: 'POST',
+                    body: JSON.stringify({ pile_ids: orderedPileIds }),
+                }),
+            );
+
+            if (!response.ok) {
+                revert('Could not reorder your piles — try again.');
+            }
+        } catch {
+            revert('Could not reorder your piles — check your connection.');
+        }
+    }
+
+    /**
      * Replace the centre and the player's own hand with the server's view.
      *
      * Chained through serializeGameplay so it can't overtake a queued swap —
@@ -457,6 +505,7 @@ export const useGameStore = defineStore('game', () => {
         pickUpCard,
         releaseCard,
         swapCard,
+        reorderPiles,
         resyncBoard,
         applyCenterCardSwapped,
         applySwapCancelled,

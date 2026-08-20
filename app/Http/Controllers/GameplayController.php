@@ -9,12 +9,14 @@ use App\Events\LobbyUpdated;
 use App\Events\PlayerPileCompleted;
 use App\Exceptions\StaleVersionException;
 use App\Http\Requests\ClaimPilesRequest;
+use App\Http\Requests\ReorderPilesRequest;
 use App\Http\Requests\SwapCardRequest;
 use App\Models\GameSession;
 use App\Models\Pile;
 use App\Models\PileCard;
 use App\Services\CardSwapService;
 use App\Services\GameVerifierService;
+use App\Services\PileReorderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -151,6 +153,27 @@ class GameplayController extends Controller
         }
 
         return response()->json(['message' => 'Claim processed.'], 200);
+    }
+
+    /**
+     * Rearrange the player's own piles.
+     *
+     * Purely presentational: pile_index drives nothing in the rules, and
+     * opponents only ever see which piles are finished. It lives on the server
+     * so the order survives the refresh a player reaches for when something
+     * looks wrong.
+     */
+    public function reorderPiles(GameSession $game, ReorderPilesRequest $request, PileReorderService $pileReorderService): Response
+    {
+        abort_unless($game->status === GameStatus::Playing, 422, 'Game is not in progress.');
+
+        $player = $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $pileReorderService->reorder($game, $player, $request->input('pile_ids'));
+
+        return response()->noContent();
     }
 
     /**

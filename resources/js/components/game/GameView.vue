@@ -113,7 +113,7 @@ function onBackToLobby() {
             tag="div"
             role="status"
             aria-live="polite"
-            class="fixed bottom-32 right-2 z-40 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4"
+            class="fixed bottom-40 right-2 z-40 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4"
         >
             <div
                 v-for="notification in notificationStore.notifications"

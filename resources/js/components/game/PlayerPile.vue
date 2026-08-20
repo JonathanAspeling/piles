@@ -8,6 +8,8 @@ const props = defineProps<{
     pile: PlayerPile;
     isActive: boolean;
     disabled: boolean;
+    reorderMode?: boolean;
+    isReorderSelected?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -17,8 +19,12 @@ const emit = defineEmits<{
 const completedFan = computed(() => [...props.pile.cards].sort((a, b) => a.color - b.color));
 const completedType = computed(() => props.pile.cards[0]?.clothing_type ?? null);
 
+// A completed pile is normally inert, but rearranging moves the slot rather
+// than its cards, so it has to be selectable while reorder mode is armed.
+const isInert = computed(() => props.disabled || (props.pile.is_completed && !props.reorderMode));
+
 function onClick() {
-    if (props.disabled || props.pile.is_completed) {
+    if (isInert.value) {
         return;
     }
     emit('open', props.pile.id);
@@ -28,14 +34,17 @@ function onClick() {
 <template>
     <button
         @click="onClick"
-        :disabled="disabled || pile.is_completed"
+        :disabled="isInert"
         class="relative flex flex-col items-center justify-center rounded-lg border-2 p-1.5 transition-all active:scale-95 sm:rounded-xl sm:p-3"
         :class="[
             pile.is_completed
-                ? 'cursor-default border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20'
-                : isActive
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20'
+                : isActive && !reorderMode
                   ? 'border-primary bg-primary/10 shadow-md'
                   : 'border-border bg-card hover:border-primary/50 hover:bg-muted/50',
+            pile.is_completed && !reorderMode ? 'cursor-default' : '',
+            reorderMode ? 'border-dashed' : '',
+            isReorderSelected ? 'ring-2 ring-amber-400' : '',
             disabled && !pile.is_completed ? 'opacity-50' : '',
         ]"
         :title="pile.is_completed && completedType !== null ? `Completed: ${CLOTHING_TYPE_LABELS[completedType]}` : undefined"

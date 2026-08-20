@@ -15,6 +15,8 @@ defineProps<{
 const gameStore = useGameStore();
 
 const activePileId = ref<number | null>(null);
+const reorderMode = ref(false);
+const reorderFirstPileId = ref<number | null>(null);
 const confirmingForfeit = ref(false);
 let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -34,9 +36,55 @@ watch(
     },
 );
 
+// Reorder mode must never outlive the game it belongs to.
+watch(isDisabled, (disabled) => {
+    if (disabled) {
+        reorderMode.value = false;
+        reorderFirstPileId.value = null;
+    }
+});
+
+// Arming closes the viewer and drops any held card, so the two tap gestures —
+// open-a-pile and pick-two-piles — never overlap.
+async function toggleReorderMode() {
+    reorderMode.value = !reorderMode.value;
+    reorderFirstPileId.value = null;
+
+    if (reorderMode.value) {
+        activePileId.value = null;
+        await gameStore.releaseCard();
+    }
+}
+
+function onReorderTap(pileId: number) {
+    if (reorderFirstPileId.value === null) {
+        reorderFirstPileId.value = pileId;
+        return;
+    }
+
+    if (reorderFirstPileId.value === pileId) {
+        reorderFirstPileId.value = null;
+        return;
+    }
+
+    const ids = gameStore.myPiles.map((p) => p.id);
+    const from = ids.indexOf(reorderFirstPileId.value);
+    const to = ids.indexOf(pileId);
+    [ids[from], ids[to]] = [ids[to], ids[from]];
+
+    // Mode stays armed — rearranging is usually more than one swap.
+    reorderFirstPileId.value = null;
+    gameStore.reorderPiles(ids);
+}
+
 // A selection never survives leaving the pile it belongs to — every pile opens
 // with all four cards unselected.
 async function onOpenPile(pileId: number) {
+    if (reorderMode.value) {
+        onReorderTap(pileId);
+        return;
+    }
+
     activePileId.value = activePileId.value === pileId ? null : pileId;
     await gameStore.releaseCard();
 }
@@ -85,7 +133,7 @@ function handleForfeit() {
 </script>
 
 <template>
-    <div class="flex h-full flex-col gap-3 p-2 pb-40 sm:gap-4 sm:p-4 sm:pb-4">
+    <div class="flex h-full flex-col gap-3 p-2 pb-48 sm:gap-4 sm:p-4 sm:pb-4">
         <!-- Leaderboard: horizontal strip on mobile, grid on larger screens.
              Sorted by piles done, so the row that moves is the story. -->
         <div v-if="gameStore.leaderboard.length > 0" class="space-y-2">
@@ -122,7 +170,7 @@ function handleForfeit() {
         <!-- Pile viewer: bottom sheet on mobile, inline card on desktop -->
         <template v-if="activePile">
             <!-- Mobile: fixed bottom sheet above sticky hand -->
-            <div class="fixed inset-x-0 bottom-32 z-20 mx-2 rounded-xl border border-primary/40 bg-card p-3 shadow-lg sm:hidden">
+            <div class="fixed inset-x-0 bottom-40 z-20 mx-2 rounded-xl border border-primary/40 bg-card p-3 shadow-lg sm:hidden">
                 <div class="mb-2 flex items-center justify-between">
                     <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Pile {{ activePile.pile_index + 1 }}
@@ -184,15 +232,41 @@ function handleForfeit() {
             >
                 PILES!
             </button>
-            <div class="grid grid-cols-6 gap-1.5 sm:gap-3">
+            <TransitionGroup name="pile" tag="div" class="grid grid-cols-6 gap-1.5 sm:gap-3">
                 <PlayerPileComponent
                     v-for="pile in gameStore.myPiles"
                     :key="pile.id"
                     :pile="pile"
                     :is-active="activePileId === pile.id"
                     :disabled="isDisabled"
+                    :reorder-mode="reorderMode"
+                    :is-reorder-selected="reorderFirstPileId === pile.id"
                     @open="onOpenPile"
                 />
+            </TransitionGroup>
+
+            <div v-if="!isDisabled" class="mt-1.5 flex items-center justify-center gap-2 sm:mt-3">
+                <button
+                    @click="toggleReorderMode"
+                    :aria-pressed="reorderMode"
+                    class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors active:scale-95 sm:text-xs"
+                    :class="
+                        reorderMode
+                            ? 'border-amber-400 bg-amber-400 text-white'
+                            : 'border-border bg-card text-muted-foreground opacity-60 hover:opacity-100'
+                    "
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 2 21 6 17 10" />
+                        <line x1="21" y1="6" x2="3" y2="6" />
+                        <polyline points="7 22 3 18 7 14" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                    {{ reorderMode ? 'Done rearranging' : 'Rearrange piles' }}
+                </button>
+                <span v-if="reorderMode" class="text-[10px] text-muted-foreground sm:text-xs">
+                    Tap two piles to swap their places.
+                </span>
             </div>
         </div>
     </div>
@@ -205,8 +279,13 @@ function handleForfeit() {
     transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.pile-move {
+    transition: transform 250ms ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .rank-move {
+    .rank-move,
+    .pile-move {
         transition: none;
     }
 }
