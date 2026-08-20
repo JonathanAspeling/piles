@@ -4,8 +4,8 @@ import type { Card, GameSession } from '../../types/game';
 import { GameStatus } from '../../types/game';
 import { useGameStore } from '../../stores/game';
 import CenterPileComponent from './CenterPile.vue';
-import OpponentRow from './OpponentRow.vue';
 import PileViewer from './PileViewer.vue';
+import PlayerScoreRow from './PlayerScoreRow.vue';
 import PlayerPileComponent from './PlayerPile.vue';
 
 defineProps<{
@@ -86,12 +86,22 @@ function handleForfeit() {
 
 <template>
     <div class="flex h-full flex-col gap-3 p-2 pb-40 sm:gap-4 sm:p-4 sm:pb-4">
-        <!-- Opponents: horizontal strip on mobile, grid on larger screens -->
-        <div v-if="gameStore.opponents.length > 0" class="space-y-2">
-            <h3 class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Opponents</h3>
-            <div class="-mx-2 flex snap-x gap-2 overflow-x-auto px-2 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
-                <OpponentRow v-for="opponent in gameStore.opponents" :key="opponent.id" :opponent="opponent" />
-            </div>
+        <!-- Leaderboard: horizontal strip on mobile, grid on larger screens.
+             Sorted by piles done, so the row that moves is the story. -->
+        <div v-if="gameStore.leaderboard.length > 0" class="space-y-2">
+            <h3 class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Leaderboard</h3>
+            <TransitionGroup
+                name="rank"
+                tag="div"
+                class="-mx-2 flex snap-x gap-2 overflow-x-auto px-2 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
+            >
+                <PlayerScoreRow
+                    v-for="row in gameStore.leaderboard"
+                    :key="row.id"
+                    :player="row"
+                    :is-self="row.id === gameStore.currentPlayer?.id"
+                />
+            </TransitionGroup>
         </div>
 
         <!-- Center piles -->
@@ -189,6 +199,18 @@ function handleForfeit() {
 </template>
 
 <style scoped>
+/* FLIP-based: nothing in plain CSS can animate a DOM reorder, and seeing the
+   row travel is the point of ranking them. */
+.rank-move {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rank-move {
+        transition: none;
+    }
+}
+
 .claim-cta {
     animation: claim-pulse 1.4s ease-in-out infinite;
 }

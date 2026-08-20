@@ -6,19 +6,21 @@ import { CLOTHING_TYPE_LABELS } from '../../types/game';
 import CardArt from './CardArt.vue';
 
 const props = defineProps<{
-    opponent: OpponentState;
+    player: OpponentState;
+    isSelf?: boolean;
 }>();
 
 const gameStore = useGameStore();
 
-const completedCount = computed(() => props.opponent.piles.filter((p) => p.is_completed).length);
-const isOnline = computed(() => gameStore.connectedUserIds.includes(props.opponent.user_id));
+const completedCount = computed(() => props.player.piles.filter((p) => p.is_completed).length);
+const isOnline = computed(() => gameStore.connectedUserIds.includes(props.player.user_id));
 </script>
 
 <template>
     <!-- Mobile: compact snapping chip; desktop: full row -->
     <div
-        class="flex shrink-0 snap-start items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-2 sm:w-auto sm:shrink sm:gap-3 sm:px-4 sm:py-3"
+        class="flex shrink-0 snap-start items-center gap-2 rounded-lg border bg-card px-2.5 py-2 sm:w-auto sm:shrink sm:gap-3 sm:px-4 sm:py-3"
+        :class="isSelf ? 'border-primary/60 bg-primary/5' : 'border-border'"
     >
         <span
             class="h-1.5 w-1.5 shrink-0 rounded-full transition-colors sm:h-2 sm:w-2"
@@ -29,13 +31,16 @@ const isOnline = computed(() => gameStore.connectedUserIds.includes(props.oppone
             class="max-w-[6rem] truncate text-xs font-medium sm:min-w-0 sm:max-w-none sm:flex-1 sm:text-sm"
             :class="{ 'text-muted-foreground/70': !isOnline }"
         >
-            {{ opponent.name }}
+            {{ player.name }}
+            <span v-if="isSelf" class="ml-1 rounded bg-primary/15 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary sm:text-[10px]">
+                You
+            </span>
         </span>
 
         <!-- Desktop: individual pile indicators. Mobile: just the count. -->
         <div class="hidden gap-1 sm:flex">
             <div
-                v-for="pile in opponent.piles"
+                v-for="pile in player.piles"
                 :key="pile.id"
                 class="group relative h-7 w-5 rounded border-2 transition-colors"
                 :class="pile.is_completed ? 'border-green-500 bg-green-400' : 'border-muted bg-muted/40'"

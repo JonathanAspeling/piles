@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { apiFetch } from '../composables/useFetch';
 import type { Card, CenterPile, GamePlayer, GameSession, GameWinner, LobbyPlayer, OpponentState, PlayerPile } from '../types/game';
 import { GameStatus } from '../types/game';
@@ -34,6 +34,39 @@ export const useGameStore = defineStore('game', () => {
     // before its pickup (or before a prior swap), which the server rejects
     // as "you have not picked up a card" or corrupts state.
     let gameplayChain: Promise<unknown> = Promise.resolve();
+
+    // Your own row, shaped like an opponent's so the scoreboard can render
+    // everyone through one component. Only completed piles surrender a clothing
+    // type, matching what the server tells opponents about you.
+    const selfRow = computed<OpponentState | null>(() => {
+        if (!currentPlayer.value) {
+            return null;
+        }
+
+        const me = currentPlayer.value;
+
+        return {
+            id: me.id,
+            user_id: me.user_id,
+            name: players.value.find((p) => p.id === me.id)?.name ?? 'You',
+            seat_index: me.seat_index,
+            piles: myPiles.value.map((pile) => ({
+                id: pile.id,
+                pile_index: pile.pile_index,
+                is_completed: pile.is_completed,
+                completed_type: pile.is_completed ? (pile.cards[0]?.clothing_type ?? null) : null,
+            })),
+        };
+    });
+
+    // Everyone ranked by piles done. seat_index breaks ties so the order is
+    // identical on every client and never jitters between equal players.
+    const leaderboard = computed<OpponentState[]>(() => {
+        const rows = selfRow.value ? [...opponents.value, selfRow.value] : [...opponents.value];
+        const done = (row: OpponentState) => row.piles.filter((p) => p.is_completed).length;
+
+        return rows.sort((a, b) => done(b) - done(a) || a.seat_index - b.seat_index);
+    });
 
     function serializeGameplay<T>(fn: () => Promise<T>): Promise<T> {
         const result = gameplayChain.then(fn, fn);
@@ -410,6 +443,7 @@ export const useGameStore = defineStore('game', () => {
         myPickedUpCard,
         myPickedUpPileId,
         connectedUserIds,
+        leaderboard,
         initialize,
         setConnectedUsers,
         markConnected,
