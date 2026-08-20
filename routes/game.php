@@ -5,7 +5,7 @@ use App\Http\Controllers\GameSessionController;
 use App\Http\Controllers\LobbyController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby.index');
 
     Route::post('/games', [GameSessionController::class, 'store'])->name('games.store');
