@@ -237,8 +237,15 @@ export const useGameStore = defineStore('game', () => {
         });
 
         const revert = () => {
-            if (myPile && heldCardIndex !== -1) {
-                myPile.cards.splice(heldCardIndex, 1, heldCard);
+            // Find the incoming card by id now rather than reusing heldCardIndex:
+            // another swap may have landed in that slot while this one was in
+            // flight, and writing over it by position is what used to leave a
+            // pile looking like a completed set the server disagreed with. If the
+            // card is already gone, leave the array alone — resyncBoard() is
+            // authoritative.
+            const incomingIndex = myPile?.cards.findIndex((c) => c.id === centerCard.id) ?? -1;
+            if (myPile && incomingIndex !== -1) {
+                myPile.cards.splice(incomingIndex, 1, heldCard);
             }
             centerPile.top_card = centerCard;
             centerPile.version = previousVersion;
@@ -266,36 +273,50 @@ export const useGameStore = defineStore('game', () => {
             if (response.status === 409) {
                 revert();
                 notificationStore.add('Someone else swapped first — try again!', 'warning');
-                resyncCenterPiles();
+                resyncBoard();
             } else if (!response.ok) {
                 revert();
                 notificationStore.add('Swap failed — try again.', 'error');
-                resyncCenterPiles();
+                resyncBoard();
             }
         } catch {
             revert();
             notificationStore.add('Swap failed — check your connection.', 'error');
+            resyncBoard();
         }
     }
 
-    async function resyncCenterPiles() {
+    /**
+     * Replace the centre and the player's own hand with the server's view.
+     *
+     * Chained through serializeGameplay so it can't overtake a queued swap —
+     * that ordering is what makes replacing myPiles wholesale safe, since no
+     * optimistic mutation can still be waiting behind it.
+     */
+    async function resyncBoard() {
         if (resyncInFlight.value || !session.value) {
             return;
         }
         resyncInFlight.value = true;
         try {
-            const response = await apiFetch(route('gameplay.center-piles', { game: session.value.id }));
+            const response = await serializeGameplay(() => apiFetch(route('gameplay.state', { game: session.value!.id })));
             if (!response.ok) {
                 return;
             }
-            const fresh: { id: number; pile_index: number; version: number; top_card: Card | null }[] = await response.json();
-            for (const pile of fresh) {
+            const fresh: {
+                center_piles: { id: number; pile_index: number; version: number; top_card: Card | null }[];
+                my_piles: PlayerPile[];
+            } = await response.json();
+
+            for (const pile of fresh.center_piles) {
                 const existing = centerPiles.value.find((p) => p.id === pile.id);
                 if (existing) {
                     existing.version = pile.version;
                     existing.top_card = pile.top_card;
                 }
             }
+
+            myPiles.value = fresh.my_piles;
         } catch {
             // Silent — next swap or manual refresh will recover.
         } finally {
@@ -400,7 +421,7 @@ export const useGameStore = defineStore('game', () => {
         pickUpCard,
         releaseCard,
         swapCard,
-        resyncCenterPiles,
+        resyncBoard,
         applyCenterCardSwapped,
         applySwapCancelled,
         applyPileCompleted,

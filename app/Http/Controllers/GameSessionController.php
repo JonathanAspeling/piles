@@ -14,7 +14,6 @@ use App\Http\Requests\JoinGameRequest;
 use App\Jobs\StartGameJob;
 use App\Models\GameSession;
 use App\Models\Pile;
-use App\Models\PileCard;
 use App\Services\GameDealerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -152,16 +151,10 @@ class GameSessionController extends Controller
         $isActiveGame = $currentPlayer && in_array($game->status, [GameStatus::Countdown, GameStatus::Playing, GameStatus::Verifying, GameStatus::Ended]);
 
         if ($isActiveGame) {
-            $props['myPiles'] = $currentPlayer->piles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
-                'id' => $pile->id,
-                'pile_index' => $pile->pile_index,
-                'is_completed' => $pile->is_completed,
-                'cards' => $pile->pileCards->map(fn (PileCard $pc) => [
-                    'id' => $pc->card->id,
-                    'clothing_type' => $pc->card->clothing_type->value,
-                    'color' => $pc->card->color->value,
-                ])->values()->all(),
-            ])->values()->all();
+            $props['myPiles'] = $currentPlayer->piles()->with('pileCards.card')->get()
+                ->map(fn (Pile $pile) => $pile->toPlayerPayload())
+                ->values()
+                ->all();
 
             $props['centerPiles'] = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
                 'id' => $pile->id,
@@ -269,16 +262,7 @@ class GameSessionController extends Controller
         broadcast(new GameStarted($game, $centerPiles, $allPlayers));
 
         foreach ($game->gamePlayers()->with('piles.pileCards.card')->get() as $player) {
-            $pilesData = $player->piles->map(fn (Pile $pile) => [
-                'id' => $pile->id,
-                'pile_index' => $pile->pile_index,
-                'is_completed' => $pile->is_completed,
-                'cards' => $pile->pileCards->map(fn (PileCard $pc) => [
-                    'id' => $pc->card->id,
-                    'clothing_type' => $pc->card->clothing_type->value,
-                    'color' => $pc->card->color->value,
-                ])->all(),
-            ])->all();
+            $pilesData = $player->piles->map(fn (Pile $pile) => $pile->toPlayerPayload())->all();
 
             broadcast(new PlayerHandDealt($player, $pilesData));
         }

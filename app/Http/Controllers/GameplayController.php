@@ -152,9 +152,15 @@ class GameplayController extends Controller
         return response()->json(['message' => 'Claim processed.'], 200);
     }
 
-    public function centerPiles(GameSession $game): JsonResponse
+    /**
+     * The authoritative board as this player is allowed to see it.
+     *
+     * Returns the centre alongside the player's own hand so a client that lost a
+     * swap race can replace both wholesale instead of trusting its own rollback.
+     */
+    public function state(GameSession $game): JsonResponse
     {
-        $game->gamePlayers()
+        $player = $game->gamePlayers()
             ->where('user_id', auth()->id())
             ->firstOrFail();
 
@@ -169,7 +175,15 @@ class GameplayController extends Controller
             ] : null,
         ])->values()->all();
 
-        return response()->json($centerPiles);
+        $myPiles = $player->piles()->with('pileCards.card')->get()
+            ->map(fn (Pile $pile) => $pile->toPlayerPayload())
+            ->values()
+            ->all();
+
+        return response()->json([
+            'center_piles' => $centerPiles,
+            'my_piles' => $myPiles,
+        ]);
     }
 
     public function forfeit(GameSession $game): Response

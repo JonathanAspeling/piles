@@ -73,7 +73,7 @@ test('starting a game twice does not deal a second hand', function () {
     $this->actingAs($game->host)->postJson(route('games.start', $game))->assertNoContent();
     $this->actingAs($game->host)->postJson(route('games.start', $game))->assertStatus(422);
 
-    expect($game->piles()->count())->toBe(8 * 6 + 8);
+    expect($game->piles()->count())->toBe(8 * 6 + $game->centerCardCount(8));
 });
 
 test('the host gets an error instead of a half dealt game when sets are missing', function () {

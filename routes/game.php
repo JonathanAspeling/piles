@@ -20,7 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/games/{game}/pickup', [GameplayController::class, 'pickup'])->name('gameplay.pickup');
     Route::post('/games/{game}/release', [GameplayController::class, 'release'])->name('gameplay.release');
     Route::post('/games/{game}/swap', [GameplayController::class, 'swap'])->name('gameplay.swap');
-    Route::get('/games/{game}/center-piles', [GameplayController::class, 'centerPiles'])->name('gameplay.center-piles');
+    Route::get('/games/{game}/state', [GameplayController::class, 'state'])->name('gameplay.state');
     Route::post('/games/{game}/claim', [GameplayController::class, 'claimPiles'])->name('gameplay.claim');
     Route::post('/games/{game}/forfeit', [GameplayController::class, 'forfeit'])->name('gameplay.forfeit');
 });
