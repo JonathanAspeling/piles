@@ -56,8 +56,8 @@ test('every player is dealt 6 piles of 4 cards', function (int $playerCount, boo
 ]);
 
 test('dealing fails loudly rather than shorting the last seats when sets are missing', function () {
-    // A card table seeded before the 16-set expansion holds 47 sets — three short
-    // of the 50 an 8-player game needs. The shortfall used to drain silently into
+    // A card table seeded before the 16-set expansion holds 47 sets — two short
+    // of the 49 an 8-player game needs. The shortfall used to drain silently into
     // the last seat's piles instead of failing.
     Card::where('clothing_type', '>=', 47)->delete();
 

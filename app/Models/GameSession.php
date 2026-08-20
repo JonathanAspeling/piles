@@ -62,6 +62,6 @@ class GameSession extends Model
 
     public function centerCardCount(int $playerCount): int
     {
-        return ($this->variant || $playerCount >= 8) ? 8 : 4;
+        return ($this->variant || $playerCount >= 9) ? 8 : 4;
     }
 }

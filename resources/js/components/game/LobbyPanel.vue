@@ -18,6 +18,10 @@ const isHost = computed(() => props.currentPlayer?.user_id === props.game.host_u
 const allReady = computed(() => props.players.length >= 2 && props.players.every((p) => p.is_ready));
 const myPlayer = computed(() => props.players.find((p) => p.id === props.currentPlayer?.id));
 
+// Mirrors GameSession::centerCardCount() — big tables get 8 centre cards whether
+// or not the host ticked variant, so say so rather than letting it surprise them.
+const variantIsForced = computed(() => props.players.length >= 9);
+
 const isActing = ref(false);
 const showHowToPlay = ref(false);
 
@@ -72,6 +76,15 @@ async function leaveGame() {
                         How to play
                     </button>
                 </div>
+                <p
+                    v-if="variantIsForced"
+                    class="mt-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                >
+                    9 or more players — variant mode is on automatically (8 cards in the centre).
+                </p>
+                <p v-else class="mt-2 text-xs text-muted-foreground">
+                    {{ game.variant ? 'Variant mode — 8 cards in the centre.' : '4 cards in the centre.' }}
+                </p>
             </div>
 
             <!-- Player list -->
