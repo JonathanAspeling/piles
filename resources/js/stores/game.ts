@@ -342,13 +342,14 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
-    function applyPileCompleted(gamePlayerId: number, pileId: number, cards: Card[]) {
+    function applyPileCompleted(gamePlayerId: number, pileId: number, cards: Card[], playerName: string, completedCount: number) {
         if (currentPlayer.value && gamePlayerId === currentPlayer.value.id) {
             const pile = myPiles.value.find((p) => p.id === pileId);
             if (pile) {
                 pile.is_completed = true;
                 pile.cards = cards;
             }
+            notificationStore.add(`You completed pile ${completedCount} of 6`, 'success', 2500);
         } else {
             const opponent = opponents.value.find((o) => o.id === gamePlayerId);
             if (opponent) {
@@ -360,6 +361,7 @@ export const useGameStore = defineStore('game', () => {
                     pile.completed_type = cards[0]?.clothing_type ?? null;
                 }
             }
+            notificationStore.add(`${playerName} completed pile ${completedCount} of 6`, 'success', 2500);
         }
     }
 

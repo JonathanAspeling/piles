@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { useEchoStore } from '../../stores/echo';
 import { useGameStore } from '../../stores/game';
@@ -109,11 +108,18 @@ function onBackToLobby() {
         </div>
 
         <!-- Toast notifications: pushed above sticky hand on mobile -->
-        <div class="fixed bottom-32 right-2 z-40 flex flex-col gap-2 sm:bottom-4 sm:right-4">
+        <TransitionGroup
+            name="toast"
+            tag="div"
+            role="status"
+            aria-live="polite"
+            class="fixed bottom-32 right-2 z-40 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4"
+        >
             <div
                 v-for="notification in notificationStore.notifications"
                 :key="notification.id"
-                class="max-w-xs rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg"
+                @click="notificationStore.remove(notification.id)"
+                class="max-w-xs cursor-pointer rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg"
                 :class="{
                     'bg-green-600': notification.level === 'success',
                     'bg-red-600': notification.level === 'error',
@@ -123,7 +129,7 @@ function onBackToLobby() {
             >
                 {{ notification.message }}
             </div>
-        </div>
+        </TransitionGroup>
 
         <!-- Main content -->
         <LobbyPanel
@@ -137,3 +143,35 @@ function onBackToLobby() {
         <GameBoard v-else-if="gameStore.session" :game="gameStore.session" />
     </div>
 </template>
+
+<style scoped>
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    transform: translateX(1rem);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* Taking the leaving toast out of flow lets the survivors slide up behind it
+   instead of jumping the moment it unmounts. */
+.toast-leave-active {
+    position: absolute;
+    right: 0;
+}
+
+.toast-move {
+    transition: transform 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast-enter-active,
+    .toast-leave-active,
+    .toast-move {
+        transition: none;
+    }
+}
+</style>
