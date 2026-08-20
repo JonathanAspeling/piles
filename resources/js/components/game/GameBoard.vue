@@ -5,8 +5,8 @@ import { GameStatus } from '../../types/game';
 import { useGameStore } from '../../stores/game';
 import CenterPileComponent from './CenterPile.vue';
 import PileViewer from './PileViewer.vue';
-import PlayerScoreRow from './PlayerScoreRow.vue';
 import PlayerPileComponent from './PlayerPile.vue';
+import PlayerScoreRow from './PlayerScoreRow.vue';
 
 defineProps<{
     game: GameSession;
