@@ -43,15 +43,8 @@ export const useEchoStore = defineStore('echo', () => {
             })
             .listen(
                 'PlayerPileCompleted',
-                (event: {
-                    game_player_id: number;
-                    pile_id: number;
-                    pile_index: number;
-                    cards: Card[];
-                    player_name: string;
-                    completed_count: number;
-                }) => {
-                    gameStore.applyPileCompleted(event.game_player_id, event.pile_id, event.cards, event.player_name, event.completed_count);
+                (event: { game_player_id: number; pile_id: number; pile_index: number; cards: Card[] }) => {
+                    gameStore.applyPileCompleted(event.game_player_id, event.pile_id, event.cards);
                 },
             )
             .listen('GameEnded', (event: { winner: GameWinner | null; forfeited_by: string | null }) => {

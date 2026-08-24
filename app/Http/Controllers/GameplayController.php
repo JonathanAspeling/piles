@@ -74,7 +74,6 @@ class GameplayController extends Controller
 
         $player = $game->gamePlayers()
             ->where('user_id', auth()->id())
-            ->with('user')
             ->firstOrFail();
 
         abort_unless($player->picked_up_card_id !== null, 422, 'You have not picked up a card.');

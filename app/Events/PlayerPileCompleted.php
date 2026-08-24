@@ -45,10 +45,6 @@ class PlayerPileCompleted implements ShouldBroadcastNow
             'pile_id' => $this->pile->id,
             'pile_index' => $this->pile->pile_index,
             'cards' => $cards,
-            'player_name' => $this->player->user->name,
-            // Announced as "pile N of 6", so it has to be the player's running
-            // total rather than pile_index — players can reorder their piles.
-            'completed_count' => $this->player->completedPilesCount(),
         ];
     }
 }

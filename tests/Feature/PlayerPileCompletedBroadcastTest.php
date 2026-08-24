@@ -48,46 +48,21 @@ function makePile(GameSession $game, GamePlayer $player, int $pileIndex, int $cl
     return $pile;
 }
 
-test('the completion broadcast carries the announcing fields', function () {
-    $user = User::factory()->create(['name' => 'Nick']);
-    [$game, $player] = makeCompletionGame($user);
-    $pile = makePile($game, $player, 0, 3, true);
-
-    $payload = (new PlayerPileCompleted($game, $player, $pile))->broadcastWith();
-
-    expect(array_keys($payload))->toBe([
-        'game_player_id',
-        'pile_id',
-        'pile_index',
-        'cards',
-        'player_name',
-        'completed_count',
-    ]);
-
-    expect($payload['player_name'])->toBe('Nick')
-        ->and($payload['completed_count'])->toBe(1)
-        ->and($payload['cards'])->toHaveCount(4);
-});
-
-test('completed_count counts only that players completed piles', function () {
+test('the completion broadcast reveals the finished set and nothing else', function () {
     $user = User::factory()->create();
     [$game, $player] = makeCompletionGame($user);
-
-    $pile = makePile($game, $player, 0, 3, true);
-    makePile($game, $player, 1, 4, true);
-    makePile($game, $player, 2, 5, false);
-    makePile($game, $player, 3, 6, false);
-    makePile($game, $player, 4, 7, false);
-
-    // A rival's finished pile must not inflate the count.
-    $rival = $game->gamePlayers()->create([
-        'user_id' => User::factory()->create()->id,
-        'seat_index' => 1,
-        'is_ready' => true,
-    ]);
-    makePile($game, $rival, 0, 8, true);
+    $pile = makePile($game, $player, 2, 3, true);
 
     $payload = (new PlayerPileCompleted($game, $player, $pile))->broadcastWith();
 
-    expect($payload['completed_count'])->toBe(2);
+    // Pinned: opponents learn which pile finished and what it holds, and the
+    // rest of the owner's hand stays private.
+    expect(array_keys($payload))->toBe(['game_player_id', 'pile_id', 'pile_index', 'cards']);
+
+    expect($payload['game_player_id'])->toBe($player->id)
+        ->and($payload['pile_id'])->toBe($pile->id)
+        ->and($payload['pile_index'])->toBe(2)
+        ->and($payload['cards'])->toHaveCount(4)
+        ->and(array_column($payload['cards'], 'clothing_type'))->toBe([3, 3, 3, 3])
+        ->and(array_column($payload['cards'], 'color'))->toBe([0, 1, 2, 3]);
 });

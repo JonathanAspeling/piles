@@ -107,15 +107,13 @@ function onBackToLobby() {
             </div>
         </div>
 
-        <!-- Toast notifications: top-right, clear of the board. Sits below the
-             floating menu button on mobile and below the app header from md up,
-             both of which occupy this corner. -->
+        <!-- Toast notifications: pushed above sticky hand on mobile -->
         <TransitionGroup
             name="toast"
             tag="div"
             role="status"
             aria-live="polite"
-            class="fixed right-2 top-14 z-40 flex flex-col items-end gap-2 md:right-4 md:top-16"
+            class="fixed bottom-40 right-2 z-40 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4"
         >
             <div
                 v-for="notification in notificationStore.notifications"

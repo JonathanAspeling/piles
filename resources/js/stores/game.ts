@@ -423,32 +423,7 @@ export const useGameStore = defineStore('game', () => {
         }
     }
 
-    /**
-     * Announce only the closing stretch.
-     *
-     * Toasting every completion is up to 54 interruptions in a ten-player game —
-     * worst at exactly the table sizes it's meant to serve. The leaderboard
-     * already carries progress continuously; these two are the moments that
-     * create pressure, and they're the ones worth interrupting for.
-     */
-    function announceCompletion(isSelf: boolean, playerName: string, completedCount: number) {
-        if (completedCount < 5) {
-            return;
-        }
-
-        if (isSelf) {
-            notificationStore.add(completedCount === 6 ? 'All 6 done — call PILES!' : '5 of 6 done — one to go!', 'success', 3000);
-            return;
-        }
-
-        notificationStore.add(
-            completedCount === 6 ? `${playerName} has all 6 — watch out!` : `${playerName} is on 5 of 6!`,
-            'warning',
-            3000,
-        );
-    }
-
-    function applyPileCompleted(gamePlayerId: number, pileId: number, cards: Card[], playerName: string, completedCount: number) {
+    function applyPileCompleted(gamePlayerId: number, pileId: number, cards: Card[]) {
         const isSelf = !!currentPlayer.value && gamePlayerId === currentPlayer.value.id;
 
         if (isSelf) {
@@ -469,8 +444,6 @@ export const useGameStore = defineStore('game', () => {
                 }
             }
         }
-
-        announceCompletion(isSelf, playerName, completedCount);
     }
 
     function applyGameEnded(gameWinner: GameWinner | null, forfeitBy?: string) {
