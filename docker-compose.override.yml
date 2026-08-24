@@ -1,0 +1,72 @@
+# Local development overrides — merged automatically by `docker compose up`.
+#
+# docker-compose.yml is production-shaped: it pulls the released GHCR image,
+# publishes no ports (Coolify's proxy handles that), and points Reverb at a
+# public HTTPS host. This file builds the working tree instead, exposes the app
+# on :8000 and Reverb on :8080, and splits the one Reverb hostname production
+# can get away with into the two a local run needs.
+#
+# Coolify keeps its own copy of the compose file, so nothing here reaches prod.
+#
+#   docker compose up --build -d      start (rebuild after code changes)
+#   docker compose logs -f app        follow
+#   docker compose down               stop, keeping the database volume
+#   docker compose down -v            stop and wipe the database
+
+x-local-build: &local-build
+    context: .
+    args:
+        # Vite inlines these at build time, so they are what the *browser*
+        # dials — they have to resolve from the host, not from inside the
+        # compose network.
+        VITE_APP_URL: http://localhost:8000
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: localhost
+        VITE_REVERB_PORT: "8080"
+        VITE_REVERB_SCHEME: http
+        APP_VERSION: dev
+
+x-local-env: &local-env
+    APP_ENV: local
+    APP_DEBUG: "true"
+    LOG_LEVEL: debug
+    APP_URL: http://localhost:8000
+    # PHP broadcasts to Reverb over the compose network, so the server dials the
+    # service name while the browser dials localhost. Production collapses these
+    # into one value because the public domain resolves from both sides.
+    REVERB_HOST: reverb
+    REVERB_PORT: "8080"
+    REVERB_SCHEME: http
+
+services:
+    app:
+        build: *local-build
+        image: piles:local
+        environment: *local-env
+        ports:
+            - "8000:80"
+
+    queue:
+        build: *local-build
+        image: piles:local
+        environment: *local-env
+        # Only the app container migrates. Without this the worker boots against
+        # a schema-less database and restart-loops until it happens to win.
+        depends_on:
+            app:
+                condition: service_healthy
+
+    scheduler:
+        build: *local-build
+        image: piles:local
+        environment: *local-env
+        depends_on:
+            app:
+                condition: service_healthy
+
+    reverb:
+        build: *local-build
+        image: piles:local
+        environment: *local-env
+        ports:
+            - "8080:8080"

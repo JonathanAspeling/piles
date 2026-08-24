@@ -37,6 +37,7 @@ public/hot
 Dockerfile
 .dockerignore
 docker-compose.yml
+docker-compose.override.yml
 
 .editorconfig
 .gitattributes

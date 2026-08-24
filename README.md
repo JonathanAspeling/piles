@@ -13,12 +13,36 @@ A real-time multiplayer web adaptation of the fast-paced card game [Piles!](http
 | Testing | Pest v3 |
 | Build | Vite 6, TypeScript |
 
-## Prerequisites
+## Running Locally with Docker
+
+The quickest way to get a full stack — app, Reverb, queue worker and scheduler —
+without installing PHP or Node. `docker-compose.override.yml` builds the working
+tree instead of pulling the released image, and is merged automatically.
+
+```bash
+docker compose up --build -d
+```
+
+The app is then on <http://localhost:8000> and Reverb on `localhost:8080`. The
+database is a SQLite file on a named volume, migrated and card-seeded on first
+boot.
+
+```bash
+docker compose logs -f app     # follow
+docker compose up --build -d   # rebuild after a code change
+docker compose down            # stop, keeping the database
+docker compose down -v         # stop and wipe the database
+```
+
+Assets are compiled into the image, so a frontend change needs a rebuild — use
+the Herd + Vite workflow below if you want hot reload.
+
+## Prerequisites (running on the host)
 
 - PHP 8.2+
 - Node.js 22+
 - Composer (via [Laravel Herd](https://herd.laravel.com/) or standalone)
-- Laravel Herd (recommended for local development — serves the app at `https://piles.test`)
+- Laravel Herd (serves the app at `https://piles.test`)
 
 ## Local Setup
 
