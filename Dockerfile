@@ -42,7 +42,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Stage 3: Runtime ----------
-FROM php:8.3-fpm-alpine AS runtime
+FROM php:8.4-fpm-alpine AS runtime
 
 # icu-libs, libzip and sqlite-libs are installed as first-class packages, not
 # left to arrive as dependencies of the -dev packages: apk garbage-collects
