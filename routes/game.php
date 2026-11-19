@@ -4,9 +4,18 @@ use App\Http\Controllers\GameplayController;
 use App\Http\Controllers\GameSessionController;
 use App\Http\Controllers\LobbyController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby.index');
+
+    // Asset preview: every set laid out without needing a live game. Hidden in
+    // production so it never ships as a spoiler sheet of the whole deck.
+    Route::get('/cards', function () {
+        abort_if(app()->isProduction(), 404);
+
+        return Inertia::render('Cards/Index');
+    })->name('cards.index');
 
     Route::post('/games', [GameSessionController::class, 'store'])->name('games.store');
     Route::post('/games/join', [GameSessionController::class, 'join'])->name('games.join');
