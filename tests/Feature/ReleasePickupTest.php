@@ -126,5 +126,5 @@ test('unauthenticated release is redirected', function () {
     [$game] = seedPlayableGameWithPile($user);
 
     $this->post(route('gameplay.release', $game))
-        ->assertRedirect(route('login'));
+        ->assertRedirect(route('home'));
 });

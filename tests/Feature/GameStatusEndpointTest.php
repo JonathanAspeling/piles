@@ -71,5 +71,5 @@ test('games.status requires authentication', function () {
     $host = User::factory()->create();
     $game = makeStatusGame($host, GameStatus::Playing);
 
-    $this->get(route('games.status', $game))->assertRedirect(route('login'));
+    $this->get(route('games.status', $game))->assertRedirect(route('home'));
 });

@@ -171,5 +171,5 @@ test('unauthenticated request is redirected', function () {
     [$game, , $piles] = seedReorderGame($user);
 
     $this->post(route('gameplay.reorder-piles', $game), ['pile_ids' => $piles->pluck('id')->all()])
-        ->assertRedirect(route('login'));
+        ->assertRedirect(route('home'));
 });

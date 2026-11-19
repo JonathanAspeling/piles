@@ -172,5 +172,5 @@ test('unauthenticated request is redirected', function () {
     $game = seedGameWithCenterPiles($player);
 
     $this->get(route('gameplay.state', $game))
-        ->assertRedirect(route('login'));
+        ->assertRedirect(route('home'));
 });

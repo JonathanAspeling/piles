@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
 
+        // Accounts are optional: send signed-out visitors to the home page,
+        // where they can pick a name to play as a guest or log in.
+        $middleware->redirectGuestsTo(fn () => route('home'));
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
