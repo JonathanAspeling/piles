@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CardTheme;
 use App\Enums\GameStatus;
 use App\Events\GameCountdownStarted;
 use App\Events\GameLobbyUpdated;
@@ -32,6 +33,8 @@ class GameSessionController extends Controller
             'status' => GameStatus::Lobby,
             'host_user_id' => $request->user()->id,
             'variant' => $request->boolean('variant'),
+            'theme' => $request->enum('theme', CardTheme::class) ?? CardTheme::Standard,
+            'hard_variant' => $request->boolean('hard_variant'),
         ]);
 
         $game->gamePlayers()->create([
@@ -52,6 +55,8 @@ class GameSessionController extends Controller
                 'status' => $game->status->value,
                 'host_user_id' => $game->host_user_id,
                 'variant' => $game->variant,
+                'theme' => $game->theme->value,
+                'hard_variant' => $game->hard_variant,
                 'sets_count' => $game->sets_count ?? null,
                 'winner_user_id' => $game->winner_user_id ?? null,
                 'started_at' => $game->started_at ?? null,
@@ -105,6 +110,8 @@ class GameSessionController extends Controller
                 'status' => $game->status->value,
                 'host_user_id' => $game->host_user_id,
                 'variant' => $game->variant,
+                'theme' => $game->theme->value,
+                'hard_variant' => $game->hard_variant,
                 'sets_count' => $game->sets_count ?? null,
                 'winner_user_id' => $game->winner_user_id ?? null,
                 'started_at' => $game->started_at ?? null,

@@ -6,6 +6,17 @@ export enum GameStatus {
     Ended = 'ended',
 }
 
+/** Mirrors App\Enums\CardTheme: the card art a game is drawn with. */
+export enum CardTheme {
+    Classic = 'classic',
+    Standard = 'standard',
+}
+
+export const CARD_THEME_LABELS: Record<CardTheme, string> = {
+    [CardTheme.Classic]: 'Classic',
+    [CardTheme.Standard]: 'Standard',
+};
+
 export enum CardColor {
     Red = 0,
     Blue = 1,
@@ -91,6 +102,9 @@ export interface GameSession {
     status: GameStatus;
     host_user_id: number;
     variant: boolean;
+    theme: CardTheme;
+    /** Standard theme only: card faces take the CardColor background instead of white. */
+    hard_variant: boolean;
     sets_count: number | null;
     winner_user_id: number | null;
     started_at: string | null;
@@ -149,6 +163,8 @@ export interface LobbyGame {
     host_name: string;
     player_count: number;
     variant: boolean;
+    theme: CardTheme;
+    hard_variant: boolean;
 }
 
 export interface GameWinner {

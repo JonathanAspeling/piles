@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { ClothingType } from '../../types/game';
+import type { CardColor, CardTheme, ClothingType } from '../../types/game';
 import { CLOTHING_TYPE_LABELS } from '../../types/game';
 import { getCardArtUrl } from '../../utils/cardArt';
 
+// Only the image. The card face behind it (and so the hard colour variant)
+// is the wrapper's job: see cardFaceClasses() in utils/cardArt.
 const props = defineProps<{
     type: ClothingType;
+    color: CardColor;
+    theme: CardTheme;
 }>();
 
-const artUrl = computed(() => getCardArtUrl(props.type));
+const artUrl = computed(() => getCardArtUrl(props.type, props.color, props.theme));
 const hasArt = computed(() => artUrl.value !== undefined);
 </script>
 

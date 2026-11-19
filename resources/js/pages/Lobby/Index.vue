@@ -6,6 +6,7 @@ import { apiFetch } from '../../composables/useFetch';
 import GameView from '../../components/game/GameView.vue';
 import HowToPlayModal from '../../components/game/HowToPlayModal.vue';
 import type { CenterPile, GamePlayer, GameSession, LobbyGame, LobbyPlayer, OpponentState, PlayerPile } from '../../types/game';
+import { CARD_THEME_LABELS, CardTheme } from '../../types/game';
 
 const props = defineProps<{
     games: LobbyGame[];
@@ -17,6 +18,9 @@ const isRejoining = ref(false);
 const showHowToPlay = ref(false);
 
 const variant = ref(false);
+const theme = ref<CardTheme>(CardTheme.Standard);
+const hardVariant = ref(false);
+const cardThemes = Object.values(CardTheme);
 const joinCode = ref('');
 const joinError = ref('');
 const isCreating = ref(false);
@@ -65,7 +69,12 @@ async function createGame() {
     try {
         const res = await apiFetch(route('games.store'), {
             method: 'POST',
-            body: JSON.stringify({ variant: variant.value }),
+            body: JSON.stringify({
+                variant: variant.value,
+                theme: theme.value,
+                // Only the standard art has a hard colour variant; classic is always coloured.
+                hard_variant: theme.value !== CardTheme.Classic && hardVariant.value,
+            }),
         });
         const data = await res.json();
         enterGame(data, data.game.id);
@@ -182,6 +191,32 @@ onUnmounted(() => {
                             <p class="text-xs text-muted-foreground">
                                 8 cards in the centre instead of 4. Games with 9 or more players switch to variant automatically.
                             </p>
+                            <fieldset class="space-y-2">
+                                <legend class="text-sm">Card art</legend>
+                                <div class="flex rounded-md border border-border p-0.5 text-xs">
+                                    <label
+                                        v-for="option in cardThemes"
+                                        :key="option"
+                                        class="flex-1 cursor-pointer rounded px-2.5 py-1.5 text-center font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+                                        :class="theme === option ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                                    >
+                                        <input v-model="theme" type="radio" name="theme" :value="option" class="sr-only" />
+                                        {{ CARD_THEME_LABELS[option] }}
+                                    </label>
+                                </div>
+                            </fieldset>
+                            <label class="flex items-center gap-3" :class="theme === CardTheme.Classic ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                                <input
+                                    type="checkbox"
+                                    v-model="hardVariant"
+                                    :disabled="theme === CardTheme.Classic"
+                                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <span class="text-sm">Hard colour variant</span>
+                            </label>
+                            <p class="text-xs text-muted-foreground">
+                                Standard cards sit on red, blue, green or yellow backgrounds instead of white. Classic cards are always coloured.
+                            </p>
                             <button
                                 type="submit"
                                 :disabled="isCreating"
@@ -236,6 +271,8 @@ onUnmounted(() => {
                                     <span class="text-muted-foreground/50">·</span>
                                     <span>{{ game.player_count }}/10 players</span>
                                     <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Variant</span>
+                                    <span v-if="game.theme === CardTheme.Classic" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">{{ CARD_THEME_LABELS[game.theme] }}</span>
+                                    <span v-if="game.theme !== CardTheme.Classic && game.hard_variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Hard colours</span>
                                 </div>
                             </div>
                             <button
@@ -251,6 +288,6 @@ onUnmounted(() => {
             </div>
         </template>
 
-        <HowToPlayModal v-if="showHowToPlay" @close="showHowToPlay = false" />
+        <HowToPlayModal v-if="showHowToPlay" :theme="theme" :hard-variant="theme !== CardTheme.Classic && hardVariant" @close="showHowToPlay = false" />
     </AppLayout>
 </template>

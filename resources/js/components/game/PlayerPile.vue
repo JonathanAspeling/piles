@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { PlayerPile } from '../../types/game';
-import { CARD_COLOR_CLASSES, CLOTHING_TYPE_LABELS } from '../../types/game';
+import type { CardTheme, PlayerPile } from '../../types/game';
+import { CLOTHING_TYPE_LABELS } from '../../types/game';
+import { cardSwatch } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     pile: PlayerPile;
+    theme: CardTheme;
+    hardVariant: boolean;
     isActive: boolean;
     disabled: boolean;
     reorderMode?: boolean;
@@ -16,8 +19,15 @@ const emit = defineEmits<{
     open: [pileId: number];
 }>();
 
-const completedFan = computed(() => [...props.pile.cards].sort((a, b) => a.color - b.color));
+const completedFan = computed(() =>
+    [...props.pile.cards]
+        .sort((a, b) => a.color - b.color)
+        .map((card) => ({ ...card, swatch: cardSwatch(card.clothing_type, card.color, props.theme, props.hardVariant) })),
+);
 const completedType = computed(() => props.pile.cards[0]?.clothing_type ?? null);
+// The overlay art is drawn in the colourway of the card on top of the fan
+// (classic ignores colour: its silhouette is the same white for all four).
+const completedTopColor = computed(() => completedFan.value[completedFan.value.length - 1]?.color ?? null);
 
 // A completed pile is normally inert, but rearranging moves the slot rather
 // than its cards, so it has to be selectable while reorder mode is armed.
@@ -66,15 +76,15 @@ function onClick() {
                 v-for="(card, index) in completedFan"
                 :key="card.id"
                 class="absolute h-8 w-6 rounded-md border-2 sm:h-12 sm:w-8"
-                :class="CARD_COLOR_CLASSES[card.color]"
-                :style="{ transform: `translateX(${(index - 1.5) * 5}px)`, zIndex: index }"
+                :class="card.swatch.class"
+                :style="{ ...card.swatch.style, transform: `translateX(${(index - 1.5) * 5}px)`, zIndex: index }"
             />
             <div
-                v-if="completedType !== null"
+                v-if="completedType !== null && completedTopColor !== null"
                 class="pointer-events-none absolute hidden h-10 w-10 text-white/95 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:flex sm:items-center sm:justify-center"
                 :style="{ zIndex: 10 }"
             >
-                <CardArt :type="completedType" />
+                <CardArt :type="completedType" :color="completedTopColor" :theme="theme" />
             </div>
         </div>
 

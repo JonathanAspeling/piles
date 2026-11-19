@@ -22,6 +22,8 @@ class LobbyController extends Controller
                 'host_name' => $game->host->name,
                 'player_count' => $game->gamePlayers->count(),
                 'variant' => $game->variant,
+                'theme' => $game->theme->value,
+                'hard_variant' => $game->hard_variant,
             ]);
 
         $activeGame = GameSession::whereIn('status', [

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CardTheme;
 use App\Enums\GameStatus;
 use Database\Factories\GameSessionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,10 +20,23 @@ class GameSession extends Model
         'status',
         'host_user_id',
         'variant',
+        'theme',
+        'hard_variant',
         'sets_count',
         'winner_user_id',
         'started_at',
         'ended_at',
+    ];
+
+    /**
+     * Mirrors the column defaults so a freshly created game reports them
+     * without a refresh.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'theme' => 'standard',
+        'hard_variant' => false,
     ];
 
     protected function casts(): array
@@ -30,6 +44,8 @@ class GameSession extends Model
         return [
             'status' => GameStatus::class,
             'variant' => 'boolean',
+            'theme' => CardTheme::class,
+            'hard_variant' => 'boolean',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
         ];

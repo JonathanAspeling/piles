@@ -144,6 +144,7 @@ function handleForfeit() {
                 class="-mx-2 flex snap-x gap-2 overflow-x-auto px-2 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
             >
                 <PlayerScoreRow
+                    :theme="game.theme"
                     v-for="row in gameStore.leaderboard"
                     :key="row.id"
                     :player="row"
@@ -157,6 +158,8 @@ function handleForfeit() {
             <h3 class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:mb-3 sm:text-xs">Center</h3>
             <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
                 <CenterPileComponent
+                    :theme="game.theme"
+                    :hard-variant="game.hard_variant"
                     v-for="pile in gameStore.centerPiles"
                     :key="pile.id"
                     :pile="pile"
@@ -187,6 +190,8 @@ function handleForfeit() {
                     </button>
                 </div>
                 <PileViewer
+                    :theme="game.theme"
+                    :hard-variant="game.hard_variant"
                     :pile="activePile"
                     :disabled="isDisabled"
                     :selected-card-id="gameStore.myPickedUpCard?.id ?? null"
@@ -197,6 +202,8 @@ function handleForfeit() {
             <!-- Desktop: inline card -->
             <div class="hidden sm:block">
                 <PileViewer
+                    :theme="game.theme"
+                    :hard-variant="game.hard_variant"
                     :pile="activePile"
                     :disabled="isDisabled"
                     :selected-card-id="gameStore.myPickedUpCard?.id ?? null"
@@ -234,6 +241,8 @@ function handleForfeit() {
             </button>
             <TransitionGroup name="pile" tag="div" class="grid grid-cols-6 gap-1.5 sm:gap-3">
                 <PlayerPileComponent
+                    :theme="game.theme"
+                    :hard-variant="game.hard_variant"
                     v-for="pile in gameStore.myPiles"
                     :key="pile.id"
                     :pile="pile"

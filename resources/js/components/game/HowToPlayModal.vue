@@ -1,9 +1,25 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
-import { CardColor, CARD_COLOR_CLASSES, ClothingType } from '../../types/game';
+import { CardColor, CardTheme, ClothingType } from '../../types/game';
+import { cardFaceClasses } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
+// Shown from the lobby (the theme being picked) and from a game's lobby (that game's theme).
+const props = withDefaults(
+    defineProps<{
+        theme?: CardTheme;
+        hardVariant?: boolean;
+    }>(),
+    { theme: CardTheme.Standard, hardVariant: false },
+);
+
 const emit = defineEmits<{ close: [] }>();
+
+// Coloured faces keep today's soft white edge; the white standard face keeps its own border.
+function exampleFaceClasses(color: CardColor): string[] {
+    const isColouredFace = props.theme === CardTheme.Classic || props.hardVariant;
+    return [cardFaceClasses(color, props.theme, props.hardVariant), isColouredFace ? 'border-white/50' : ''];
+}
 
 const fanColors: CardColor[] = [CardColor.Red, CardColor.Blue, CardColor.Green, CardColor.Yellow];
 
@@ -64,11 +80,11 @@ onUnmounted(() => {
                         <div
                             v-for="(color, i) in fanColors"
                             :key="color"
-                            class="flex h-20 w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/50 p-1 text-white shadow"
-                            :class="CARD_COLOR_CLASSES[color]"
+                            class="flex h-20 w-14 items-center justify-center overflow-hidden rounded-lg border-2 p-1 shadow"
+                            :class="exampleFaceClasses(color)"
                             :style="{ transform: `translateY(${Math.abs(i - 1.5) * 3}px) rotate(${(i - 1.5) * 4}deg)` }"
                         >
-                            <CardArt :type="ClothingType.Hoodie" />
+                            <CardArt :type="ClothingType.Hoodie" :color="color" :theme="theme" />
                         </div>
                     </div>
                     <p class="mt-2 text-center text-xs text-muted-foreground">Four hoodies, one of each colour = a complete set</p>
@@ -99,10 +115,10 @@ onUnmounted(() => {
                     <div class="mt-4 flex items-center justify-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-4 sm:gap-4">
                         <div class="flex flex-col items-center gap-1.5">
                             <div
-                                class="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg border-2 border-white/50 p-1 text-white shadow ring-2 ring-amber-400"
-                                :class="CARD_COLOR_CLASSES[CardColor.Red]"
+                                class="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg border-2 p-1 shadow ring-2 ring-amber-400"
+                                :class="exampleFaceClasses(CardColor.Red)"
                             >
-                                <CardArt :type="ClothingType.Jeans" />
+                                <CardArt :type="ClothingType.Jeans" :color="CardColor.Red" :theme="theme" />
                             </div>
                             <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Your pick</span>
                         </div>
@@ -114,10 +130,10 @@ onUnmounted(() => {
                         </svg>
                         <div class="flex flex-col items-center gap-1.5">
                             <div
-                                class="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg border-2 border-white/50 p-1 text-white shadow"
-                                :class="CARD_COLOR_CLASSES[CardColor.Blue]"
+                                class="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg border-2 p-1 shadow"
+                                :class="exampleFaceClasses(CardColor.Blue)"
                             >
-                                <CardArt :type="ClothingType.Hoodie" />
+                                <CardArt :type="ClothingType.Hoodie" :color="CardColor.Blue" :theme="theme" />
                             </div>
                             <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Centre pile</span>
                         </div>
