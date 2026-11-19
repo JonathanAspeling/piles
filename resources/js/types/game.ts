@@ -105,6 +105,8 @@ export interface GameSession {
     theme: CardTheme;
     /** Standard theme only: card faces take the CardColor background instead of white. */
     hard_variant: boolean;
+    /** Seeds the per-game shuffle of hard colour variant backgrounds. */
+    background_seed: number;
     sets_count: number | null;
     winner_user_id: number | null;
     started_at: string | null;

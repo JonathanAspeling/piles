@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { Card, CardTheme, PlayerPile } from '../../types/game';
+import type { Card, PlayerPile } from '../../types/game';
 import { CLOTHING_TYPE_LABELS } from '../../types/game';
+import type { CardStyle } from '../../utils/cardArt';
 import { cardFaceClasses } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
 const props = withDefaults(
     defineProps<{
         pile: PlayerPile;
-        theme: CardTheme;
-        hardVariant: boolean;
+        cardStyle: CardStyle;
         disabled: boolean;
         selectedCardId: number | null;
         bare?: boolean;
@@ -47,13 +47,13 @@ function onCardClick(card: Card) {
                 :disabled="disabled || pile.is_completed"
                 class="group relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-xl border-2 p-1.5 shadow transition-all active:scale-95 sm:h-20 sm:w-14"
                 :class="[
-                    cardFaceClasses(card.color, theme, hardVariant),
+                    cardFaceClasses(card.clothing_type, card.color, cardStyle),
                     disabled ? 'cursor-default opacity-60' : 'cursor-pointer hover:scale-105',
                     card.id === selectedCardId ? 'z-10 -translate-y-3 shadow-lg ring-2 ring-amber-400 sm:-translate-y-4' : '',
                 ]"
                 :title="CLOTHING_TYPE_LABELS[card.clothing_type]"
             >
-                <CardArt :type="card.clothing_type" :color="card.color" :theme="theme" />
+                <CardArt :type="card.clothing_type" :color="card.color" :theme="cardStyle.theme" />
 
                 <!-- Marked for discard; the label names the way out, since tapping
                      the card again clears the pick. Mobile has no hover, so the

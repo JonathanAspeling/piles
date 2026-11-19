@@ -144,3 +144,49 @@ test('the open games list shows each game theme and hard colour variant', functi
     expect((new LobbyUpdated)->broadcastWith()['games'][0])
         ->toMatchArray(['id' => $game->id, 'theme' => 'classic', 'hard_variant' => false]);
 });
+
+test('every new game gets its own random background seed', function () {
+    $host = User::factory()->create();
+
+    $first = $this->actingAs($host)->postJson(route('games.store'), ['hard_variant' => true])->assertOk();
+    $second = $this->actingAs($host)->postJson(route('games.store'), ['hard_variant' => true])->assertOk();
+
+    $seeds = GameSession::orderBy('id')->pluck('background_seed')->all();
+
+    expect($seeds)->toHaveCount(2)
+        ->and($seeds[0])->toBeInt()->toBeGreaterThan(0)->toBeLessThanOrEqual(0x7FFFFFFF)
+        ->and($seeds[1])->toBeInt()->toBeGreaterThan(0)->toBeLessThanOrEqual(0x7FFFFFFF)
+        ->and($seeds[0])->not->toBe($seeds[1])
+        ->and($first->json('game.background_seed'))->toBe($seeds[0])
+        ->and($second->json('game.background_seed'))->toBe($seeds[1]);
+});
+
+test('a game keeps its background seed for its whole life', function () {
+    $game = makeThemedLobbyGame(User::factory()->create(), CardTheme::Standard, true);
+    $seed = $game->background_seed;
+
+    $game->update(['status' => GameStatus::Playing]);
+    $game->update(['status' => GameStatus::Ended]);
+
+    expect($seed)->toBeGreaterThan(0)
+        ->and($game->fresh()->background_seed)->toBe($seed);
+});
+
+test('every player in a game receives the same background seed', function () {
+    $host = User::factory()->create();
+    $guest = User::factory()->create();
+    $game = makeThemedLobbyGame($host, CardTheme::Standard, true);
+
+    $this->actingAs($guest)
+        ->postJson(route('games.join'), ['code' => $game->code])
+        ->assertOk()
+        ->assertJsonPath('game.background_seed', $game->background_seed);
+
+    foreach ([$host, $guest] as $player) {
+        $this->actingAs($player)
+            ->get(route('games.show', $game))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('game.background_seed', $game->background_seed)
+            );
+    }
+});

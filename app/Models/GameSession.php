@@ -39,6 +39,29 @@ class GameSession extends Model
         'hard_variant' => false,
     ];
 
+    /**
+     * Every game gets its own random background seed when it's created. A game
+     * is never replayed (each new game is a new row), so the hard colour
+     * variant backgrounds are reshuffled for every game.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (GameSession $game): void {
+            if (! $game->background_seed) {
+                $game->background_seed = self::newBackgroundSeed();
+            }
+        });
+    }
+
+    /**
+     * A random positive 31-bit seed: fits an integer column on any database and
+     * the 32-bit maths of the client PRNG.
+     */
+    public static function newBackgroundSeed(): int
+    {
+        return random_int(1, 0x7FFFFFFF);
+    }
+
     protected function casts(): array
     {
         return [
@@ -46,6 +69,7 @@ class GameSession extends Model
             'variant' => 'boolean',
             'theme' => CardTheme::class,
             'hard_variant' => 'boolean',
+            'background_seed' => 'integer',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
         ];

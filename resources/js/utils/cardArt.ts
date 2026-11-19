@@ -1,4 +1,5 @@
 import cardArtSchemes from '../data/cardArtSchemes.json';
+import type { GameSession } from '../types/game';
 import { CARD_COLOR_CLASSES, CardColor, CardTheme, ClothingType } from '../types/game';
 
 /**
@@ -65,6 +66,57 @@ export function countMissingArt(theme: CardTheme): { missing: number; total: num
     };
 }
 
+/** How a game draws its cards. Every player in a game shares the same style. */
+export interface CardStyle {
+    theme: CardTheme;
+    hardVariant: boolean;
+    /** Seeds the per-game shuffle of hard colour variant backgrounds. */
+    backgroundSeed: number;
+}
+
+export function cardStyleFor(game: Pick<GameSession, 'theme' | 'hard_variant' | 'background_seed'>): CardStyle {
+    return { theme: game.theme, hardVariant: game.hard_variant, backgroundSeed: game.background_seed };
+}
+
+/** mulberry32: a tiny seeded PRNG returning floats in [0, 1). Same seed, same sequence. */
+function seededRandom(seed: number): () => number {
+    let state = seed >>> 0;
+    return () => {
+        state = (state + 0x6d2b79f5) >>> 0;
+        let t = state;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/**
+ * The hard colour variant's background for each of an item's four cards: a
+ * permutation of the four CardColors, indexed by the card's CardColor.
+ * Each item gets its own permutation, fixed for a given seed (so for a whole game).
+ */
+export function shuffledBackgrounds(seed: number, type: ClothingType): CardColor[] {
+    // Mix the item into the seed so items don't share a permutation.
+    const random = seededRandom((seed ^ Math.imul(type + 1, 0x9e3779b1)) >>> 0);
+    const backgrounds = [...ALL_CARD_COLORS];
+    for (let index = backgrounds.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(random() * (index + 1));
+        [backgrounds[index], backgrounds[swapIndex]] = [backgrounds[swapIndex], backgrounds[index]];
+    }
+    return backgrounds;
+}
+
+/**
+ * The CardColor whose colour a card shows when drawn with a coloured face:
+ * its own colour in classic, its shuffled background in standard with hard colours.
+ */
+function faceColor(type: ClothingType, color: CardColor, style: CardStyle): CardColor {
+    if (style.theme === CardTheme.Classic || !style.hardVariant) {
+        return color;
+    }
+    return shuffledBackgrounds(style.backgroundSeed, type)[color];
+}
+
 // The white face standard cards sit on; a light border keeps it off a white page.
 const STANDARD_FACE_CLASSES = 'bg-white border-slate-200 text-slate-700';
 
@@ -72,13 +124,14 @@ const STANDARD_FACE_CLASSES = 'bg-white border-slate-200 text-slate-700';
  * Background, border and text colour for a card face.
  *
  * - classic: the CardColor background behind a white silhouette (hard variant has no effect).
- * - standard: a white face, or the CardColor background when the hard colour variant is on.
+ * - standard: a white face, or with the hard colour variant one of the four
+ *   CardColor backgrounds, shuffled per item and per game.
  *
  * Text colour only shows when an image is missing and CardArt falls back to the label.
  */
-export function cardFaceClasses(color: CardColor, theme: CardTheme, hardVariant: boolean): string {
-    if (theme === CardTheme.Classic || hardVariant) {
-        return `${CARD_COLOR_CLASSES[color]} text-white`;
+export function cardFaceClasses(type: ClothingType, color: CardColor, style: CardStyle): string {
+    if (style.theme === CardTheme.Classic || style.hardVariant) {
+        return `${CARD_COLOR_CLASSES[faceColor(type, color, style)]} text-white`;
     }
     return STANDARD_FACE_CLASSES;
 }
@@ -109,14 +162,15 @@ export interface CardSwatch {
 /**
  * A card's colour drawn without its art (e.g. the completed-pile fan).
  *
- * Classic, and standard with the hard colour variant, use the CardColor colour
- * — the same colour as that card's face. Plain standard has no fixed colour per
- * CardColor, so it uses the item's own main colour from its colourway.
+ * Classic, and standard with the hard colour variant, use the colour of that
+ * card's face (shuffled with hard colours, matching cardFaceClasses). Plain
+ * standard has no fixed colour per CardColor, so it uses the item's own main
+ * colour from its colourway.
  */
-export function cardSwatch(type: ClothingType, color: CardColor, theme: CardTheme, hardVariant: boolean): CardSwatch {
+export function cardSwatch(type: ClothingType, color: CardColor, style: CardStyle): CardSwatch {
     const scheme = getCardArtScheme(type, color);
-    if (theme === CardTheme.Classic || hardVariant || scheme === undefined) {
-        return { class: CARD_COLOR_CLASSES[color] };
+    if (style.theme === CardTheme.Classic || style.hardVariant || scheme === undefined) {
+        return { class: CARD_COLOR_CLASSES[faceColor(type, color, style)] };
     }
     return {
         class: 'border-white/70',

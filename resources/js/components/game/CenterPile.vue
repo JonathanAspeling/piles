@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { CardTheme, CenterPile } from '../../types/game';
+import type { CenterPile } from '../../types/game';
 import { CLOTHING_TYPE_LABELS } from '../../types/game';
+import type { CardStyle } from '../../utils/cardArt';
 import { cardFaceClasses } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     pile: CenterPile;
-    theme: CardTheme;
-    hardVariant: boolean;
+    cardStyle: CardStyle;
     hasCardInHand: boolean;
     disabled: boolean;
 }>();
@@ -34,12 +34,12 @@ function onPileClick() {
             v-if="pile.top_card"
             class="relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-xl border-2 p-2 text-center shadow-md transition-all sm:h-28 sm:w-20"
             :class="[
-                cardFaceClasses(pile.top_card.color, theme, hardVariant),
+                cardFaceClasses(pile.top_card.clothing_type, pile.top_card.color, cardStyle),
                 hasCardInHand && !disabled ? 'cursor-pointer ring-2 ring-white ring-offset-2 hover:scale-105 active:scale-95' : 'cursor-default',
             ]"
             :title="CLOTHING_TYPE_LABELS[pile.top_card.clothing_type]"
         >
-            <CardArt :type="pile.top_card.clothing_type" :color="pile.top_card.color" :theme="theme" />
+            <CardArt :type="pile.top_card.clothing_type" :color="pile.top_card.color" :theme="cardStyle.theme" />
         </div>
 
         <!-- Empty placeholder -->

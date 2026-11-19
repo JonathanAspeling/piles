@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CardTheme, PlayerPile } from '../../types/game';
+import type { PlayerPile } from '../../types/game';
 import { CLOTHING_TYPE_LABELS } from '../../types/game';
+import type { CardStyle } from '../../utils/cardArt';
 import { cardSwatch } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     pile: PlayerPile;
-    theme: CardTheme;
-    hardVariant: boolean;
+    cardStyle: CardStyle;
     isActive: boolean;
     disabled: boolean;
     reorderMode?: boolean;
@@ -22,7 +22,7 @@ const emit = defineEmits<{
 const completedFan = computed(() =>
     [...props.pile.cards]
         .sort((a, b) => a.color - b.color)
-        .map((card) => ({ ...card, swatch: cardSwatch(card.clothing_type, card.color, props.theme, props.hardVariant) })),
+        .map((card) => ({ ...card, swatch: cardSwatch(card.clothing_type, card.color, props.cardStyle) })),
 );
 const completedType = computed(() => props.pile.cards[0]?.clothing_type ?? null);
 // The overlay art is drawn in the colourway of the card on top of the fan
@@ -84,7 +84,7 @@ function onClick() {
                 class="pointer-events-none absolute hidden h-10 w-10 text-white/95 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:flex sm:items-center sm:justify-center"
                 :style="{ zIndex: 10 }"
             >
-                <CardArt :type="completedType" :color="completedTopColor" :theme="theme" />
+                <CardArt :type="completedType" :color="completedTopColor" :theme="cardStyle.theme" />
             </div>
         </div>
 

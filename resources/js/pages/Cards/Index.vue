@@ -4,6 +4,7 @@ import { Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CardArt from '../../components/game/CardArt.vue';
 import { CARD_THEME_LABELS, CardColor, CardTheme, CLOTHING_TYPE_LABELS, ClothingType } from '../../types/game';
+import type { CardStyle } from '../../utils/cardArt';
 import { ALL_CARD_COLORS, ALL_CLOTHING_TYPES, cardFaceClasses, countMissingArt } from '../../utils/cardArt';
 
 type ViewMode = 'sets' | 'shuffled';
@@ -31,11 +32,22 @@ const viewMode = ref<ViewMode>('sets');
 const cardSize = ref<CardSize>('game');
 const theme = ref<CardTheme>(CardTheme.Standard);
 const hardVariant = ref(false);
+const backgroundSeed = ref(newBackgroundSeed());
 const search = ref('');
 
 // Classic counts per set (its silhouette is shared by all four colours); standard counts every card face.
 const missingArt = computed(() => countMissingArt(theme.value));
 const hardVariantApplies = computed(() => theme.value !== CardTheme.Classic);
+const cardStyle = computed<CardStyle>(() => ({ theme: theme.value, hardVariant: hardVariant.value, backgroundSeed: backgroundSeed.value }));
+
+// Same range as GameSession::newBackgroundSeed(): a new game, a new shuffle.
+function newBackgroundSeed(): number {
+    return 1 + Math.floor(Math.random() * 0x7fffffff);
+}
+
+function reshuffleBackgrounds() {
+    backgroundSeed.value = newBackgroundSeed();
+}
 
 const visibleClothingTypes = computed(() => {
     const term = search.value.trim().toLowerCase();
@@ -67,8 +79,8 @@ const cardClasses = computed(
         `relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 shadow-md ${CARD_SIZE_CLASSES[cardSize.value]}`,
 );
 
-function faceClasses(color: CardColor): string[] {
-    return [cardClasses.value, cardFaceClasses(color, theme.value, hardVariant.value)];
+function faceClasses(type: ClothingType, color: CardColor): string[] {
+    return [cardClasses.value, cardFaceClasses(type, color, cardStyle.value)];
 }
 
 function toggleButtonClasses(isActive: boolean): string {
@@ -115,6 +127,14 @@ function toggleButtonClasses(isActive: boolean): string {
                         :class="toggleButtonClasses(hardVariant && hardVariantApplies)"
                     >
                         Hard colours
+                    </button>
+
+                    <button
+                        v-if="hardVariant && hardVariantApplies"
+                        @click="reshuffleBackgrounds"
+                        class="rounded-md border border-border px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-muted"
+                    >
+                        Reshuffle backgrounds
                     </button>
 
                     <div class="flex rounded-md border border-border p-0.5 text-xs">
@@ -170,7 +190,7 @@ function toggleButtonClasses(isActive: boolean): string {
                         <div
                             v-for="color in allColors"
                             :key="color"
-                            :class="faceClasses(color)"
+                            :class="faceClasses(type, color)"
                             :title="CLOTHING_TYPE_LABELS[type]"
                         >
                             <CardArt :type="type" :color="color" :theme="theme" />
@@ -185,7 +205,7 @@ function toggleButtonClasses(isActive: boolean): string {
                 <div
                     v-for="card in shuffledCards"
                     :key="card.key"
-                    :class="faceClasses(card.color)"
+                    :class="faceClasses(card.clothingType, card.color)"
                     :title="CLOTHING_TYPE_LABELS[card.clothingType]"
                 >
                     <CardArt :type="card.clothingType" :color="card.color" :theme="theme" />

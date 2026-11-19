@@ -215,7 +215,7 @@ onUnmounted(() => {
                                 <span class="text-sm">Hard colour variant</span>
                             </label>
                             <p class="text-xs text-muted-foreground">
-                                Standard cards sit on red, blue, green or yellow backgrounds instead of white. Classic cards are always coloured.
+                                Standard cards sit on red, blue, green or yellow backgrounds instead of white, shuffled for every game. Classic cards are always coloured.
                             </p>
                             <button
                                 type="submit"
@@ -288,6 +288,10 @@ onUnmounted(() => {
             </div>
         </template>
 
-        <HowToPlayModal v-if="showHowToPlay" :theme="theme" :hard-variant="theme !== CardTheme.Classic && hardVariant" @close="showHowToPlay = false" />
+        <HowToPlayModal
+            v-if="showHowToPlay"
+            :card-style="{ theme, hardVariant: theme !== CardTheme.Classic && hardVariant, backgroundSeed: 0 }"
+            @close="showHowToPlay = false"
+        />
     </AppLayout>
 </template>

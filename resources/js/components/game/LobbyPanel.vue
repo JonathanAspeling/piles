@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
 import type { GamePlayer, GameSession, LobbyPlayer } from '../../types/game';
 import { CARD_THEME_LABELS, CardTheme } from '../../types/game';
+import { cardStyleFor } from '../../utils/cardArt';
 import HowToPlayModal from './HowToPlayModal.vue';
 
 const props = defineProps<{
@@ -155,6 +156,6 @@ async function leaveGame() {
             </div>
         </div>
 
-        <HowToPlayModal v-if="showHowToPlay" :theme="game.theme" :hard-variant="game.hard_variant" @close="showHowToPlay = false" />
+        <HowToPlayModal v-if="showHowToPlay" :card-style="cardStyleFor(game)" @close="showHowToPlay = false" />
     </div>
 </template>

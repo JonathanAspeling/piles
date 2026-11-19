@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { CardColor, CardTheme, ClothingType } from '../../types/game';
+import type { CardStyle } from '../../utils/cardArt';
 import { cardFaceClasses } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
-// Shown from the lobby (the theme being picked) and from a game's lobby (that game's theme).
+// Shown from the lobby (the style being picked) and from a game's lobby (that game's style).
 const props = withDefaults(
     defineProps<{
-        theme?: CardTheme;
-        hardVariant?: boolean;
+        cardStyle?: CardStyle;
     }>(),
-    { theme: CardTheme.Standard, hardVariant: false },
+    { cardStyle: () => ({ theme: CardTheme.Standard, hardVariant: false, backgroundSeed: 0 }) },
 );
 
 const emit = defineEmits<{ close: [] }>();
 
 // Coloured faces keep today's soft white edge; the white standard face keeps its own border.
-function exampleFaceClasses(color: CardColor): string[] {
-    const isColouredFace = props.theme === CardTheme.Classic || props.hardVariant;
-    return [cardFaceClasses(color, props.theme, props.hardVariant), isColouredFace ? 'border-white/50' : ''];
+function exampleFaceClasses(type: ClothingType, color: CardColor): string[] {
+    const isColouredFace = props.cardStyle.theme === CardTheme.Classic || props.cardStyle.hardVariant;
+    return [cardFaceClasses(type, color, props.cardStyle), isColouredFace ? 'border-white/50' : ''];
 }
 
 const fanColors: CardColor[] = [CardColor.Red, CardColor.Blue, CardColor.Green, CardColor.Yellow];
@@ -81,10 +81,10 @@ onUnmounted(() => {
                             v-for="(color, i) in fanColors"
                             :key="color"
                             class="flex h-20 w-14 items-center justify-center overflow-hidden rounded-lg border-2 p-1 shadow"
-                            :class="exampleFaceClasses(color)"
+                            :class="exampleFaceClasses(ClothingType.Hoodie, color)"
                             :style="{ transform: `translateY(${Math.abs(i - 1.5) * 3}px) rotate(${(i - 1.5) * 4}deg)` }"
                         >
-                            <CardArt :type="ClothingType.Hoodie" :color="color" :theme="theme" />
+                            <CardArt :type="ClothingType.Hoodie" :color="color" :theme="cardStyle.theme" />
                         </div>
                     </div>
                     <p class="mt-2 text-center text-xs text-muted-foreground">Four hoodies, one of each colour = a complete set</p>
@@ -116,9 +116,9 @@ onUnmounted(() => {
                         <div class="flex flex-col items-center gap-1.5">
                             <div
                                 class="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg border-2 p-1 shadow ring-2 ring-amber-400"
-                                :class="exampleFaceClasses(CardColor.Red)"
+                                :class="exampleFaceClasses(ClothingType.Jeans, CardColor.Red)"
                             >
-                                <CardArt :type="ClothingType.Jeans" :color="CardColor.Red" :theme="theme" />
+                                <CardArt :type="ClothingType.Jeans" :color="CardColor.Red" :theme="cardStyle.theme" />
                             </div>
                             <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Your pick</span>
                         </div>
@@ -131,9 +131,9 @@ onUnmounted(() => {
                         <div class="flex flex-col items-center gap-1.5">
                             <div
                                 class="flex h-16 w-12 items-center justify-center overflow-hidden rounded-lg border-2 p-1 shadow"
-                                :class="exampleFaceClasses(CardColor.Blue)"
+                                :class="exampleFaceClasses(ClothingType.Hoodie, CardColor.Blue)"
                             >
-                                <CardArt :type="ClothingType.Hoodie" :color="CardColor.Blue" :theme="theme" />
+                                <CardArt :type="ClothingType.Hoodie" :color="CardColor.Blue" :theme="cardStyle.theme" />
                             </div>
                             <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Centre pile</span>
                         </div>
