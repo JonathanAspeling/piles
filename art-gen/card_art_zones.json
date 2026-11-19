@@ -1,0 +1,571 @@
+[
+  {
+    "type": 0,
+    "name": "Socks",
+    "subject": "a sock",
+    "main": "sock body",
+    "secondary": "large heel and toe patches",
+    "accent": "ribbed top cuff",
+    "details": "a small woven cream label on the cuff"
+  },
+  {
+    "type": 1,
+    "name": "Jeans",
+    "subject": "a pair of jeans",
+    "main": "legs",
+    "secondary": "wide turned-up hems and front pocket panels",
+    "accent": "waistband and belt loops",
+    "details": "silver rivets at the pocket corners and a silver top button"
+  },
+  {
+    "type": 2,
+    "name": "Dress",
+    "subject": "a dress",
+    "main": "skirt",
+    "secondary": "bodice",
+    "accent": "waistband and sleeve cuffs",
+    "details": "a small cream bow at the waist",
+    "fill_holes": "secondary"
+  },
+  {
+    "type": 3,
+    "name": "TrenchCoat",
+    "subject": "a trench coat",
+    "main": "coat body and sleeves",
+    "secondary": "wide collar and lapels",
+    "accent": "belt, cuff straps and buttons",
+    "fixed": "belt buckle in silver metal",
+    "details": "a row of cream topstitching along the front edge"
+  },
+  {
+    "type": 4,
+    "name": "PufferJacket",
+    "subject": "a puffer jacket",
+    "main": "quilted body",
+    "secondary": "quilted sleeves",
+    "accent": "collar, cuffs, hem and zips",
+    "details": "a small round cream logo patch on the chest"
+  },
+  {
+    "type": 5,
+    "name": "Blouse",
+    "subject": "a blouse",
+    "main": "body and sleeves",
+    "secondary": "large rounded collar",
+    "accent": "sleeve cuffs and buttons",
+    "details": "a row of small pearl buttons down the front"
+  },
+  {
+    "type": 6,
+    "name": "TShirt",
+    "subject": "a t-shirt",
+    "main": "body",
+    "secondary": "sleeves",
+    "accent": "neck ribbing and sleeve hems",
+    "details": "a small cream tag stitched at the hem"
+  },
+  {
+    "type": 7,
+    "name": "Shorts",
+    "subject": "a pair of shorts",
+    "main": "legs",
+    "secondary": "wide waistband and large patch pockets on the front of each leg",
+    "accent": "leg hems and drawstring",
+    "details": "a silver button at the waist and cream topstitching on the pockets"
+  },
+  {
+    "type": 8,
+    "name": "Skirt",
+    "subject": "a pleated skirt",
+    "main": "skirt",
+    "secondary": "wide band around the hem",
+    "accent": "waistband",
+    "details": "a row of cream buttons down the front"
+  },
+  {
+    "type": 9,
+    "name": "Cardigan",
+    "subject": "a cardigan",
+    "main": "body and sleeves",
+    "secondary": "large patch pockets",
+    "accent": "collar band, cuffs, hem and buttons",
+    "details": "cream buttons with visible cross-stitches"
+  },
+  {
+    "type": 10,
+    "name": "Hoodie",
+    "subject": "a hoodie",
+    "main": "body and sleeves",
+    "secondary": "hood lining and large front pocket",
+    "accent": "cuffs, waistband and drawstrings",
+    "details": "silver eyelets where the drawstrings come out"
+  },
+  {
+    "type": 11,
+    "name": "Sweater",
+    "subject": "a sweater",
+    "main": "body and sleeves",
+    "secondary": "a wide stripe across the chest and both sleeves",
+    "accent": "collar, cuffs and hem bands",
+    "details": "a cream cable-knit pattern down the front"
+  },
+  {
+    "type": 12,
+    "name": "Leggings",
+    "subject": "a pair of leggings",
+    "main": "legs",
+    "secondary": "wide high waistband and side panels down each leg",
+    "accent": "ankle cuffs",
+    "details": "a small cream logo patch on the hip"
+  },
+  {
+    "type": 13,
+    "name": "Overalls",
+    "subject": "a pair of overalls",
+    "main": "bib and legs",
+    "secondary": "large square patch pocket on the front of the bib",
+    "accent": "shoulder straps and leg cuffs",
+    "fixed": "strap buckles in silver metal",
+    "details": "two small buttons at the sides of the waist, and thin cream piping around the bib pocket"
+  },
+  {
+    "type": 14,
+    "name": "Swimsuit",
+    "subject": "a one-piece swimsuit",
+    "main": "swimsuit body",
+    "secondary": "a wide diagonal stripe across the front",
+    "accent": "shoulder straps",
+    "details": "a small silver ring where the straps meet"
+  },
+  {
+    "type": 15,
+    "name": "TankTop",
+    "subject": "a tank top",
+    "main": "tank top body",
+    "secondary": "a wide band across the chest",
+    "accent": "neckline and armhole trim",
+    "details": "a small cream tag stitched at the hem"
+  },
+  {
+    "type": 16,
+    "name": "PoloShirt",
+    "subject": "a polo shirt",
+    "main": "body and sleeves",
+    "secondary": "large collar and button placket",
+    "accent": "sleeve bands and buttons",
+    "details": "a small round cream logo patch on the chest"
+  },
+  {
+    "type": 17,
+    "name": "ButtonDownShirt",
+    "subject": "a button-down shirt",
+    "main": "body and sleeves",
+    "secondary": "collar and two large chest pockets",
+    "accent": "cuffs and buttons",
+    "details": "a small cream monogram on the chest pocket"
+  },
+  {
+    "type": 18,
+    "name": "Blazer",
+    "subject": "a blazer",
+    "main": "body and sleeves",
+    "secondary": "wide lapels",
+    "accent": "pocket flaps and buttons",
+    "details": "a folded cream pocket square in the chest pocket"
+  },
+  {
+    "type": 19,
+    "name": "SuitJacket",
+    "subject": "a suit jacket",
+    "main": "jacket body and sleeves",
+    "secondary": "wide lapels",
+    "accent": "tie and buttons",
+    "fixed": "white shirt collar",
+    "details": "a folded cream pocket square in the chest pocket"
+  },
+  {
+    "type": 20,
+    "name": "Vest",
+    "subject": "a waistcoat vest",
+    "main": "vest body",
+    "secondary": "tie",
+    "accent": "buttons and pocket welts",
+    "fixed": "white shirt collar",
+    "details": "a silver watch chain between the pockets"
+  },
+  {
+    "type": 21,
+    "name": "Raincoat",
+    "subject": "a hooded raincoat",
+    "main": "coat body and sleeves",
+    "secondary": "hood and large patch pockets",
+    "accent": "sleeve cuffs, toggles and drawstrings",
+    "details": "silver press studs down the front"
+  },
+  {
+    "type": 22,
+    "name": "Parka",
+    "subject": "a parka",
+    "main": "coat body, hood and sleeves",
+    "secondary": "large patch pockets",
+    "accent": "sleeve cuffs, hem, toggles and drawstrings",
+    "fixed": "fluffy fur trim around the hood in cream",
+    "details": "a small cream tag on the sleeve"
+  },
+  {
+    "type": 23,
+    "name": "Windbreaker",
+    "subject": "a windbreaker jacket",
+    "main": "lower body and sleeves",
+    "secondary": "a wide horizontal panel straight across the whole chest and both shoulders, the same on both sides",
+    "accent": "collar, cuffs, hem bands and zip",
+    "details": "a small cream logo patch on the chest"
+  },
+  {
+    "type": 24,
+    "name": "FleeceJacket",
+    "subject": "a fleece jacket",
+    "main": "fluffy body and sleeves",
+    "secondary": "a smooth yoke band straight across the top of both shoulders, mirror-image left and right, the same height on both sides",
+    "accent": "cuffs, hem band and zip",
+    "details": "a small cream tag on the chest"
+  },
+  {
+    "type": 25,
+    "name": "DenimJacket",
+    "subject": "a denim jacket",
+    "main": "body and sleeves",
+    "secondary": "collar and large chest pockets",
+    "accent": "waistband and cuffs",
+    "fixed": "metal buttons in silver",
+    "details": "silver rivets at the pocket corners"
+  },
+  {
+    "type": 26,
+    "name": "LeatherJacket",
+    "subject": "a leather biker jacket",
+    "main": "body and sleeves",
+    "secondary": "wide lapels and belt",
+    "fixed": "zips and belt buckle in silver metal",
+    "details": "silver studs along the collar"
+  },
+  {
+    "type": 27,
+    "name": "BomberJacket",
+    "subject": "a bomber jacket",
+    "main": "body and pockets",
+    "secondary": "sleeves",
+    "accent": "ribbed collar, cuffs, waistband and zip",
+    "details": "a small cream patch on the sleeve"
+  },
+  {
+    "type": 28,
+    "name": "Peacoat",
+    "subject": "a double-breasted peacoat",
+    "main": "coat body and sleeves",
+    "secondary": "wide collar and lapels",
+    "accent": "buttons",
+    "details": "a cream anchor stitched on each button"
+  },
+  {
+    "type": 29,
+    "name": "TrackSuitTop",
+    "subject": "a tracksuit top",
+    "main": "body and lower sleeves",
+    "secondary": "shoulder panels and upper sleeves",
+    "accent": "sleeve stripes, collar, cuffs and zip",
+    "details": "a small cream logo patch on the chest"
+  },
+  {
+    "type": 30,
+    "name": "TrackSuitBottoms",
+    "subject": "a pair of tracksuit bottoms",
+    "main": "legs",
+    "secondary": "wide side stripes down each leg",
+    "accent": "waistband and ankle cuffs",
+    "details": "a small cream logo patch on the thigh"
+  },
+  {
+    "type": 31,
+    "name": "YogaPants",
+    "subject": "a pair of flared yoga pants",
+    "main": "legs",
+    "secondary": "wide waistband and side panels down each leg",
+    "details": "a small cream tag on the waistband"
+  },
+  {
+    "type": 32,
+    "name": "PajamaTop",
+    "subject": "a pajama top",
+    "main": "body and sleeves",
+    "secondary": "collar and large chest pocket",
+    "accent": "sleeve cuffs and buttons",
+    "details": "thin cream piping along the collar and cuffs"
+  },
+  {
+    "type": 33,
+    "name": "PajamaBottoms",
+    "subject": "a pair of pajama bottoms",
+    "main": "legs",
+    "secondary": "wide waistband and deep ankle cuffs",
+    "accent": "drawstring bow",
+    "details": "a small cream tag on the waistband"
+  },
+  {
+    "type": 34,
+    "name": "Bathrobe",
+    "subject": "a bathrobe",
+    "main": "robe body, sleeves and pockets",
+    "secondary": "wide shawl collar and sleeve cuffs",
+    "accent": "tied belt",
+    "details": "thin cream piping along the collar"
+  },
+  {
+    "type": 35,
+    "name": "Scarf",
+    "subject": "a scarf",
+    "main": "scarf",
+    "secondary": "wide stripes across both ends",
+    "accent": "fringe tassels",
+    "details": "a small cream label stitched near one end"
+  },
+  {
+    "type": 36,
+    "name": "Gloves",
+    "subject": "a glove with five fingers",
+    "main": "glove",
+    "secondary": "wide cuff",
+    "silhouette": 43,
+    "details": "a small silver snap button on the cuff"
+  },
+  {
+    "type": 37,
+    "name": "Cap",
+    "subject": "a baseball cap",
+    "main": "crown",
+    "secondary": "large brim",
+    "accent": "seams and the button on top",
+    "details": "a small cream logo patch on the front"
+  },
+  {
+    "type": 38,
+    "name": "Beanie",
+    "subject": "a knitted beanie",
+    "main": "knitted crown",
+    "secondary": "wide folded cuff",
+    "accent": "pom-pom",
+    "details": "a small cream label on the cuff"
+  },
+  {
+    "type": 39,
+    "name": "Belt",
+    "subject": "a belt",
+    "main": "leather strap",
+    "secondary": "loop keeper and the pointed tip section of the strap",
+    "fixed": "buckle in silver metal",
+    "details": "a row of evenly spaced silver holes along the strap"
+  },
+  {
+    "type": 40,
+    "name": "Tie",
+    "subject": "a necktie",
+    "main": "tie blade",
+    "secondary": "wide diagonal stripes across the blade",
+    "accent": "knot",
+    "details": "a small cream label on the back of the blade"
+  },
+  {
+    "type": 41,
+    "name": "BowTie",
+    "subject": "a bow tie",
+    "main": "bow wings",
+    "secondary": "large centre knot",
+    "details": "a fine cream dot pattern"
+  },
+  {
+    "type": 42,
+    "name": "Suspenders",
+    "subject": "a pair of suspenders",
+    "main": "both straps",
+    "secondary": "a large leather patch at the centre where the straps cross, with both straps the same colour",
+    "fixed": "clips in silver metal",
+    "details": "silver adjuster sliders on the straps"
+  },
+  {
+    "type": 43,
+    "name": "Mittens",
+    "subject": "a mitten",
+    "main": "mitten",
+    "secondary": "wide ribbed cuff",
+    "silhouette": 36,
+    "details": "a cream snowflake stitched on the back"
+  },
+  {
+    "type": 44,
+    "name": "Sneakers",
+    "subject": "a sneaker",
+    "main": "upper",
+    "secondary": "toe cap and sole",
+    "accent": "laces",
+    "details": "a cream logo stripe on the side"
+  },
+  {
+    "type": 45,
+    "name": "JoggingShoes",
+    "subject": "a chunky running shoe",
+    "main": "upper",
+    "secondary": "chunky sole and heel panel",
+    "accent": "laces",
+    "details": "a cream logo stripe on the side"
+  },
+  {
+    "type": 46,
+    "name": "FormalShoes",
+    "subject": "a formal leather shoe",
+    "main": "upper",
+    "secondary": "sole and heel",
+    "accent": "laces",
+    "details": "a row of cream broguing holes on the toe"
+  },
+  {
+    "type": 47,
+    "name": "IceSkates",
+    "subject": "an ice skate",
+    "main": "boot",
+    "secondary": "heel and sole",
+    "accent": "laces",
+    "fixed": "blade in silver metal",
+    "details": "silver eyelets for the laces"
+  },
+  {
+    "type": 48,
+    "name": "BikeHelmet",
+    "subject": "a bike helmet",
+    "main": "shell",
+    "secondary": "a wide stripe over the top of the shell",
+    "accent": "chin strap",
+    "fixed": "strap buckle in silver metal",
+    "details": "a small cream logo sticker on the side"
+  },
+  {
+    "type": 49,
+    "name": "SunHat",
+    "subject": "a wide-brimmed sun hat",
+    "main": "crown and brim",
+    "secondary": "wide hat band",
+    "details": "a small cream flower on the band"
+  },
+  {
+    "type": 50,
+    "name": "Backpack",
+    "subject": "a backpack",
+    "main": "bag body",
+    "secondary": "large front pocket covering the lower half of the bag",
+    "accent": "shoulder straps and top handle",
+    "fixed": "zip pull in silver metal",
+    "details": "a chunky silver zip pull on the front pocket, and a small sewn-on fabric tag near the bottom"
+  },
+  {
+    "type": 51,
+    "name": "Sunglasses",
+    "subject": "a pair of sunglasses",
+    "main": "front frames",
+    "secondary": "arms",
+    "fixed": "dark tinted lenses",
+    "details": "small silver hinges where the arms meet the frames"
+  },
+  {
+    "type": 52,
+    "name": "Umbrella",
+    "subject": "an umbrella",
+    "main": "canopy",
+    "secondary": "every other canopy panel",
+    "accent": "curved handle",
+    "fixed": "tip in silver metal",
+    "details": "a cream tassel on the handle"
+  },
+  {
+    "type": 53,
+    "name": "Wristwatch",
+    "subject": "a wristwatch",
+    "main": "strap",
+    "secondary": "wide bezel ring around the watch face",
+    "fixed": "silver metal crown and a white watch face with dark hands",
+    "details": "a silver buckle on the strap"
+  },
+  {
+    "type": 54,
+    "name": "RainBoots",
+    "subject": "a rain boot",
+    "main": "boot",
+    "secondary": "chunky sole and a wide band around the top",
+    "details": "a small cream logo on the side"
+  },
+  {
+    "type": 55,
+    "name": "Sandals",
+    "subject": "a sandal",
+    "main": "straps",
+    "secondary": "sole",
+    "details": "a small silver buckle on the strap"
+  },
+  {
+    "type": 56,
+    "name": "HighHeels",
+    "subject": "a high-heeled shoe",
+    "main": "shoe",
+    "secondary": "heel and sole",
+    "details": "a small cream bow at the back of the heel"
+  },
+  {
+    "type": 57,
+    "name": "Apron",
+    "subject": "an apron",
+    "main": "apron body",
+    "secondary": "large front pocket",
+    "accent": "neck strap and waist ties",
+    "details": "a small cream tag at the top of the pocket"
+  },
+  {
+    "type": 58,
+    "name": "CowboyHat",
+    "subject": "a cowboy hat",
+    "main": "crown and brim",
+    "secondary": "wide hat band",
+    "details": "a cream stitched star on the band"
+  },
+  {
+    "type": 59,
+    "name": "TopHat",
+    "subject": "a top hat",
+    "main": "crown and brim",
+    "secondary": "wide hat band",
+    "details": "a small cream feather tucked into the band"
+  },
+  {
+    "type": 60,
+    "name": "Handbag",
+    "subject": "a handbag",
+    "main": "bag body",
+    "secondary": "handle and front flap",
+    "fixed": "clasp in silver metal",
+    "details": "a silver clasp on the front flap"
+  },
+  {
+    "type": 61,
+    "name": "ChefHat",
+    "subject": "a chef hat",
+    "main": "puffy top",
+    "secondary": "wide headband",
+    "details": "a cream stitched seam running around the top"
+  },
+  {
+    "type": 62,
+    "name": "BalletFlat",
+    "subject": "a ballet flat shoe",
+    "main": "shoe",
+    "secondary": "sole and inside lining",
+    "accent": "bow",
+    "details": "a fine cream piping around the opening"
+  }
+]
