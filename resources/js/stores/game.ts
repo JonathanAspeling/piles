@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { apiFetch } from '../composables/useFetch';
 import type { Card, CenterPile, GamePlayer, GameSession, GameWinner, LobbyPlayer, OpponentState, PlayerPile } from '../types/game';
 import { GameStatus } from '../types/game';
+import { preloadDealtCardArt } from '../utils/cardArt';
 import { useNotificationStore } from './notification';
 
 export const useGameStore = defineStore('game', () => {
@@ -68,6 +69,21 @@ export const useGameStore = defineStore('game', () => {
         return rows.sort((a, b) => done(b) - done(a) || a.seat_index - b.seat_index);
     });
 
+    /**
+     * Warm the card art as soon as cards are dealt. The board only mounts at
+     * GO, so this uses the countdown to fetch what's about to be drawn.
+     */
+    function preloadGameCardArt() {
+        if (!session.value) {
+            return;
+        }
+        const visibleCards = [
+            ...myPiles.value.flatMap((pile) => pile.cards),
+            ...centerPiles.value.flatMap((pile) => (pile.top_card ? [pile.top_card] : [])),
+        ];
+        preloadDealtCardArt(visibleCards, session.value.theme);
+    }
+
     function serializeGameplay<T>(fn: () => Promise<T>): Promise<T> {
         const result = gameplayChain.then(fn, fn);
         // Prevent a rejected chain from poisoning future requests.
@@ -94,6 +110,7 @@ export const useGameStore = defineStore('game', () => {
         opponents.value = opponentsData;
         // Reset presence — the fresh subscribe's .here() will repopulate.
         connectedUserIds.value = [];
+        preloadGameCardArt();
         // Rejoin mid-countdown: data already dealt server-side, confirm immediately
         if (gameData.status === GameStatus.Countdown && myPilesData.length > 0) {
             confirmClientReady();
@@ -144,10 +161,12 @@ export const useGameStore = defineStore('game', () => {
             top_card: cp.top_card,
         }));
         opponents.value = allPlayers.filter((p) => p.id !== currentPlayer.value?.id);
+        preloadGameCardArt();
     }
 
     function applyHandDealt(piles: PlayerPile[]) {
         myPiles.value = piles;
+        preloadGameCardArt();
     }
 
     async function confirmClientReady() {
