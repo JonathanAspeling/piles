@@ -118,7 +118,8 @@ function faceColor(type: ClothingType, color: CardColor, style: CardStyle): Card
 }
 
 // The white face standard cards sit on; a light border keeps it off a white page.
-const STANDARD_FACE_CLASSES = 'bg-white border-slate-200 text-slate-700';
+// In dark mode a warm off-white, so a row of cards doesn't glare against near-black.
+const STANDARD_FACE_CLASSES = 'bg-white border-slate-200 text-slate-700 dark:border-[#F2EEE5] dark:bg-[#F2EEE5]';
 
 /**
  * Background, border and text colour for a card face.

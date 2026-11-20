@@ -23,3 +23,7 @@ yarn-error.log
 /.zed
 /Piles Images
 /prompt.txt
+/test-results
+/playwright-report
+/tests/e2e/screenshots
+/artifacts

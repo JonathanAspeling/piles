@@ -24,6 +24,7 @@ class GameSession extends Model
         'hard_variant',
         'sets_count',
         'winner_user_id',
+        'rematch_game_session_id',
         'started_at',
         'ended_at',
     ];
@@ -83,6 +84,29 @@ class GameSession extends Model
     public function winner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'winner_user_id');
+    }
+
+    /** The lobby this game's players regroup in for "Play again", once someone asks for one. */
+    public function rematchGame(): BelongsTo
+    {
+        return $this->belongsTo(GameSession::class, 'rematch_game_session_id');
+    }
+
+    /**
+     * Who has moved on to this game's rematch lobby, for the end-of-game panel.
+     *
+     * @return array{rematch_game_id: int|null, user_ids: array<int, int>}
+     */
+    public function rematchPayload(): array
+    {
+        $rematch = $this->rematchGame;
+
+        return [
+            'rematch_game_id' => $rematch?->id,
+            'user_ids' => $rematch
+                ? $rematch->gamePlayers()->orderBy('seat_index')->pluck('user_id')->map(fn ($id) => (int) $id)->values()->all()
+                : [],
+        ];
     }
 
     public function gamePlayers(): HasMany

@@ -1,7 +1,8 @@
+import { router } from '@inertiajs/vue3';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { apiFetch } from '../composables/useFetch';
-import type { Card, CenterPile, GamePlayer, GameSession, GameWinner, LobbyPlayer, OpponentState, PlayerPile } from '../types/game';
+import type { Card, CenterPile, GamePlayer, GameSession, GameWinner, LobbyPlayer, OpponentState, PlayerPile, RematchState } from '../types/game';
 import { GameStatus } from '../types/game';
 import { preloadDealtCardArt } from '../utils/cardArt';
 import { useNotificationStore } from './notification';
@@ -23,6 +24,7 @@ export const useGameStore = defineStore('game', () => {
     const countdownServerOffsetMs = ref<number>(0);
     const winner = ref<GameWinner | null>(null);
     const forfeitedBy = ref<string | null>(null);
+    const rematch = ref<RematchState>({ rematch_game_id: null, user_ids: [] });
     const resyncInFlight = ref(false);
     const myPickedUpCard = ref<Card | null>(null);
     const myPickedUpPileId = ref<number | null>(null);
@@ -101,8 +103,10 @@ export const useGameStore = defineStore('game', () => {
         myPilesData: PlayerPile[],
         centerPilesData: CenterPile[],
         opponentsData: OpponentState[],
+        rematchData: RematchState = { rematch_game_id: null, user_ids: [] },
     ) {
         session.value = gameData;
+        rematch.value = rematchData;
         currentPlayer.value = currentPlayerData;
         players.value = playersData;
         myPiles.value = myPilesData;
@@ -481,6 +485,29 @@ export const useGameStore = defineStore('game', () => {
         notificationStore.add(`${claimantName}'s PILES! claim was invalid — game resumes!`, 'warning');
     }
 
+    function applyRematchUpdate(rematchData: RematchState) {
+        rematch.value = rematchData;
+    }
+
+    /**
+     * Join the ended game's rematch lobby (opening it if you're first), then
+     * go there. Returns false if the server turned you away.
+     */
+    async function requestRematch(): Promise<boolean> {
+        if (!session.value) {
+            return false;
+        }
+        const response = await apiFetch(route('games.rematch', { game: session.value.id }), { method: 'POST' });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            notificationStore.add(data.message ?? 'Could not start a rematch.', 'warning');
+            return false;
+        }
+        const data = await response.json();
+        router.visit(route('games.show', { game: data.game.id }));
+        return true;
+    }
+
     async function claimPiles() {
         if (!session.value) {
             return;
@@ -507,6 +534,7 @@ export const useGameStore = defineStore('game', () => {
         countdownServerOffsetMs,
         winner,
         forfeitedBy,
+        rematch,
         myPickedUpCard,
         myPickedUpPileId,
         connectedUserIds,
@@ -531,6 +559,8 @@ export const useGameStore = defineStore('game', () => {
         applyPileCompleted,
         applyGameEnded,
         applyGameResumed,
+        applyRematchUpdate,
+        requestRematch,
         claimPiles,
         forfeit,
     };
