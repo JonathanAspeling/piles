@@ -20,8 +20,6 @@ const gameStore = useGameStore();
 const activePileId = ref<number | null>(null);
 const reorderMode = ref(false);
 const reorderFirstPileId = ref<number | null>(null);
-const confirmingForfeit = ref(false);
-let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isDisabled = computed(() => gameStore.session?.status !== GameStatus.Playing);
 const completedCount = computed(() => gameStore.myPiles.filter((p) => p.is_completed).length);
@@ -118,21 +116,6 @@ async function onSwap(centerPileId: number, centerCardId: number, expectedVersio
 async function claimPiles() {
     await gameStore.claimPiles();
 }
-
-function handleForfeit() {
-    if (!confirmingForfeit.value) {
-        confirmingForfeit.value = true;
-        forfeitTimer = setTimeout(() => {
-            confirmingForfeit.value = false;
-        }, 3000);
-    } else {
-        if (forfeitTimer) {
-            clearTimeout(forfeitTimer);
-        }
-        confirmingForfeit.value = false;
-        gameStore.forfeit();
-    }
-}
 </script>
 
 <template>
@@ -214,7 +197,7 @@ function handleForfeit() {
 
         <!-- Player hand: sticky bottom on mobile, flow on desktop -->
         <div class="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/95 p-2 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] backdrop-blur-sm sm:static sm:flex-1 sm:border-t-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-0">
-            <div class="mb-2 flex items-center justify-between sm:mb-3">
+            <div class="mb-2 flex items-center sm:mb-3">
                 <h3
                     class="text-[10px] font-semibold uppercase tracking-wider sm:text-xs"
                     :class="readyToClaim ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'"
@@ -222,14 +205,6 @@ function handleForfeit() {
                     <template v-if="readyToClaim">You're ready — call PILES! to win! ↓</template>
                     <template v-else>Your Piles — {{ completedCount }}/6 done</template>
                 </h3>
-                <button
-                    v-if="gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying"
-                    @click="handleForfeit"
-                    class="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors active:scale-95 sm:px-3 sm:text-xs"
-                    :class="confirmingForfeit ? 'border-red-500 bg-red-500 text-white' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'"
-                >
-                    {{ confirmingForfeit ? 'Confirm forfeit?' : 'Forfeit' }}
-                </button>
             </div>
 
             <button
