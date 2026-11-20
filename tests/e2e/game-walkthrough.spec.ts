@@ -111,7 +111,11 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await shot(guest, 'pile-sheet-phone', { fullPage: false });
     await visiblePileCards(guest).nth(1).click();
     await shot(guest, 'card-picked-up-phone', { fullPage: false });
+    // Closing puts the lifted card back. Wait for that write to land: the
+    // endgame re-deal below shares the SQLite database and must not race it.
+    const released = guest.waitForResponse((response) => response.url().endsWith('/release'));
     await guest.getByRole('button', { name: 'Close pile' }).click();
+    await released;
 
     await guest.getByRole('button', { name: 'Rearrange piles' }).click();
     await guest.getByRole('button', { name: /^Pile 1\b/ }).click();

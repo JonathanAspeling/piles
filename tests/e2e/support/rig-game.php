@@ -29,6 +29,14 @@ require '/app/vendor/autoload.php';
 $app = require '/app/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
+// Booting Laravel installs its own exception handler, which prints the error
+// but leaves the process exiting 0, so a failed rig used to pass silently and
+// the walkthrough only failed later, waiting for a board that never changed.
+set_exception_handler(function (Throwable $exception): void {
+    fwrite(STDERR, "rig-game failed: {$exception}\n");
+    exit(1);
+});
+
 $game = GameSession::where('code', getenv('GAME_CODE'))->firstOrFail();
 
 $host = $game->gamePlayers()->where('user_id', $game->host_user_id)->firstOrFail();
@@ -83,6 +91,9 @@ foreach ($allPiles as $pile) {
     }
 }
 
+// The e2e stack runs on SQLite, shared with the app, queue and sessions, so
+// this write can collide with a request still settling. Laravel retries the
+// transaction on "database is locked" and similar concurrency errors.
 DB::transaction(function () use ($allPiles, $assignment, $slots, $hostPiles, $game, $host, $guest) {
     PileCard::whereIn('pile_id', $allPiles->pluck('id'))->delete();
 
@@ -99,6 +110,12 @@ DB::transaction(function () use ($allPiles, $assignment, $slots, $hostPiles, $ga
     foreach ([$host, $guest] as $player) {
         $player->update(['picked_up_card_id' => null, 'picked_up_pile_id' => null]);
     }
-});
+}, 5);
+
+$hostCompleted = $host->piles()->where('is_completed', true)->count();
+
+if ($hostCompleted !== 5) {
+    throw new RuntimeException("Expected the host to have 5 completed piles after the re-deal, found {$hostCompleted}.");
+}
 
 echo json_encode(['hostMatchCenter' => 1, 'guestMatchCenter' => 2]);
