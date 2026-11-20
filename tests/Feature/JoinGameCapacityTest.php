@@ -15,7 +15,7 @@ function makeLobbyWithSeats(int $seats): GameSession
         'code' => 'FULL10',
         'status' => GameStatus::Lobby,
         'host_user_id' => $host->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     for ($i = 0; $i < $seats; $i++) {

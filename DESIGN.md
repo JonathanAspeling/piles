@@ -25,7 +25,7 @@ Sets used = 6 × players + 1: 6 piles of 4 cards per player, plus 4 centre cards
 | 9 | 4 | 55 | 216 + 4 centre = 220 |
 | 10 | 4 | 61 | 240 + 4 centre = 244 |
 
-With the variant, add one set and deal 8 centre cards: 6 × players + 2 sets (62 at 10 players).
+Which sets go into the deck is chosen by `DeckBuilder`: normally it avoids look-alike items (see Similar items below).
 
 ### Setup
 
@@ -51,9 +51,14 @@ All 4 centre cards are flipped simultaneously (countdown from 3). Once flipped, 
 
 The first player to have all 6 piles face-up (all sets complete) shouts **"PILES!"**. The winner's piles are verified; if a mistake is found, play resumes immediately.
 
-### Variant (Chaos Mode)
+### Similar items (hard mode)
 
-At any player count, the host can choose variant: it adds **one extra set** to the deck and deals **8 cards to the centre** instead of 4.
+Not in the original rules. The deck is always 6 × players + 1 sets with 4 centre cards; this setting only changes which items make up those sets.
+
+- **Off (default):** the deck avoids look-alike items. It only adds an item with a look-alike already in the deck once no fully distinct item is left.
+- **On:** items are picked at random, with no preference for any group, but look-alikes always come in at least pairs. Whenever a picked item has no look-alike in the deck yet, one random look-alike joins it. The last slot only takes an item that won't be left on its own (an ungrouped item, or one whose look-alike is already in the deck), unless none is left. A group can still end up with 3 or more items by chance.
+
+The look-alike groups live in `App\Services\ClothingSimilarity::GROUPS`. Two items are similar when they share a group; an item can be in several groups or none.
 
 ---
 
@@ -92,7 +97,10 @@ At any player count, the host can choose variant: it adds **one extra set** to t
 | `code` | string(6) unique | Human-readable join code (e.g. `FXQR7K`) |
 | `status` | enum | `lobby`, `countdown`, `playing`, `verifying`, `ended` |
 | `host_user_id` | FK → users | |
-| `variant` | boolean | Chaos mode (8 centre cards) |
+| `similar_items` | boolean | Hard mode: look-alike items come in at least pairs |
+| `theme` | string | Card art: `classic` or `standard` |
+| `hard_variant` | boolean | Standard art on coloured card backgrounds |
+| `background_seed` | unsigned int | Seeds the per-game shuffle of hard colour backgrounds |
 | `sets_count` | tinyint | Derived from player count at game start |
 | `winner_user_id` | FK → users, nullable | |
 | `started_at` | timestamp, nullable | |
@@ -127,7 +135,7 @@ Static lookup table — seeded once, never mutated.
 | `id` | bigint PK | |
 | `game_session_id` | FK | |
 | `game_player_id` | FK, nullable | `null` = centre pile |
-| `pile_index` | tinyint | 0–5 for player piles; 0–3 (or 0–7 variant) for centre |
+| `pile_index` | tinyint | 0–5 for player piles; 0–3 for centre |
 | `is_completed` | boolean | True once the pile is a matching set |
 | `version` | integer | Optimistic lock counter for concurrent swap protection |
 

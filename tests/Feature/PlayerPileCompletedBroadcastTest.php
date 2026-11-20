@@ -15,7 +15,7 @@ function makeCompletionGame(User $user): array
         'code' => 'PILDON',
         'status' => GameStatus::Playing,
         'host_user_id' => $user->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $player = $game->gamePlayers()->create([

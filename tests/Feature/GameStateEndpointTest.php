@@ -13,7 +13,7 @@ function seedGameWithCenterPiles(User $player): GameSession
         'code' => strtoupper(substr(md5(uniqid()), 0, 6)),
         'status' => GameStatus::Playing,
         'host_user_id' => $player->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $gamePlayer = $game->gamePlayers()->create([

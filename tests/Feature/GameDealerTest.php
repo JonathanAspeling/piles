@@ -6,10 +6,11 @@ use App\Exceptions\NotEnoughCardsException;
 use App\Models\Card;
 use App\Models\GameSession;
 use App\Models\User;
+use App\Services\ClothingSimilarity;
 use App\Services\GameDealerService;
 use Database\Seeders\CardSeeder;
 
-function makeDealtGame(int $playerCount, bool $variant = false): GameSession
+function makeDealtGame(int $playerCount, bool $similarItems = false): GameSession
 {
     $host = User::factory()->create();
 
@@ -17,7 +18,7 @@ function makeDealtGame(int $playerCount, bool $variant = false): GameSession
         'code' => 'DEAL'.str_pad((string) $playerCount, 2, '0', STR_PAD_LEFT),
         'status' => GameStatus::Countdown,
         'host_user_id' => $host->id,
-        'variant' => $variant,
+        'similar_items' => $similarItems,
     ]);
 
     for ($i = 0; $i < $playerCount; $i++) {
@@ -35,8 +36,8 @@ beforeEach(function () {
     $this->seed(CardSeeder::class);
 });
 
-test('every player is dealt 6 piles of 4 cards', function (int $playerCount, bool $variant) {
-    $game = makeDealtGame($playerCount, $variant);
+test('every player is dealt 6 piles of 4 cards', function (int $playerCount, bool $similarItems) {
+    $game = makeDealtGame($playerCount, $similarItems);
 
     app(GameDealerService::class)->deal($game);
 
@@ -48,44 +49,50 @@ test('every player is dealt 6 piles of 4 cards', function (int $playerCount, boo
         }
     }
 
-    expect($game->centerPiles()->count())->toBe($game->centerCardCount($playerCount));
+    expect($game->centerPiles()->count())->toBe(GameDealerService::CENTER_CARDS);
 })->with([
     [2, false], [3, false], [4, false], [5, false], [6, false],
     [7, false], [8, false], [9, false], [10, false],
-    [2, true], [7, true], [8, true], [9, true], [10, true],
+    [2, true], [5, true], [8, true], [9, true], [10, true],
 ]);
 
-test('the deck follows the real game: 6 sets per player plus 1, or plus 2 with the variant', function (int $playerCount, bool $variant) {
-    $game = makeDealtGame($playerCount, $variant);
+test('the deck is 6 sets per player plus 1, with 4 centre cards, in both deck modes', function (int $playerCount, bool $similarItems) {
+    $game = makeDealtGame($playerCount, $similarItems);
 
     app(GameDealerService::class)->deal($game);
 
-    $expectedSets = 6 * $playerCount + ($variant ? 2 : 1);
-    $expectedCentreCards = $variant ? 8 : 4;
+    $expectedSets = 6 * $playerCount + 1;
 
-    $dealtCards = $game->piles()->withCount('pileCards')->get()->sum('pile_cards_count');
+    $dealtTypes = $game->piles()->with('pileCards.card')->get()
+        ->flatMap(fn ($pile) => $pile->pileCards->pluck('card.clothing_type'));
 
     expect($game->fresh()->sets_count)->toBe($expectedSets)
-        ->and($game->centerPiles()->count())->toBe($expectedCentreCards)
-        ->and($dealtCards)->toBe($expectedSets * 4);
+        ->and($game->centerPiles()->count())->toBe(4)
+        ->and($dealtTypes)->toHaveCount($expectedSets * 4)
+        ->and($dealtTypes->unique())->toHaveCount($expectedSets);
 })->with(function () {
     foreach (range(2, 10) as $playerCount) {
         yield "{$playerCount} players" => [$playerCount, false];
-        yield "{$playerCount} players, variant" => [$playerCount, true];
+        yield "{$playerCount} players, similar items" => [$playerCount, true];
     }
 });
 
-test('9 and 10 player games without the variant get 4 centre cards', function (int $playerCount, int $expectedSets) {
-    $game = makeDealtGame($playerCount);
+test('a 2-player deck has no look-alike items unless similar items is on', function () {
+    $game = makeDealtGame(2);
 
     app(GameDealerService::class)->deal($game);
 
-    expect($game->centerPiles()->count())->toBe(4)
-        ->and($game->fresh()->sets_count)->toBe($expectedSets);
-})->with([
-    '9 players' => [9, 55],
-    '10 players' => [10, 61],
-]);
+    $types = $game->piles()->with('pileCards.card')->get()
+        ->flatMap(fn ($pile) => $pile->pileCards->pluck('card.clothing_type'))
+        ->unique()
+        ->values();
+
+    foreach ($types as $type) {
+        foreach ($types as $other) {
+            expect(ClothingSimilarity::areSimilar($type, $other))->toBeFalse("{$type->name} and {$other->name}");
+        }
+    }
+});
 
 test('dealing fails loudly rather than shorting the last seats when sets are missing', function () {
     // A card table seeded before the 16-set expansion holds 47 sets — two short
@@ -105,26 +112,29 @@ test('dealing fails loudly rather than shorting the last seats when sets are mis
 test('an incomplete set is never dealt', function () {
     Card::where('clothing_type', 0)->orderBy('id')->first()->delete();
 
-    // 10 players with the variant need 62 sets: exactly the 62 complete ones left.
-    $game = makeDealtGame(10, variant: true);
+    // Two sets broken leaves 61 complete: exactly what 10 players need.
+    Card::where('clothing_type', 1)->orderBy('id')->first()->delete();
+
+    $game = makeDealtGame(10);
 
     app(GameDealerService::class)->deal($game);
 
     $dealt = $game->piles()->with('pileCards.card')->get()
         ->flatMap(fn ($pile) => $pile->pileCards->pluck('card.clothing_type'));
 
-    expect($dealt)->toHaveCount(248)
-        ->and($dealt->contains(ClothingType::Socks))->toBeFalse();
+    expect($dealt)->toHaveCount(244)
+        ->and($dealt->contains(ClothingType::Socks))->toBeFalse()
+        ->and($dealt->contains(ClothingType::Jeans))->toBeFalse();
 });
 
 test('no card is dealt twice in a full table', function () {
-    $game = makeDealtGame(10, variant: true);
+    $game = makeDealtGame(10);
 
     app(GameDealerService::class)->deal($game);
 
     $cardIds = $game->piles()->with('pileCards')->get()
         ->flatMap(fn ($pile) => $pile->pileCards->pluck('card_id'));
 
-    expect($cardIds)->toHaveCount(248)
-        ->and($cardIds->unique())->toHaveCount(248);
+    expect($cardIds)->toHaveCount(244)
+        ->and($cardIds->unique())->toHaveCount(244);
 });
