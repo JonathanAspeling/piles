@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Card, GameWinner, LobbyPlayer, OpponentState, PlayerPile } from '../types/game';
+import type { Card, GameWinner, LobbyPlayer, OpponentState, PlayerPile, RematchState } from '../types/game';
 import { useGameStore } from './game';
 
 export const useEchoStore = defineStore('echo', () => {
@@ -52,6 +52,9 @@ export const useEchoStore = defineStore('echo', () => {
             })
             .listen('GameResumed', (event: { claimant_name: string }) => {
                 gameStore.applyGameResumed(event.claimant_name);
+            })
+            .listen('RematchUpdated', (event: RematchState) => {
+                gameStore.applyRematchUpdate(event);
             });
 
         window.Echo.private(`game.${gameId}.player.${playerId}`).listen('PlayerHandDealt', (event: { piles: PlayerPile[] }) => {
