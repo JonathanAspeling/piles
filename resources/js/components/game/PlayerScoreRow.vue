@@ -2,11 +2,13 @@
 import { computed } from 'vue';
 import { useGameStore } from '../../stores/game';
 import type { OpponentState } from '../../types/game';
-import { CLOTHING_TYPE_LABELS } from '../../types/game';
+import { CardColor, CardTheme, CLOTHING_TYPE_LABELS } from '../../types/game';
+import { completedSetFaceClasses } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
 const props = defineProps<{
     player: OpponentState;
+    theme: CardTheme;
     isSelf?: boolean;
 }>();
 
@@ -14,6 +16,10 @@ const gameStore = useGameStore();
 
 const completedCount = computed(() => props.player.piles.filter((p) => p.is_completed).length);
 const isOnline = computed(() => gameStore.connectedUserIds.includes(props.player.user_id));
+
+// A completed set stands for all four colours; the illustrated themes show it
+// in its first colourway (classic's silhouette is colourless anyway).
+const COMPLETED_SET_COLOR = CardColor.Red;
 </script>
 
 <template>
@@ -43,7 +49,7 @@ const isOnline = computed(() => gameStore.connectedUserIds.includes(props.player
                 v-for="pile in player.piles"
                 :key="pile.id"
                 class="group relative h-7 w-5 rounded border-2 transition-colors"
-                :class="pile.is_completed ? 'border-green-500 bg-green-400' : 'border-muted bg-muted/40'"
+                :class="pile.is_completed ? completedSetFaceClasses(theme) : 'border-muted bg-muted/40'"
                 :tabindex="pile.is_completed ? 0 : undefined"
                 :aria-label="
                     pile.is_completed && pile.completed_type !== null
@@ -58,7 +64,10 @@ const isOnline = computed(() => gameStore.connectedUserIds.includes(props.player
                 <CardArt
                     v-if="pile.is_completed && pile.completed_type !== null"
                     :type="pile.completed_type"
-                    class="p-0.5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]"
+                    :color="COMPLETED_SET_COLOR"
+                    :theme="theme"
+                    class="p-0.5"
+                    :class="theme === CardTheme.Classic ? 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]' : ''"
                 />
 
                 <!-- Zoom: a full-size card on hover or keyboard focus, for when it isn't.
@@ -69,9 +78,10 @@ const isOnline = computed(() => gameStore.connectedUserIds.includes(props.player
                     class="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 flex-col items-center gap-1 group-hover:flex group-focus:flex"
                 >
                     <div
-                        class="flex h-28 w-20 items-center justify-center rounded-xl border-2 border-green-500 bg-green-400 p-2 text-white shadow-xl"
+                        class="flex h-28 w-20 items-center justify-center rounded-xl border-2 p-2 shadow-xl"
+                        :class="completedSetFaceClasses(theme)"
                     >
-                        <CardArt :type="pile.completed_type" />
+                        <CardArt :type="pile.completed_type" :color="COMPLETED_SET_COLOR" :theme="theme" />
                     </div>
                     <span class="whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-[10px] font-medium text-background shadow">
                         {{ CLOTHING_TYPE_LABELS[pile.completed_type] }}

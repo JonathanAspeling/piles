@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CardTheme;
 use App\Enums\GameStatus;
 use Database\Factories\GameSessionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,17 +20,56 @@ class GameSession extends Model
         'status',
         'host_user_id',
         'variant',
+        'theme',
+        'hard_variant',
         'sets_count',
         'winner_user_id',
         'started_at',
         'ended_at',
     ];
 
+    /**
+     * Mirrors the column defaults so a freshly created game reports them
+     * without a refresh.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'theme' => 'standard',
+        'hard_variant' => false,
+    ];
+
+    /**
+     * Every game gets its own random background seed when it's created. A game
+     * is never replayed (each new game is a new row), so the hard colour
+     * variant backgrounds are reshuffled for every game.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (GameSession $game): void {
+            if (! $game->background_seed) {
+                $game->background_seed = self::newBackgroundSeed();
+            }
+        });
+    }
+
+    /**
+     * A random positive 31-bit seed: fits an integer column on any database and
+     * the 32-bit maths of the client PRNG.
+     */
+    public static function newBackgroundSeed(): int
+    {
+        return random_int(1, 0x7FFFFFFF);
+    }
+
     protected function casts(): array
     {
         return [
             'status' => GameStatus::class,
             'variant' => 'boolean',
+            'theme' => CardTheme::class,
+            'hard_variant' => 'boolean',
+            'background_seed' => 'integer',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
         ];

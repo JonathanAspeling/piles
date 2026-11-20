@@ -1,0 +1,1640 @@
+{
+    "0": [
+        {
+            "family": "cobalt",
+            "main": "#2e6ef0",
+            "secondary": "#f5f0e3",
+            "accent": "#ffa043"
+        },
+        {
+            "family": "teal",
+            "main": "#138a96",
+            "secondary": "#f5e9c4",
+            "accent": "#ffb450"
+        },
+        {
+            "family": "coral",
+            "main": "#ff695d",
+            "secondary": "#1b8581",
+            "accent": "#ffecb3"
+        },
+        {
+            "family": "pink",
+            "main": "#ed8cb8",
+            "secondary": "#258d89",
+            "accent": "#fff2dc"
+        }
+    ],
+    "1": [
+        {
+            "family": "lemon",
+            "main": "#f2c433",
+            "secondary": "#3f99cc",
+            "accent": "#dc465b"
+        },
+        {
+            "family": "sky",
+            "main": "#62b1ec",
+            "secondary": "#f6d43a",
+            "accent": "#fff1c8"
+        },
+        {
+            "family": "berry",
+            "main": "#a9306d",
+            "secondary": "#e0b731",
+            "accent": "#facdd6"
+        },
+        {
+            "family": "violet",
+            "main": "#7c4abd",
+            "secondary": "#f080a9",
+            "accent": "#facc5a"
+        }
+    ],
+    "2": [
+        {
+            "family": "slate",
+            "main": "#6f7c8a",
+            "secondary": "#b9413b",
+            "accent": "#f0b546"
+        },
+        {
+            "family": "tangerine",
+            "main": "#f67814",
+            "secondary": "#f2debe",
+            "accent": "#284282"
+        },
+        {
+            "family": "lilac",
+            "main": "#9e85e0",
+            "secondary": "#64c79c",
+            "accent": "#ffe796"
+        },
+        {
+            "family": "mint",
+            "main": "#6ecea6",
+            "secondary": "#2a3d6a",
+            "accent": "#f05a69"
+        }
+    ],
+    "3": [
+        {
+            "family": "tomato",
+            "main": "#e04048",
+            "secondary": "#244170",
+            "accent": "#f6eac8"
+        },
+        {
+            "family": "denim",
+            "main": "#496ab0",
+            "secondary": "#c58738",
+            "accent": "#f0e8d2"
+        },
+        {
+            "family": "cocoa",
+            "main": "#8b643c",
+            "secondary": "#77aadd",
+            "accent": "#f0cd8c"
+        },
+        {
+            "family": "forest",
+            "main": "#2e884d",
+            "secondary": "#c23a31",
+            "accent": "#ffd066"
+        }
+    ],
+    "4": [
+        {
+            "family": "leaf",
+            "main": "#81b73c",
+            "secondary": "#ed7423",
+            "accent": "#faf2c8"
+        },
+        {
+            "family": "cobalt",
+            "main": "#2a58df",
+            "secondary": "#eae4cc",
+            "accent": "#ffaa43"
+        },
+        {
+            "family": "rust",
+            "main": "#c45e22",
+            "secondary": "#2a5c71",
+            "accent": "#f2c44c"
+        },
+        {
+            "family": "mustard",
+            "main": "#dea520",
+            "secondary": "#653d23",
+            "accent": "#5e3fa0"
+        }
+    ],
+    "5": [
+        {
+            "family": "mint",
+            "main": "#78d1b5",
+            "secondary": "#2b396f",
+            "accent": "#f05a69"
+        },
+        {
+            "family": "pink",
+            "main": "#f06a9a",
+            "secondary": "#1c8288",
+            "accent": "#fff0dc"
+        },
+        {
+            "family": "denim",
+            "main": "#4d69a6",
+            "secondary": "#b98440",
+            "accent": "#f0e5d2"
+        },
+        {
+            "family": "olive",
+            "main": "#88812f",
+            "secondary": "#b14724",
+            "accent": "#f0d8aa"
+        }
+    ],
+    "6": [
+        {
+            "family": "lemon",
+            "main": "#f3da4e",
+            "secondary": "#5499d1",
+            "accent": "#dc4661"
+        },
+        {
+            "family": "berry",
+            "main": "#a62e68",
+            "secondary": "#e1b92b",
+            "accent": "#facdd6"
+        },
+        {
+            "family": "tangerine",
+            "main": "#ef892f",
+            "secondary": "#f6ecda",
+            "accent": "#284682"
+        },
+        {
+            "family": "olive",
+            "main": "#7d7f31",
+            "secondary": "#a55729",
+            "accent": "#f0dbaa"
+        }
+    ],
+    "7": [
+        {
+            "family": "teal",
+            "main": "#1a918d",
+            "secondary": "#f4e6ce",
+            "accent": "#ffac50"
+        },
+        {
+            "family": "mustard",
+            "main": "#dba52b",
+            "secondary": "#663f26",
+            "accent": "#5c3fa0"
+        },
+        {
+            "family": "violet",
+            "main": "#7340bd",
+            "secondary": "#f170a2",
+            "accent": "#fad05a"
+        },
+        {
+            "family": "leaf",
+            "main": "#7abb42",
+            "secondary": "#e88e34",
+            "accent": "#faf0c8"
+        }
+    ],
+    "8": [
+        {
+            "family": "forest",
+            "main": "#2d9555",
+            "secondary": "#d33f30",
+            "accent": "#ffd866"
+        },
+        {
+            "family": "lilac",
+            "main": "#ad8cdb",
+            "secondary": "#6bc2a8",
+            "accent": "#ffe496"
+        },
+        {
+            "family": "coral",
+            "main": "#ff755e",
+            "secondary": "#1a8588",
+            "accent": "#ffebb3"
+        },
+        {
+            "family": "sky",
+            "main": "#56beee",
+            "secondary": "#f9bd2d",
+            "accent": "#ffefc8"
+        }
+    ],
+    "9": [
+        {
+            "family": "tangerine",
+            "main": "#fda012",
+            "secondary": "#f5e9c3",
+            "accent": "#284882"
+        },
+        {
+            "family": "slate",
+            "main": "#70828f",
+            "secondary": "#c5363b",
+            "accent": "#f0bd46"
+        },
+        {
+            "family": "cocoa",
+            "main": "#81553a",
+            "secondary": "#69afd8",
+            "accent": "#f0cb8c"
+        },
+        {
+            "family": "tomato",
+            "main": "#db3935",
+            "secondary": "#233868",
+            "accent": "#f6e5c8"
+        }
+    ],
+    "10": [
+        {
+            "family": "rust",
+            "main": "#b75e2d",
+            "secondary": "#2f5a6b",
+            "accent": "#f2c74c"
+        },
+        {
+            "family": "violet",
+            "main": "#7e4dbb",
+            "secondary": "#ed84a9",
+            "accent": "#fac15a"
+        },
+        {
+            "family": "mint",
+            "main": "#67d0b2",
+            "secondary": "#27326b",
+            "accent": "#f05a66"
+        },
+        {
+            "family": "lemon",
+            "main": "#fcd52a",
+            "secondary": "#3893d3",
+            "accent": "#dc4661"
+        }
+    ],
+    "11": [
+        {
+            "family": "coral",
+            "main": "#f9906c",
+            "secondary": "#227583",
+            "accent": "#ffe9b3"
+        },
+        {
+            "family": "forest",
+            "main": "#318a4e",
+            "secondary": "#c53a35",
+            "accent": "#ffd866"
+        },
+        {
+            "family": "mustard",
+            "main": "#e9be26",
+            "secondary": "#6f4622",
+            "accent": "#603fa0"
+        },
+        {
+            "family": "pink",
+            "main": "#f076a1",
+            "secondary": "#1e848b",
+            "accent": "#fff0dc"
+        }
+    ],
+    "12": [
+        {
+            "family": "cocoa",
+            "main": "#855e38",
+            "secondary": "#69a4dc",
+            "accent": "#f0c58c"
+        },
+        {
+            "family": "lilac",
+            "main": "#b298de",
+            "secondary": "#74c5aa",
+            "accent": "#ffe296"
+        },
+        {
+            "family": "tomato",
+            "main": "#e0322e",
+            "secondary": "#21386a",
+            "accent": "#f6e7c8"
+        },
+        {
+            "family": "berry",
+            "main": "#af2c6b",
+            "secondary": "#e7bf2e",
+            "accent": "#facdd7"
+        }
+    ],
+    "13": [
+        {
+            "family": "rust",
+            "main": "#b3462c",
+            "secondary": "#2e6168",
+            "accent": "#f2c14c"
+        },
+        {
+            "family": "cobalt",
+            "main": "#3163e0",
+            "secondary": "#eee8d5",
+            "accent": "#ffa443"
+        },
+        {
+            "family": "olive",
+            "main": "#898c2f",
+            "secondary": "#b75a23",
+            "accent": "#f0daaa"
+        },
+        {
+            "family": "sky",
+            "main": "#46c0f1",
+            "secondary": "#feb41c",
+            "accent": "#ffeec8"
+        }
+    ],
+    "14": [
+        {
+            "family": "teal",
+            "main": "#198989",
+            "secondary": "#efddb9",
+            "accent": "#ffb550"
+        },
+        {
+            "family": "berry",
+            "main": "#a52f66",
+            "secondary": "#dfbc2d",
+            "accent": "#facdd5"
+        },
+        {
+            "family": "leaf",
+            "main": "#7cbf35",
+            "secondary": "#f97e1a",
+            "accent": "#faeec8"
+        },
+        {
+            "family": "denim",
+            "main": "#4a6ea5",
+            "secondary": "#b8783c",
+            "accent": "#f0e6d2"
+        }
+    ],
+    "15": [
+        {
+            "family": "leaf",
+            "main": "#66b03f",
+            "secondary": "#e69c26",
+            "accent": "#faeec8"
+        },
+        {
+            "family": "pink",
+            "main": "#ee8cb1",
+            "secondary": "#248b8e",
+            "accent": "#fff0dc"
+        },
+        {
+            "family": "coral",
+            "main": "#ff7b5f",
+            "secondary": "#198188",
+            "accent": "#ffedb3"
+        },
+        {
+            "family": "slate",
+            "main": "#7a8797",
+            "secondary": "#cb4e41",
+            "accent": "#f0b546"
+        }
+    ],
+    "16": [
+        {
+            "family": "tangerine",
+            "main": "#ff9d1b",
+            "secondary": "#f8eed2",
+            "accent": "#284982"
+        },
+        {
+            "family": "mint",
+            "main": "#6bd29f",
+            "secondary": "#27426e",
+            "accent": "#f05a70"
+        },
+        {
+            "family": "tomato",
+            "main": "#d84049",
+            "secondary": "#26416a",
+            "accent": "#f6e9c8"
+        },
+        {
+            "family": "olive",
+            "main": "#817d30",
+            "secondary": "#a74b26",
+            "accent": "#f0dcaa"
+        }
+    ],
+    "17": [
+        {
+            "family": "forest",
+            "main": "#2e8651",
+            "secondary": "#bf4132",
+            "accent": "#ffd666"
+        },
+        {
+            "family": "cocoa",
+            "main": "#855138",
+            "secondary": "#67b7dc",
+            "accent": "#f0cc8c"
+        },
+        {
+            "family": "lilac",
+            "main": "#ae97df",
+            "secondary": "#74c5a6",
+            "accent": "#ffe896"
+        },
+        {
+            "family": "lemon",
+            "main": "#f1c641",
+            "secondary": "#4a9fcd",
+            "accent": "#dc4655"
+        }
+    ],
+    "18": [
+        {
+            "family": "denim",
+            "main": "#4f7fab",
+            "secondary": "#be6e40",
+            "accent": "#f0e4d2"
+        },
+        {
+            "family": "teal",
+            "main": "#0f9b93",
+            "secondary": "#f7e4c7",
+            "accent": "#ffb750"
+        },
+        {
+            "family": "cobalt",
+            "main": "#305fee",
+            "secondary": "#f6f2e4",
+            "accent": "#ff9643"
+        },
+        {
+            "family": "mustard",
+            "main": "#d9c02d",
+            "secondary": "#664926",
+            "accent": "#5e3fa0"
+        }
+    ],
+    "19": [
+        {
+            "family": "rust",
+            "main": "#b1632b",
+            "secondary": "#2d5367",
+            "accent": "#f2d14c"
+        },
+        {
+            "family": "violet",
+            "main": "#854cba",
+            "secondary": "#ed819f",
+            "accent": "#fad15a"
+        },
+        {
+            "family": "forest",
+            "main": "#31904c",
+            "secondary": "#cc3535",
+            "accent": "#ffd966"
+        },
+        {
+            "family": "slate",
+            "main": "#758191",
+            "secondary": "#c24b3f",
+            "accent": "#f0ab46"
+        }
+    ],
+    "20": [
+        {
+            "family": "sky",
+            "main": "#54a9ec",
+            "secondary": "#f7d52c",
+            "accent": "#ffefc8"
+        },
+        {
+            "family": "leaf",
+            "main": "#7db53c",
+            "secondary": "#eb7723",
+            "accent": "#faf1c8"
+        },
+        {
+            "family": "lemon",
+            "main": "#fef134",
+            "secondary": "#4087d7",
+            "accent": "#dc465a"
+        },
+        {
+            "family": "rust",
+            "main": "#c36022",
+            "secondary": "#2a5a70",
+            "accent": "#f2d04c"
+        }
+    ],
+    "21": [
+        {
+            "family": "cocoa",
+            "main": "#855b3e",
+            "secondary": "#76b1d8",
+            "accent": "#f0ca8c"
+        },
+        {
+            "family": "violet",
+            "main": "#8553ba",
+            "secondary": "#ec8caa",
+            "accent": "#fac55a"
+        },
+        {
+            "family": "berry",
+            "main": "#a22762",
+            "secondary": "#e5ba18",
+            "accent": "#facdd7"
+        },
+        {
+            "family": "teal",
+            "main": "#179495",
+            "secondary": "#f5e9cf",
+            "accent": "#ffb450"
+        }
+    ],
+    "22": [
+        {
+            "family": "tangerine",
+            "main": "#f1a42e",
+            "secondary": "#f7f1db",
+            "accent": "#284582"
+        },
+        {
+            "family": "mint",
+            "main": "#64d1a2",
+            "secondary": "#263c6b",
+            "accent": "#f05a68"
+        },
+        {
+            "family": "pink",
+            "main": "#ec739d",
+            "secondary": "#207f86",
+            "accent": "#fff0dc"
+        },
+        {
+            "family": "sky",
+            "main": "#5dc0e8",
+            "secondary": "#f1b436",
+            "accent": "#fff0c8"
+        }
+    ],
+    "23": [
+        {
+            "family": "cobalt",
+            "main": "#2969dc",
+            "secondary": "#e8dec8",
+            "accent": "#ff9543"
+        },
+        {
+            "family": "tomato",
+            "main": "#dc3236",
+            "secondary": "#223b68",
+            "accent": "#f6e7c8"
+        },
+        {
+            "family": "mustard",
+            "main": "#e4a828",
+            "secondary": "#6c3e23",
+            "accent": "#563fa0"
+        },
+        {
+            "family": "slate",
+            "main": "#728592",
+            "secondary": "#ce323b",
+            "accent": "#f0aa46"
+        }
+    ],
+    "24": [
+        {
+            "family": "denim",
+            "main": "#476cb1",
+            "secondary": "#c78436",
+            "accent": "#f0e5d2"
+        },
+        {
+            "family": "berry",
+            "main": "#a23274",
+            "secondary": "#daa330",
+            "accent": "#facdd5"
+        },
+        {
+            "family": "olive",
+            "main": "#7e7e33",
+            "secondary": "#a3532c",
+            "accent": "#f0ddaa"
+        },
+        {
+            "family": "coral",
+            "main": "#f9736a",
+            "secondary": "#22827d",
+            "accent": "#ffebb3"
+        }
+    ],
+    "25": [
+        {
+            "family": "teal",
+            "main": "#179292",
+            "secondary": "#f4e5c7",
+            "accent": "#ffb450"
+        },
+        {
+            "family": "tomato",
+            "main": "#e23532",
+            "secondary": "#21396d",
+            "accent": "#f6e7c8"
+        },
+        {
+            "family": "lilac",
+            "main": "#bb9ae2",
+            "secondary": "#76c9b4",
+            "accent": "#ffe596"
+        },
+        {
+            "family": "olive",
+            "main": "#84862d",
+            "secondary": "#ae5322",
+            "accent": "#f0deaa"
+        }
+    ],
+    "26": [
+        {
+            "family": "cobalt",
+            "main": "#2368e4",
+            "secondary": "#eadfc8",
+            "accent": "#ff9643"
+        },
+        {
+            "family": "lemon",
+            "main": "#ffed40",
+            "secondary": "#4991da",
+            "accent": "#dc4661"
+        },
+        {
+            "family": "cocoa",
+            "main": "#83553d",
+            "secondary": "#72b6d7",
+            "accent": "#f0cd8c"
+        },
+        {
+            "family": "coral",
+            "main": "#f87669",
+            "secondary": "#22817f",
+            "accent": "#ffecb3"
+        }
+    ],
+    "27": [
+        {
+            "family": "denim",
+            "main": "#4677ad",
+            "secondary": "#c26f36",
+            "accent": "#f0e4d2"
+        },
+        {
+            "family": "rust",
+            "main": "#bd4926",
+            "secondary": "#2c636d",
+            "accent": "#f2c34c"
+        },
+        {
+            "family": "pink",
+            "main": "#ee83b0",
+            "secondary": "#228d8d",
+            "accent": "#ffefdc"
+        },
+        {
+            "family": "mustard",
+            "main": "#e5c01d",
+            "secondary": "#694621",
+            "accent": "#5b3fa0"
+        }
+    ],
+    "28": [
+        {
+            "family": "violet",
+            "main": "#8650b9",
+            "secondary": "#eb87a3",
+            "accent": "#fac85a"
+        },
+        {
+            "family": "slate",
+            "main": "#6f818e",
+            "secondary": "#c4353a",
+            "accent": "#f0b546"
+        },
+        {
+            "family": "leaf",
+            "main": "#75bc44",
+            "secondary": "#e89837",
+            "accent": "#faf0c8"
+        },
+        {
+            "family": "mint",
+            "main": "#5fd2ac",
+            "secondary": "#24336b",
+            "accent": "#f05a6c"
+        }
+    ],
+    "29": [
+        {
+            "family": "lilac",
+            "main": "#a282e0",
+            "secondary": "#61c7a1",
+            "accent": "#ffe496"
+        },
+        {
+            "family": "leaf",
+            "main": "#6eb93d",
+            "secondary": "#ec9727",
+            "accent": "#faf1c8"
+        },
+        {
+            "family": "tangerine",
+            "main": "#ec921d",
+            "secondary": "#efe3c0",
+            "accent": "#284b82"
+        },
+        {
+            "family": "sky",
+            "main": "#62b0e7",
+            "secondary": "#f0cc3b",
+            "accent": "#ffeec8"
+        }
+    ],
+    "30": [
+        {
+            "family": "pink",
+            "main": "#f376b6",
+            "secondary": "#1b9085",
+            "accent": "#fff2dc"
+        },
+        {
+            "family": "violet",
+            "main": "#7346c3",
+            "secondary": "#f57eb2",
+            "accent": "#fac55a"
+        },
+        {
+            "family": "forest",
+            "main": "#318c52",
+            "secondary": "#c84035",
+            "accent": "#ffce66"
+        },
+        {
+            "family": "denim",
+            "main": "#4677a8",
+            "secondary": "#bd6a36",
+            "accent": "#f0e8d2"
+        }
+    ],
+    "31": [
+        {
+            "family": "teal",
+            "main": "#0f988e",
+            "secondary": "#f6dfbf",
+            "accent": "#ffb550"
+        },
+        {
+            "family": "tangerine",
+            "main": "#ff811c",
+            "secondary": "#f8ead3",
+            "accent": "#284582"
+        },
+        {
+            "family": "cobalt",
+            "main": "#2d7ee3",
+            "secondary": "#efe4d5",
+            "accent": "#ffa043"
+        },
+        {
+            "family": "berry",
+            "main": "#9d3067",
+            "secondary": "#d9b02a",
+            "accent": "#facdd6"
+        }
+    ],
+    "32": [
+        {
+            "family": "mustard",
+            "main": "#e1c62e",
+            "secondary": "#6c4b25",
+            "accent": "#5a3fa0"
+        },
+        {
+            "family": "slate",
+            "main": "#728490",
+            "secondary": "#c6383f",
+            "accent": "#f0bc46"
+        },
+        {
+            "family": "mint",
+            "main": "#66cf9e",
+            "secondary": "#273f6a",
+            "accent": "#f05a76"
+        },
+        {
+            "family": "coral",
+            "main": "#fa765f",
+            "secondary": "#207c80",
+            "accent": "#ffefb3"
+        }
+    ],
+    "33": [
+        {
+            "family": "cocoa",
+            "main": "#8a6240",
+            "secondary": "#7fb0db",
+            "accent": "#f0c48c"
+        },
+        {
+            "family": "lemon",
+            "main": "#fce92b",
+            "secondary": "#3985d4",
+            "accent": "#dc4653"
+        },
+        {
+            "family": "tangerine",
+            "main": "#ec9127",
+            "secondary": "#f2e7cc",
+            "accent": "#284982"
+        },
+        {
+            "family": "sky",
+            "main": "#5aa8ea",
+            "secondary": "#f4d733",
+            "accent": "#ffeec8"
+        }
+    ],
+    "34": [
+        {
+            "family": "teal",
+            "main": "#19988a",
+            "secondary": "#f7ead9",
+            "accent": "#ffb350"
+        },
+        {
+            "family": "rust",
+            "main": "#b4612a",
+            "secondary": "#2d5569",
+            "accent": "#f2c14c"
+        },
+        {
+            "family": "lemon",
+            "main": "#f9ea3c",
+            "secondary": "#468ad4",
+            "accent": "#dc4653"
+        },
+        {
+            "family": "olive",
+            "main": "#7d842f",
+            "secondary": "#ac5e25",
+            "accent": "#f0dcaa"
+        }
+    ],
+    "35": [
+        {
+            "family": "rust",
+            "main": "#c05323",
+            "secondary": "#2a5e6f",
+            "accent": "#f2d14c"
+        },
+        {
+            "family": "lilac",
+            "main": "#b289e2",
+            "secondary": "#67c9b0",
+            "accent": "#ffe796"
+        },
+        {
+            "family": "forest",
+            "main": "#308645",
+            "secondary": "#be343a",
+            "accent": "#ffd366"
+        },
+        {
+            "family": "pink",
+            "main": "#f36594",
+            "secondary": "#197f89",
+            "accent": "#fff0dc"
+        }
+    ],
+    "36": [
+        {
+            "family": "sky",
+            "main": "#5fbdf2",
+            "secondary": "#fdca35",
+            "accent": "#fff0c8"
+        },
+        {
+            "family": "tomato",
+            "main": "#dd4050",
+            "secondary": "#25446d",
+            "accent": "#f6e6c8"
+        },
+        {
+            "family": "mint",
+            "main": "#7ad3ab",
+            "secondary": "#2b4270",
+            "accent": "#f05a69"
+        },
+        {
+            "family": "leaf",
+            "main": "#81c53f",
+            "secondary": "#f48b2f",
+            "accent": "#faf0c8"
+        }
+    ],
+    "37": [
+        {
+            "family": "coral",
+            "main": "#ff8469",
+            "secondary": "#1e8188",
+            "accent": "#ffe8b3"
+        },
+        {
+            "family": "mustard",
+            "main": "#e6b224",
+            "secondary": "#6c4122",
+            "accent": "#573fa0"
+        },
+        {
+            "family": "berry",
+            "main": "#a43571",
+            "secondary": "#d9ad38",
+            "accent": "#facdd7"
+        },
+        {
+            "family": "violet",
+            "main": "#824ab6",
+            "secondary": "#e97c9b",
+            "accent": "#fad05a"
+        }
+    ],
+    "38": [
+        {
+            "family": "cobalt",
+            "main": "#266de0",
+            "secondary": "#e9ddc8",
+            "accent": "#ffa843"
+        },
+        {
+            "family": "tangerine",
+            "main": "#f99524",
+            "secondary": "#f8eed8",
+            "accent": "#284782"
+        },
+        {
+            "family": "denim",
+            "main": "#4d77a9",
+            "secondary": "#bd743e",
+            "accent": "#f0e6d2"
+        },
+        {
+            "family": "cocoa",
+            "main": "#8a5738",
+            "secondary": "#6bb4e0",
+            "accent": "#f0ce8c"
+        }
+    ],
+    "39": [
+        {
+            "family": "berry",
+            "main": "#a42860",
+            "secondary": "#e6c31c",
+            "accent": "#facdd6"
+        },
+        {
+            "family": "slate",
+            "main": "#7a8594",
+            "secondary": "#c45446",
+            "accent": "#f0b146"
+        },
+        {
+            "family": "tomato",
+            "main": "#e62836",
+            "secondary": "#1e3e6c",
+            "accent": "#f6e7c8"
+        },
+        {
+            "family": "forest",
+            "main": "#2e8546",
+            "secondary": "#be3133",
+            "accent": "#ffd266"
+        }
+    ],
+    "40": [
+        {
+            "family": "olive",
+            "main": "#837f2d",
+            "secondary": "#ab4923",
+            "accent": "#f0d9aa"
+        },
+        {
+            "family": "lilac",
+            "main": "#a188df",
+            "secondary": "#67c59e",
+            "accent": "#ffea96"
+        },
+        {
+            "family": "mint",
+            "main": "#6dd1af",
+            "secondary": "#28386d",
+            "accent": "#f05a6e"
+        },
+        {
+            "family": "sky",
+            "main": "#69c0eb",
+            "secondary": "#f3c142",
+            "accent": "#ffeec8"
+        }
+    ],
+    "41": [
+        {
+            "family": "teal",
+            "main": "#15988a",
+            "secondary": "#f6e5d0",
+            "accent": "#ffb450"
+        },
+        {
+            "family": "pink",
+            "main": "#ec87ba",
+            "secondary": "#248b82",
+            "accent": "#fff1dc"
+        },
+        {
+            "family": "leaf",
+            "main": "#80c138",
+            "secondary": "#f67d21",
+            "accent": "#faefc8"
+        },
+        {
+            "family": "cocoa",
+            "main": "#86613e",
+            "secondary": "#76a8d9",
+            "accent": "#f0c58c"
+        }
+    ],
+    "42": [
+        {
+            "family": "lemon",
+            "main": "#f8d035",
+            "secondary": "#4098d1",
+            "accent": "#dc465c"
+        },
+        {
+            "family": "olive",
+            "main": "#898038",
+            "secondary": "#b04e2f",
+            "accent": "#f0dfaa"
+        },
+        {
+            "family": "cobalt",
+            "main": "#3a75e5",
+            "secondary": "#f5f1e6",
+            "accent": "#ffa943"
+        },
+        {
+            "family": "slate",
+            "main": "#748190",
+            "secondary": "#c1473e",
+            "accent": "#f0b846"
+        }
+    ],
+    "43": [
+        {
+            "family": "denim",
+            "main": "#4671a3",
+            "secondary": "#b76c37",
+            "accent": "#f0e6d2"
+        },
+        {
+            "family": "lemon",
+            "main": "#fcdc32",
+            "secondary": "#3f93d5",
+            "accent": "#dc4652"
+        },
+        {
+            "family": "violet",
+            "main": "#8448c4",
+            "secondary": "#f682a7",
+            "accent": "#facc5a"
+        },
+        {
+            "family": "coral",
+            "main": "#fe6c5f",
+            "secondary": "#1e8480",
+            "accent": "#ffeab3"
+        }
+    ],
+    "44": [
+        {
+            "family": "violet",
+            "main": "#6d42c2",
+            "secondary": "#f477b1",
+            "accent": "#fac85a"
+        },
+        {
+            "family": "forest",
+            "main": "#2f945c",
+            "secondary": "#d04d35",
+            "accent": "#ffd366"
+        },
+        {
+            "family": "mustard",
+            "main": "#d8ba2a",
+            "secondary": "#644626",
+            "accent": "#5c3fa0"
+        },
+        {
+            "family": "tomato",
+            "main": "#e13044",
+            "secondary": "#21426b",
+            "accent": "#f6e8c8"
+        }
+    ],
+    "45": [
+        {
+            "family": "rust",
+            "main": "#c15d27",
+            "secondary": "#2d5d6f",
+            "accent": "#f2d14c"
+        },
+        {
+            "family": "mustard",
+            "main": "#d8a626",
+            "secondary": "#633f25",
+            "accent": "#5e3fa0"
+        },
+        {
+            "family": "sky",
+            "main": "#61c3f1",
+            "secondary": "#fcc337",
+            "accent": "#fff3c8"
+        },
+        {
+            "family": "lilac",
+            "main": "#ae9ae7",
+            "secondary": "#74cfa6",
+            "accent": "#ffe796"
+        }
+    ],
+    "46": [
+        {
+            "family": "coral",
+            "main": "#ff8c66",
+            "secondary": "#197d8c",
+            "accent": "#ffefb3"
+        },
+        {
+            "family": "mint",
+            "main": "#6ccf9e",
+            "secondary": "#29426b",
+            "accent": "#f05a6d"
+        },
+        {
+            "family": "leaf",
+            "main": "#74c442",
+            "secondary": "#f1a134",
+            "accent": "#faefc8"
+        },
+        {
+            "family": "cobalt",
+            "main": "#2d7bed",
+            "secondary": "#f4ecdf",
+            "accent": "#ffa543"
+        }
+    ],
+    "47": [
+        {
+            "family": "cocoa",
+            "main": "#825f3c",
+            "secondary": "#6ea4d7",
+            "accent": "#f0cc8c"
+        },
+        {
+            "family": "lilac",
+            "main": "#a685dc",
+            "secondary": "#66c2a3",
+            "accent": "#ffe996"
+        },
+        {
+            "family": "pink",
+            "main": "#ee80a6",
+            "secondary": "#21858c",
+            "accent": "#fff0dc"
+        },
+        {
+            "family": "tangerine",
+            "main": "#ff9217",
+            "secondary": "#f7eacd",
+            "accent": "#284782"
+        }
+    ],
+    "48": [
+        {
+            "family": "denim",
+            "main": "#486eaf",
+            "secondary": "#c58037",
+            "accent": "#f0e5d2"
+        },
+        {
+            "family": "violet",
+            "main": "#854dc6",
+            "secondary": "#f68aae",
+            "accent": "#faca5a"
+        },
+        {
+            "family": "berry",
+            "main": "#a9337b",
+            "secondary": "#dea538",
+            "accent": "#facdda"
+        },
+        {
+            "family": "rust",
+            "main": "#c16230",
+            "secondary": "#325f71",
+            "accent": "#f2c44c"
+        }
+    ],
+    "49": [
+        {
+            "family": "denim",
+            "main": "#4471a5",
+            "secondary": "#b96d35",
+            "accent": "#f0e8d2"
+        },
+        {
+            "family": "teal",
+            "main": "#11999b",
+            "secondary": "#f7e9cc",
+            "accent": "#ffb650"
+        },
+        {
+            "family": "tangerine",
+            "main": "#f38e2f",
+            "secondary": "#f8efdf",
+            "accent": "#284882"
+        },
+        {
+            "family": "tomato",
+            "main": "#da3743",
+            "secondary": "#243f68",
+            "accent": "#f6e8c8"
+        }
+    ],
+    "50": [
+        {
+            "family": "forest",
+            "main": "#2d9848",
+            "secondary": "#d53237",
+            "accent": "#ffd766"
+        },
+        {
+            "family": "sky",
+            "main": "#55b5eb",
+            "secondary": "#f6c32d",
+            "accent": "#fff0c8"
+        },
+        {
+            "family": "berry",
+            "main": "#9d2e6a",
+            "secondary": "#dcaa24",
+            "accent": "#facdd8"
+        },
+        {
+            "family": "cocoa",
+            "main": "#84533b",
+            "secondary": "#6eb7d9",
+            "accent": "#f0c78c"
+        }
+    ],
+    "51": [
+        {
+            "family": "tomato",
+            "main": "#e3322d",
+            "secondary": "#20376b",
+            "accent": "#f6e5c8"
+        },
+        {
+            "family": "pink",
+            "main": "#f17ca4",
+            "secondary": "#1e868e",
+            "accent": "#fff0dc"
+        },
+        {
+            "family": "cobalt",
+            "main": "#2c6be3",
+            "secondary": "#eee5d2",
+            "accent": "#ff9f43"
+        },
+        {
+            "family": "olive",
+            "main": "#7d8130",
+            "secondary": "#a75826",
+            "accent": "#f0dbaa"
+        }
+    ],
+    "52": [
+        {
+            "family": "coral",
+            "main": "#ff9174",
+            "secondary": "#1e838d",
+            "accent": "#fff0b3"
+        },
+        {
+            "family": "berry",
+            "main": "#ac2e71",
+            "secondary": "#e3b430",
+            "accent": "#facdd5"
+        },
+        {
+            "family": "slate",
+            "main": "#778796",
+            "secondary": "#d03b38",
+            "accent": "#f0b046"
+        },
+        {
+            "family": "lilac",
+            "main": "#b18ce0",
+            "secondary": "#6ac7ae",
+            "accent": "#ffe796"
+        }
+    ],
+    "53": [
+        {
+            "family": "lemon",
+            "main": "#f4d945",
+            "secondary": "#4d96d1",
+            "accent": "#dc465e"
+        },
+        {
+            "family": "leaf",
+            "main": "#86c143",
+            "secondary": "#ee8536",
+            "accent": "#faf1c8"
+        },
+        {
+            "family": "cocoa",
+            "main": "#865938",
+            "secondary": "#68addd",
+            "accent": "#f0cd8c"
+        },
+        {
+            "family": "slate",
+            "main": "#6e7c8c",
+            "secondary": "#c03d35",
+            "accent": "#f0b846"
+        }
+    ],
+    "54": [
+        {
+            "family": "olive",
+            "main": "#818a35",
+            "secondary": "#b3662b",
+            "accent": "#f0ddaa"
+        },
+        {
+            "family": "teal",
+            "main": "#108892",
+            "secondary": "#f3e3b5",
+            "accent": "#ffb250"
+        },
+        {
+            "family": "pink",
+            "main": "#ec79ab",
+            "secondary": "#218886",
+            "accent": "#ffefdc"
+        },
+        {
+            "family": "tangerine",
+            "main": "#fb9a14",
+            "secondary": "#f4e8c4",
+            "accent": "#284582"
+        }
+    ],
+    "55": [
+        {
+            "family": "mint",
+            "main": "#75d4ad",
+            "secondary": "#293e71",
+            "accent": "#f05a68"
+        },
+        {
+            "family": "leaf",
+            "main": "#7ebe48",
+            "secondary": "#e8933d",
+            "accent": "#faf0c8"
+        },
+        {
+            "family": "lilac",
+            "main": "#bd9de8",
+            "secondary": "#76d0b7",
+            "accent": "#ffe796"
+        },
+        {
+            "family": "mustard",
+            "main": "#d7b626",
+            "secondary": "#634425",
+            "accent": "#5a3fa0"
+        }
+    ],
+    "56": [
+        {
+            "family": "rust",
+            "main": "#b94e2e",
+            "secondary": "#2f626c",
+            "accent": "#f2cb4c"
+        },
+        {
+            "family": "cobalt",
+            "main": "#2e60ec",
+            "secondary": "#f4efdf",
+            "accent": "#ff9843"
+        },
+        {
+            "family": "mint",
+            "main": "#77d2b3",
+            "secondary": "#2a3b70",
+            "accent": "#f05a6c"
+        },
+        {
+            "family": "denim",
+            "main": "#4a7bb4",
+            "secondary": "#c8773c",
+            "accent": "#f0e7d2"
+        }
+    ],
+    "57": [
+        {
+            "family": "forest",
+            "main": "#2d8f47",
+            "secondary": "#cd2e30",
+            "accent": "#ffd266"
+        },
+        {
+            "family": "slate",
+            "main": "#72808f",
+            "secondary": "#c43e38",
+            "accent": "#f0b946"
+        },
+        {
+            "family": "lemon",
+            "main": "#fff131",
+            "secondary": "#3e86d8",
+            "accent": "#dc4661"
+        },
+        {
+            "family": "pink",
+            "main": "#f16e9d",
+            "secondary": "#1c848a",
+            "accent": "#fff0dc"
+        }
+    ],
+    "58": [
+        {
+            "family": "violet",
+            "main": "#8855bd",
+            "secondary": "#ee91ae",
+            "accent": "#fac65a"
+        },
+        {
+            "family": "sky",
+            "main": "#579ee3",
+            "secondary": "#ecd632",
+            "accent": "#fff0c8"
+        },
+        {
+            "family": "cocoa",
+            "main": "#89513a",
+            "secondary": "#6fbdde",
+            "accent": "#f0c58c"
+        },
+        {
+            "family": "tomato",
+            "main": "#e13839",
+            "secondary": "#223c6e",
+            "accent": "#f6e8c8"
+        }
+    ],
+    "59": [
+        {
+            "family": "coral",
+            "main": "#fd7b75",
+            "secondary": "#218a83",
+            "accent": "#ffeab3"
+        },
+        {
+            "family": "cobalt",
+            "main": "#2c59dd",
+            "secondary": "#eae3cc",
+            "accent": "#ff9f43"
+        },
+        {
+            "family": "berry",
+            "main": "#a22b5e",
+            "secondary": "#e2c321",
+            "accent": "#facdd5"
+        },
+        {
+            "family": "forest",
+            "main": "#309249",
+            "secondary": "#ce3539",
+            "accent": "#ffda66"
+        }
+    ],
+    "60": [
+        {
+            "family": "teal",
+            "main": "#178e84",
+            "secondary": "#f2dcbf",
+            "accent": "#ffb450"
+        },
+        {
+            "family": "mustard",
+            "main": "#e3c120",
+            "secondary": "#684722",
+            "accent": "#563fa0"
+        },
+        {
+            "family": "tomato",
+            "main": "#e62d3a",
+            "secondary": "#1f3f6e",
+            "accent": "#f6e8c8"
+        },
+        {
+            "family": "berry",
+            "main": "#a4326f",
+            "secondary": "#dbb034",
+            "accent": "#facdda"
+        }
+    ],
+    "61": [
+        {
+            "family": "pink",
+            "main": "#f27bb0",
+            "secondary": "#1d908c",
+            "accent": "#fff2dc"
+        },
+        {
+            "family": "violet",
+            "main": "#884fc2",
+            "secondary": "#f38bab",
+            "accent": "#fac95a"
+        },
+        {
+            "family": "olive",
+            "main": "#8a8033",
+            "secondary": "#b24829",
+            "accent": "#f0dfaa"
+        },
+        {
+            "family": "lemon",
+            "main": "#f2d240",
+            "secondary": "#4996ce",
+            "accent": "#dc4657"
+        }
+    ],
+    "62": [
+        {
+            "family": "mint",
+            "main": "#67d1b0",
+            "secondary": "#26346c",
+            "accent": "#f05a68"
+        },
+        {
+            "family": "tangerine",
+            "main": "#ff8213",
+            "secondary": "#f6e5c6",
+            "accent": "#284882"
+        },
+        {
+            "family": "leaf",
+            "main": "#73b93d",
+            "secondary": "#ed8e26",
+            "accent": "#faeec8"
+        },
+        {
+            "family": "lemon",
+            "main": "#f1e139",
+            "secondary": "#4486cc",
+            "accent": "#dc4659"
+        }
+    ]
+}

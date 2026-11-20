@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CardTheme;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateGameRequest extends FormRequest
 {
@@ -19,6 +21,8 @@ class CreateGameRequest extends FormRequest
     {
         return [
             'variant' => 'boolean',
+            'theme' => [Rule::enum(CardTheme::class)],
+            'hard_variant' => 'boolean',
         ];
     }
 }

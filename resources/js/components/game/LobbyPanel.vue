@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
 import type { GamePlayer, GameSession, LobbyPlayer } from '../../types/game';
+import { CARD_THEME_LABELS, CardTheme } from '../../types/game';
+import { cardStyleFor } from '../../utils/cardArt';
 import HowToPlayModal from './HowToPlayModal.vue';
 
 const props = defineProps<{
@@ -63,6 +65,8 @@ async function leaveGame() {
                     <div class="flex items-center gap-3">
                         <span>{{ players.length }}/10 players</span>
                         <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Variant</span>
+                        <span class="rounded bg-muted px-1.5 py-0.5 text-xs">{{ CARD_THEME_LABELS[game.theme] }} cards</span>
+                        <span v-if="game.theme !== CardTheme.Classic && game.hard_variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Hard colours</span>
                     </div>
                     <button
                         @click="showHowToPlay = true"
@@ -152,6 +156,6 @@ async function leaveGame() {
             </div>
         </div>
 
-        <HowToPlayModal v-if="showHowToPlay" @close="showHowToPlay = false" />
+        <HowToPlayModal v-if="showHowToPlay" :card-style="cardStyleFor(game)" @close="showHowToPlay = false" />
     </div>
 </template>
