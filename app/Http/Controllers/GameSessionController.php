@@ -9,10 +9,12 @@ use App\Events\GameLobbyUpdated;
 use App\Events\GameStarted;
 use App\Events\LobbyUpdated;
 use App\Events\PlayerHandDealt;
+use App\Events\RematchUpdated;
 use App\Exceptions\NotEnoughCardsException;
 use App\Http\Requests\CreateGameRequest;
 use App\Http\Requests\JoinGameRequest;
 use App\Jobs\StartGameJob;
+use App\Models\GamePlayer;
 use App\Models\GameSession;
 use App\Models\Pile;
 use App\Services\GameDealerService;
@@ -48,34 +50,7 @@ class GameSessionController extends Controller
 
         $player = $game->gamePlayers()->where('user_id', $request->user()->id)->first();
 
-        return response()->json([
-            'game' => [
-                'id' => $game->id,
-                'code' => $game->code,
-                'status' => $game->status->value,
-                'host_user_id' => $game->host_user_id,
-                'variant' => $game->variant,
-                'theme' => $game->theme->value,
-                'hard_variant' => $game->hard_variant,
-                'background_seed' => $game->background_seed,
-                'sets_count' => $game->sets_count ?? null,
-                'winner_user_id' => $game->winner_user_id ?? null,
-                'started_at' => $game->started_at ?? null,
-            ],
-            'current_player' => [
-                'id' => $player->id,
-                'user_id' => $player->user_id,
-                'seat_index' => $player->seat_index,
-                'is_ready' => $player->is_ready,
-            ],
-            'players' => $game->gamePlayers()->with('user')->get()->map(fn ($p) => [
-                'id' => $p->id,
-                'user_id' => $p->user_id,
-                'name' => $p->user->name,
-                'seat_index' => $p->seat_index,
-                'is_ready' => $p->is_ready,
-            ])->values()->all(),
-        ])->header('X-Game-Id', (string) $game->id);
+        return $this->joinedGameResponse($game, $player);
     }
 
     public function join(JoinGameRequest $request): JsonResponse
@@ -104,34 +79,7 @@ class GameSessionController extends Controller
         broadcast(new GameLobbyUpdated($game));
         broadcast(new LobbyUpdated);
 
-        return response()->json([
-            'game' => [
-                'id' => $game->id,
-                'code' => $game->code,
-                'status' => $game->status->value,
-                'host_user_id' => $game->host_user_id,
-                'variant' => $game->variant,
-                'theme' => $game->theme->value,
-                'hard_variant' => $game->hard_variant,
-                'background_seed' => $game->background_seed,
-                'sets_count' => $game->sets_count ?? null,
-                'winner_user_id' => $game->winner_user_id ?? null,
-                'started_at' => $game->started_at ?? null,
-            ],
-            'current_player' => [
-                'id' => $player->id,
-                'user_id' => $player->user_id,
-                'seat_index' => $player->seat_index,
-                'is_ready' => $player->is_ready,
-            ],
-            'players' => $game->gamePlayers()->with('user')->get()->map(fn ($p) => [
-                'id' => $p->id,
-                'user_id' => $p->user_id,
-                'name' => $p->user->name,
-                'seat_index' => $p->seat_index,
-                'is_ready' => $p->is_ready,
-            ])->values()->all(),
-        ])->header('X-Game-Id', (string) $game->id);
+        return $this->joinedGameResponse($game, $player);
     }
 
     public function show(GameSession $game): Response
@@ -155,6 +103,7 @@ class GameSessionController extends Controller
             'myPiles' => [],
             'centerPiles' => [],
             'opponents' => [],
+            'rematch' => $game->rematchPayload(),
         ];
 
         $isActiveGame = $currentPlayer && in_array($game->status, [GameStatus::Countdown, GameStatus::Playing, GameStatus::Verifying, GameStatus::Ended]);
@@ -340,6 +289,92 @@ class GameSessionController extends Controller
         broadcast(new LobbyUpdated);
 
         return response()->noContent();
+    }
+
+    /**
+     * Ask for a rematch of an ended game: the first player to ask opens a new
+     * lobby with the same settings, and everyone after joins that lobby.
+     * Asking twice is harmless: you're simply already in.
+     */
+    public function rematch(GameSession $game): JsonResponse
+    {
+        [$rematch, $player] = DB::transaction(function () use ($game) {
+            $locked = $this->lockGame($game);
+
+            abort_unless($locked->status === GameStatus::Ended, 422, 'This game has not ended yet.');
+            abort_unless($locked->gamePlayers()->where('user_id', auth()->id())->exists(), 403);
+
+            if ($locked->rematch_game_session_id === null) {
+                $rematch = GameSession::create([
+                    'code' => strtoupper(Str::random(6)),
+                    'status' => GameStatus::Lobby,
+                    'host_user_id' => auth()->id(),
+                    'variant' => $locked->variant,
+                    'theme' => $locked->theme,
+                    'hard_variant' => $locked->hard_variant,
+                ]);
+
+                $locked->update(['rematch_game_session_id' => $rematch->id]);
+            } else {
+                $rematch = $this->lockGame($locked->rematchGame);
+            }
+
+            $existing = $rematch->gamePlayers()->where('user_id', auth()->id())->first();
+
+            if ($existing) {
+                return [$rematch, $existing];
+            }
+
+            abort_unless($rematch->status === GameStatus::Lobby, 422, 'That rematch has already started.');
+            abort_if($rematch->gamePlayers()->count() >= 10, 422, 'That rematch is full.');
+
+            $nextSeat = $rematch->gamePlayers()->exists() ? $rematch->gamePlayers()->max('seat_index') + 1 : 0;
+
+            return [$rematch, $rematch->gamePlayers()->create([
+                'user_id' => auth()->id(),
+                'seat_index' => $nextSeat,
+                'is_ready' => false,
+            ])];
+        }, 3);
+
+        broadcast(new GameLobbyUpdated($rematch));
+        broadcast(new RematchUpdated($game->fresh()));
+        broadcast(new LobbyUpdated);
+
+        return $this->joinedGameResponse($rematch, $player);
+    }
+
+    /** The game, your seat and the table: what the client needs to open a game's lobby. */
+    private function joinedGameResponse(GameSession $game, GamePlayer $player): JsonResponse
+    {
+        return response()->json([
+            'game' => [
+                'id' => $game->id,
+                'code' => $game->code,
+                'status' => $game->status->value,
+                'host_user_id' => $game->host_user_id,
+                'variant' => $game->variant,
+                'theme' => $game->theme->value,
+                'hard_variant' => $game->hard_variant,
+                'background_seed' => $game->background_seed,
+                'sets_count' => $game->sets_count ?? null,
+                'winner_user_id' => $game->winner_user_id ?? null,
+                'started_at' => $game->started_at ?? null,
+            ],
+            'current_player' => [
+                'id' => $player->id,
+                'user_id' => $player->user_id,
+                'seat_index' => $player->seat_index,
+                'is_ready' => $player->is_ready,
+            ],
+            'players' => $game->gamePlayers()->with('user')->get()->map(fn ($p) => [
+                'id' => $p->id,
+                'user_id' => $p->user_id,
+                'name' => $p->user->name,
+                'seat_index' => $p->seat_index,
+                'is_ready' => $p->is_ready,
+            ])->values()->all(),
+        ])->header('X-Game-Id', (string) $game->id);
     }
 
     /**

@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/games/{game}/start', [GameSessionController::class, 'start'])->name('games.start');
     Route::post('/games/{game}/client-ready', [GameSessionController::class, 'clientReady'])->name('games.client-ready');
     Route::get('/games/{game}/status', [GameSessionController::class, 'status'])->name('games.status');
+    Route::post('/games/{game}/rematch', [GameSessionController::class, 'rematch'])->name('games.rematch');
     Route::delete('/games/{game}/leave', [GameSessionController::class, 'leave'])->name('games.leave');
 
     Route::post('/games/{game}/pickup', [GameplayController::class, 'pickup'])->name('gameplay.pickup');
