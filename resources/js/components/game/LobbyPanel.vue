@@ -60,7 +60,7 @@ async function leaveGame() {
                 <div class="mt-1 flex items-center justify-between gap-3 text-sm text-muted-foreground">
                     <div class="flex items-center gap-3">
                         <span>{{ players.length }}/10 players</span>
-                        <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Variant</span>
+                        <span v-if="game.similar_items" class="rounded bg-muted px-1.5 py-0.5 text-xs">Similar items</span>
                         <span class="rounded bg-muted px-1.5 py-0.5 text-xs">{{ CARD_THEME_LABELS[game.theme] }} cards</span>
                         <span v-if="game.theme !== CardTheme.Classic && game.hard_variant" class="rounded bg-muted px-1.5 py-0.5 text-xs">Hard colours</span>
                     </div>
@@ -77,7 +77,7 @@ async function leaveGame() {
                     </button>
                 </div>
                 <p class="mt-2 text-xs text-muted-foreground">
-                    {{ game.variant ? 'Variant mode — 8 cards in the centre.' : '4 cards in the centre.' }}
+                    {{ game.similar_items ? 'Similar items — look-alike items come in at least pairs.' : 'The deck is built from items that are easy to tell apart.' }}
                 </p>
             </div>
 

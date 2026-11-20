@@ -11,7 +11,7 @@ function makeLobbyGame(User $host, GameStatus $status): GameSession
         'code' => strtoupper(substr(md5(uniqid()), 0, 6)),
         'status' => $status,
         'host_user_id' => $host->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $game->gamePlayers()->create([

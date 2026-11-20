@@ -17,7 +17,7 @@ const games = ref<LobbyGame[]>(props.games);
 const isRejoining = ref(false);
 const showHowToPlay = ref(false);
 
-const variant = ref(false);
+const similarItems = ref(false);
 const theme = ref<CardTheme>(CardTheme.Standard);
 const hardVariant = ref(false);
 const cardThemes = Object.values(CardTheme);
@@ -70,7 +70,7 @@ async function createGame() {
         const res = await apiFetch(route('games.store'), {
             method: 'POST',
             body: JSON.stringify({
-                variant: variant.value,
+                similar_items: similarItems.value,
                 theme: theme.value,
                 // Only the standard art has a hard colour variant; classic is always coloured.
                 hard_variant: theme.value !== CardTheme.Classic && hardVariant.value,
@@ -183,13 +183,13 @@ onUnmounted(() => {
                             <label class="flex cursor-pointer items-center gap-3">
                                 <input
                                     type="checkbox"
-                                    v-model="variant"
+                                    v-model="similarItems"
                                     class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
-                                <span class="text-sm">Variant mode (extra set)</span>
+                                <span class="text-sm">Similar items</span>
                             </label>
                             <p class="text-xs text-muted-foreground">
-                                An extra set in the deck and 8 cards in the centre instead of 4.
+                                Look-alike items, such as two jackets or two hats, always come in at least pairs, so sets are harder to tell apart.
                             </p>
                             <fieldset class="space-y-2">
                                 <legend class="text-sm">Card art</legend>
@@ -270,7 +270,7 @@ onUnmounted(() => {
                                     <span>{{ game.host_name }}</span>
                                     <span class="text-muted-foreground/50">·</span>
                                     <span>{{ game.player_count }}/10 players</span>
-                                    <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Variant</span>
+                                    <span v-if="game.similar_items" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Similar items</span>
                                     <span v-if="game.theme === CardTheme.Classic" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">{{ CARD_THEME_LABELS[game.theme] }}</span>
                                     <span v-if="game.theme !== CardTheme.Classic && game.hard_variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">Hard colours</span>
                                 </div>

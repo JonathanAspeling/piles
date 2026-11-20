@@ -16,7 +16,7 @@ function makeGame(User $host, User $joiner): GameSession
         'code' => 'CLAIM1',
         'status' => GameStatus::Playing,
         'host_user_id' => $host->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $game->gamePlayers()->create([

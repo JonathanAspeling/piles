@@ -14,7 +14,7 @@ test('pickup from a completed pile is rejected', function () {
         'code' => 'PKUP01',
         'status' => GameStatus::Playing,
         'host_user_id' => $host->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $player = $game->gamePlayers()->create([

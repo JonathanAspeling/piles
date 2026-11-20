@@ -41,7 +41,7 @@ test('a completed opponent pile reveals its clothing type, an in-progress one do
         'code' => 'OPPCMP',
         'status' => GameStatus::Playing,
         'host_user_id' => $me->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $game->gamePlayers()->create(['user_id' => $me->id, 'seat_index' => 0, 'is_ready' => true]);
@@ -70,7 +70,7 @@ test('an in-progress opponent pile leaks no card data at all', function () {
         'code' => 'OPPLEK',
         'status' => GameStatus::Playing,
         'host_user_id' => $me->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $game->gamePlayers()->create(['user_id' => $me->id, 'seat_index' => 0, 'is_ready' => true]);

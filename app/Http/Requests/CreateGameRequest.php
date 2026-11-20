@@ -20,7 +20,7 @@ class CreateGameRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'variant' => 'boolean',
+            'similar_items' => 'boolean',
             'theme' => [Rule::enum(CardTheme::class)],
             'hard_variant' => 'boolean',
         ];

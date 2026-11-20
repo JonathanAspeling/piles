@@ -10,7 +10,7 @@ function makeStatusGame(User $host, GameStatus $status, ?int $winnerUserId = nul
         'code' => 'STATUS',
         'status' => $status,
         'host_user_id' => $host->id,
-        'variant' => false,
+        'similar_items' => false,
         'winner_user_id' => $winnerUserId,
     ]);
 

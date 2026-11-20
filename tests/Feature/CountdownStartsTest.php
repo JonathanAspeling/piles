@@ -14,7 +14,7 @@ function createCountdownGame(User $host, User $joiner): GameSession
         'code' => 'CNTDWN',
         'status' => GameStatus::Countdown,
         'host_user_id' => $host->id,
-        'variant' => false,
+        'similar_items' => false,
     ]);
 
     $game->gamePlayers()->create([
