@@ -11,19 +11,21 @@ Original game by Lost Boy Entertainment / FoxMind (2024). Rules are summarised h
 
 ### Sets per Player Count
 
-Base games with 2–8 players use 4 centre cards; 9–10 player games use 8 centre cards to keep contention manageable.
+Sets used = 6 × players + 1: 6 piles of 4 cards per player, plus 4 centre cards. The same rule holds at every player count; 9–10 players extend it within the 63 sets.
 
 | Players | Centre | Sets used | Total cards |
 |---------|--------|-----------|-------------|
-| 2 | 4 | 13 | 52 + 4 centre = 56 |
-| 3 | 4 | 19 | 76 + 4 centre = 80 |
-| 4 | 4 | 25 | 100 + 4 centre = 104 |
-| 5 | 4 | 31 | 124 + 4 centre = 128 |
-| 6 | 4 | 37 | 148 + 4 centre = 152 |
-| 7 | 4 | 43 | 172 + 4 centre = 176 |
+| 2 | 4 | 13 | 48 + 4 centre = 52 |
+| 3 | 4 | 19 | 72 + 4 centre = 76 |
+| 4 | 4 | 25 | 96 + 4 centre = 100 |
+| 5 | 4 | 31 | 120 + 4 centre = 124 |
+| 6 | 4 | 37 | 144 + 4 centre = 148 |
+| 7 | 4 | 43 | 168 + 4 centre = 172 |
 | 8 | 4 | 49 | 192 + 4 centre = 196 |
-| 9 | 8 | 56 | 216 + 8 centre = 224 |
-| 10 | 8 | 62 | 240 + 8 centre = 248 |
+| 9 | 4 | 55 | 216 + 4 centre = 220 |
+| 10 | 4 | 61 | 240 + 4 centre = 244 |
+
+With the variant, add one set and deal 8 centre cards: 6 × players + 2 sets (62 at 10 players).
 
 ### Setup
 
@@ -51,7 +53,7 @@ The first player to have all 6 piles face-up (all sets complete) shouts **"PILES
 
 ### Variant (Chaos Mode)
 
-For 2–8 player games, variant deals **8 cards to the centre** instead of 4 (with one extra set added to the deck to cover the additional centre cards). Variant has no effect at 9–10 players because those counts already use 8 centre cards by default.
+At any player count, the host can choose variant: it adds **one extra set** to the deck and deals **8 cards to the centre** instead of 4.
 
 ---
 

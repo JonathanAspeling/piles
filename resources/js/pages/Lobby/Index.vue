@@ -189,7 +189,7 @@ onUnmounted(() => {
                                 <span class="text-sm">Variant mode (extra set)</span>
                             </label>
                             <p class="text-xs text-muted-foreground">
-                                8 cards in the centre instead of 4. Games with 9 or more players switch to variant automatically.
+                                An extra set in the deck and 8 cards in the centre instead of 4.
                             </p>
                             <fieldset class="space-y-2">
                                 <legend class="text-sm">Card art</legend>
