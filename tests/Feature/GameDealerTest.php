@@ -52,7 +52,39 @@ test('every player is dealt 6 piles of 4 cards', function (int $playerCount, boo
 })->with([
     [2, false], [3, false], [4, false], [5, false], [6, false],
     [7, false], [8, false], [9, false], [10, false],
-    [2, true], [7, true], [8, true], [10, true],
+    [2, true], [7, true], [8, true], [9, true], [10, true],
+]);
+
+test('the deck follows the real game: 6 sets per player plus 1, or plus 2 with the variant', function (int $playerCount, bool $variant) {
+    $game = makeDealtGame($playerCount, $variant);
+
+    app(GameDealerService::class)->deal($game);
+
+    $expectedSets = 6 * $playerCount + ($variant ? 2 : 1);
+    $expectedCentreCards = $variant ? 8 : 4;
+
+    $dealtCards = $game->piles()->withCount('pileCards')->get()->sum('pile_cards_count');
+
+    expect($game->fresh()->sets_count)->toBe($expectedSets)
+        ->and($game->centerPiles()->count())->toBe($expectedCentreCards)
+        ->and($dealtCards)->toBe($expectedSets * 4);
+})->with(function () {
+    foreach (range(2, 10) as $playerCount) {
+        yield "{$playerCount} players" => [$playerCount, false];
+        yield "{$playerCount} players, variant" => [$playerCount, true];
+    }
+});
+
+test('9 and 10 player games without the variant get 4 centre cards', function (int $playerCount, int $expectedSets) {
+    $game = makeDealtGame($playerCount);
+
+    app(GameDealerService::class)->deal($game);
+
+    expect($game->centerPiles()->count())->toBe(4)
+        ->and($game->fresh()->sets_count)->toBe($expectedSets);
+})->with([
+    '9 players' => [9, 55],
+    '10 players' => [10, 61],
 ]);
 
 test('dealing fails loudly rather than shorting the last seats when sets are missing', function () {
@@ -73,7 +105,8 @@ test('dealing fails loudly rather than shorting the last seats when sets are mis
 test('an incomplete set is never dealt', function () {
     Card::where('clothing_type', 0)->orderBy('id')->first()->delete();
 
-    $game = makeDealtGame(10);
+    // 10 players with the variant need 62 sets: exactly the 62 complete ones left.
+    $game = makeDealtGame(10, variant: true);
 
     app(GameDealerService::class)->deal($game);
 
@@ -85,7 +118,7 @@ test('an incomplete set is never dealt', function () {
 });
 
 test('no card is dealt twice in a full table', function () {
-    $game = makeDealtGame(10);
+    $game = makeDealtGame(10, variant: true);
 
     app(GameDealerService::class)->deal($game);
 
