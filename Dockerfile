@@ -6,7 +6,11 @@ FROM composer:2 AS vendor
 WORKDIR /app
 
 COPY composer.json composer.lock ./
+# composer:2 tracks the newest PHP, which can outrun the lock's packages. The
+# lock was resolved for the runtime's PHP 8.4, and the runtime stage's
+# platform check enforces that at boot, so this stage skips its own PHP check.
 RUN composer install \
+    --ignore-platform-req=php \
     --no-dev \
     --no-scripts \
     --no-autoloader \
