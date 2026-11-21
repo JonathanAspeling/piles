@@ -157,7 +157,7 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
 
     await host.getByRole('button', { name: 'Play again' }).click();
     await expect(host.getByRole('heading', { name: 'Game Lobby' })).toBeVisible();
-    await expect(guest.getByText('2/10 players')).toBeVisible();
+    await expect(guest.getByText('Players · 2/10')).toBeVisible();
     await shot(host, 'rematch-lobby-desktop');
     await shot(guest, 'rematch-lobby-phone');
 
@@ -179,11 +179,11 @@ async function playAsGuest(page: Page, name: string) {
 }
 
 async function readGameCode(page: Page): Promise<string> {
-    const header = await page.getByText('Code:').locator('..').innerText();
-    const match = header.match(/[A-Z0-9]{6}/);
+    const text = await page.locator('[data-room-code]').innerText();
+    const match = text.match(/[A-Z0-9]{6}/);
 
     if (!match) {
-        throw new Error(`No game code in "${header}"`);
+        throw new Error(`No game code in "${text}"`);
     }
 
     return match[0];
