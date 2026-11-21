@@ -79,7 +79,7 @@ onMounted(async () => {
                 v-for="(flight, index) in flights"
                 :key="flight.card.id"
                 ref="flyerElements"
-                data-swap-flyer
+                :data-swap-flyer="flight.card.id"
                 class="absolute rounded-[10px] border-[1.5px] md:rounded-[14px]"
                 :class="[
                     cardFaceClasses(flight.card.clothing_type, flight.card.color, cardStyle),

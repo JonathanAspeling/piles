@@ -14,7 +14,8 @@ import CardArt from './CardArt.vue';
  * - target: a centre card you can swap your lifted card for (amber glow)
  * - lifted: the card you've picked up (raised, amber ring)
  * - flash: a card that just arrived in a swap (green glow)
- * - hidden: keeps the slot while a flying copy of the card is mid-swap
+ * - hidden: keeps the slot while a flying copy of the card is mid-swap. Not
+ *   faded: it must show at once when the copy lands, or the hand-off blinks.
  */
 export type GameCardState = 'idle' | 'target' | 'lifted' | 'flash' | 'hidden';
 
@@ -52,7 +53,7 @@ const stateClasses = computed(() => STATE_CLASSES[props.state]);
         :disabled="!interactive"
         :data-card-id="card.id"
         :title="CLOTHING_TYPE_LABELS[card.clothing_type]"
-        class="relative flex aspect-[33/43] w-full items-center justify-center rounded-[10px] border-[1.5px] px-[12%] py-[19%] transition-[transform,box-shadow,opacity] duration-150 md:rounded-[14px]"
+        class="relative flex aspect-[33/43] w-full items-center justify-center rounded-[10px] border-[1.5px] px-[12%] py-[19%] transition-[transform,box-shadow] duration-150 md:rounded-[14px]"
         :class="[
             cardFaceClasses(card.clothing_type, card.color, cardStyle),
             interactive ? 'cursor-pointer active:scale-95' : 'cursor-default',

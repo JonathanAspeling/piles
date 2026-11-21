@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useGameStore } from '../../stores/game';
 import type { Card, CenterPile, GameSession } from '../../types/game';
 import { CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
@@ -107,10 +107,29 @@ function flash(cardIds: number[]) {
     }, 700);
 }
 
-function onFlightLanded() {
-    const landedIds = flights.value?.map((flight) => flight.card.id) ?? [];
-    flights.value = null;
+/**
+ * Hands over from the flying copies to the real cards without a blink: the
+ * real cards are shown (art decoded) underneath first, then the copies go.
+ */
+async function onFlightLanded() {
+    const landedFlights = flights.value;
+    const landedIds = landedFlights?.map((flight) => flight.card.id) ?? [];
+
     hiddenCardIds.value = new Set();
+    await nextTick();
+    await Promise.all(
+        landedIds.map((cardId) =>
+            boardRoot.value
+                ?.querySelector<HTMLImageElement>(`[data-zone] [data-card-id="${cardId}"] img`)
+                ?.decode()
+                .catch(() => undefined),
+        ),
+    );
+
+    // A newer swap may have taken off meanwhile; its flight isn't ours to clear.
+    if (flights.value === landedFlights) {
+        flights.value = null;
+    }
     flash(landedIds);
 }
 
