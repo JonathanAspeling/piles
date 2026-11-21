@@ -103,7 +103,7 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await shot(host, 'pile-open-desktop');
     await visiblePileCards(host).first().click();
     await shot(host, 'card-picked-up-desktop');
-    await centerPile(host, 1).click();
+    await expectSwapFlightMatchesCards(host, () => centerPile(host, 1).click());
     await expect(host.getByText('Tap a card to pick it up')).toBeVisible();
     await shot(host, 'after-swap-desktop');
 
@@ -212,7 +212,58 @@ async function completePile(page: Page, pileNumber: number, centerNumber: number
     const stray = titles.findIndex((title) => titles.filter((other) => other === title).length === 1);
 
     await cards.nth(stray).click();
-    await centerPile(page, centerNumber).click();
+    await expectSwapFlightMatchesCards(page, () => centerPile(page, centerNumber).click());
+}
+
+interface FlyerSize {
+    width: number;
+    height: number;
+    artWidth: number;
+    artHeight: number;
+}
+
+/**
+ * Runs a swap and checks the flying copies are exactly the size of a board card:
+ * each flyer's size the moment it appears, against a centre card's slot, and
+ * that its item art isn't squeezed to nothing.
+ */
+async function expectSwapFlightMatchesCards(page: Page, swap: () => Promise<void>) {
+    await page.evaluate(() => {
+        const sizes: FlyerSize[] = [];
+        (window as unknown as { __flyerSizes: typeof sizes }).__flyerSizes = sizes;
+        new MutationObserver((records, observer) => {
+            for (const record of records) {
+                for (const node of record.addedNodes) {
+                    if (!(node instanceof HTMLElement)) {
+                        continue;
+                    }
+                    for (const flyer of node.querySelectorAll<HTMLElement>('[data-swap-flyer]')) {
+                        const { width, height } = flyer.getBoundingClientRect();
+                        const art = flyer.querySelector('img')?.getBoundingClientRect();
+                        sizes.push({ width, height, artWidth: art?.width ?? 0, artHeight: art?.height ?? 0 });
+                    }
+                }
+            }
+            if (sizes.length) {
+                observer.disconnect();
+            }
+        }).observe(document.body, { childList: true, subtree: true });
+    });
+
+    const slot = await page.locator('[data-zone="centre"] button[data-card-id]').first().boundingBox();
+    await swap();
+
+    const flyers = await page.waitForFunction(() => {
+        const sizes = (window as unknown as { __flyerSizes: FlyerSize[] }).__flyerSizes;
+
+        return sizes.length ? sizes : null;
+    });
+
+    for (const flyer of (await flyers.jsonValue()) ?? []) {
+        expect(flyer.width).toBeCloseTo(slot!.width, 0);
+        expect(flyer.height).toBeCloseTo(slot!.height, 0);
+        expect(flyer.artWidth * flyer.artHeight, 'the flying card shows its item').toBeGreaterThan(0);
+    }
 }
 
 function rigEndgame(code: string) {
