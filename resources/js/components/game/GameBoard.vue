@@ -258,7 +258,10 @@ async function claimPiles() {
 </script>
 
 <template>
-    <div ref="boardRoot" class="flex min-h-full flex-1 flex-col md:flex-row">
+    <!-- Desktop: the board is exactly the viewport below the 48px header, so a
+         full table's opponents scroll in their own column instead of
+         stretching the page and pushing your piles below the fold. -->
+    <div ref="boardRoot" class="flex min-h-full flex-1 flex-col md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-none md:flex-row">
         <!-- Desktop: opponents get a column of their own. -->
         <aside class="hidden w-[300px] shrink-0 flex-col gap-[22px] border-r border-border bg-card px-6 py-7 md:flex">
             <div class="flex items-baseline justify-between gap-3">
@@ -291,8 +294,8 @@ async function claimPiles() {
             {{ coachText }}
         </p>
 
-        <main class="flex shrink-0 flex-col items-center px-4 pb-3 md:flex-1 md:justify-center md:px-10 md:py-8">
-            <div class="flex w-full flex-col gap-3.5 md:w-[660px] md:max-w-full md:gap-7">
+        <main class="flex shrink-0 flex-col items-center px-4 pb-3 md:flex-1 md:overflow-y-auto md:px-10 md:py-8">
+            <div class="flex w-full flex-col gap-3.5 md:my-auto md:w-[660px] md:max-w-full md:gap-7">
                 <div class="flex flex-col gap-2.5 md:gap-4">
                     <!-- Centre -->
                     <section
