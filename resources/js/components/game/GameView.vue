@@ -3,11 +3,12 @@ import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { useEchoStore } from '../../stores/echo';
 import { useGameStore } from '../../stores/game';
 import { useNotificationStore } from '../../stores/notification';
-import type { CenterPile, GamePlayer, GameSession, LobbyPlayer, OpponentState, PlayerPile } from '../../types/game';
+import type { CenterPile, GamePlayer, GameSession, LobbyPlayer, OpponentState, PlayerPile, RematchState } from '../../types/game';
 import { GameStatus } from '../../types/game';
 import { celebrate, stopCelebrating } from '../../utils/celebrate';
 import CountdownOverlay from './CountdownOverlay.vue';
 import GameBoard from './GameBoard.vue';
+import GameOverPanel from './GameOverPanel.vue';
 import LobbyPanel from './LobbyPanel.vue';
 
 const props = defineProps<{
@@ -17,6 +18,7 @@ const props = defineProps<{
     myPiles: PlayerPile[];
     centerPiles: CenterPile[];
     opponents: OpponentState[];
+    rematch?: RematchState;
 }>();
 
 const emit = defineEmits<{
@@ -33,7 +35,6 @@ const isPlaying = computed(
 const isEnded = computed(() => gameStore.session?.status === GameStatus.Ended);
 const isCountdown = computed(() => gameStore.session?.status === GameStatus.Countdown);
 const winner = computed(() => gameStore.winner);
-const forfeitedBy = computed(() => gameStore.forfeitedBy);
 const iWon = computed(() => isEnded.value && !!winner.value && winner.value.user_id === props.currentPlayer?.user_id);
 
 // Fires only on the false→true transition, so a page reload during Ended
@@ -45,7 +46,7 @@ watch(iWon, (won) => {
 });
 
 onMounted(() => {
-    gameStore.initialize(props.game, props.currentPlayer, props.players, props.myPiles, props.centerPiles, props.opponents);
+    gameStore.initialize(props.game, props.currentPlayer, props.players, props.myPiles, props.centerPiles, props.opponents, props.rematch);
 
     if (props.currentPlayer) {
         echoStore.subscribe(props.game.id, props.currentPlayer.id);
@@ -79,33 +80,8 @@ function onBackToLobby() {
             :server-offset-ms="gameStore.countdownServerOffsetMs"
         />
 
-        <!-- Winner/forfeit announcement — always shows on Ended so players are never stuck -->
-        <div
-            v-if="isEnded"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-        >
-            <div class="flex flex-col items-center gap-4 px-6 text-center text-white">
-                <p class="text-xl font-semibold sm:text-2xl">Game Over!</p>
-                <template v-if="forfeitedBy">
-                    <p class="text-3xl font-black sm:text-5xl">{{ forfeitedBy }} forfeited</p>
-                    <p class="text-lg text-white/70">No winner this time</p>
-                </template>
-                <template v-else-if="winner">
-                    <p v-if="iWon" class="text-3xl font-black sm:text-5xl">Congratulations, {{ winner.name }}! 🎉</p>
-                    <p v-else class="text-3xl font-black sm:text-5xl">{{ winner.name }} wins!</p>
-                </template>
-                <template v-else>
-                    <p class="text-3xl font-black sm:text-5xl">Game ended</p>
-                    <p class="text-lg text-white/70">Result unavailable — return to lobby</p>
-                </template>
-                <button
-                    @click="onBackToLobby"
-                    class="mt-4 rounded-lg bg-white px-6 py-2 text-sm font-bold text-black hover:bg-white/90"
-                >
-                    Back to Lobby
-                </button>
-            </div>
-        </div>
+        <!-- End of game: results, rematch status, Play again. Always shows on Ended so players are never stuck. -->
+        <GameOverPanel v-if="isEnded" @leave="onBackToLobby" />
 
         <!-- Toast notifications: pushed above sticky hand on mobile -->
         <TransitionGroup
@@ -113,7 +89,7 @@ function onBackToLobby() {
             tag="div"
             role="status"
             aria-live="polite"
-            class="fixed bottom-40 right-2 z-40 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4"
+            class="fixed right-2 top-24 z-40 flex flex-col items-end gap-2 md:bottom-4 md:right-4 md:top-auto"
         >
             <div
                 v-for="notification in notificationStore.notifications"
