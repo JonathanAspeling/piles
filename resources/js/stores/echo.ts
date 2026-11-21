@@ -12,6 +12,9 @@ export const useEchoStore = defineStore('echo', () => {
             .here((users: { id: number }[]) => {
                 isConnected.value = true;
                 gameStore.setConnectedUsers(users.map((u) => u.id));
+                // Fires on every (re)subscribe. Broadcasts sent before it, or while
+                // the connection was down, aren't replayed, so catch up instead.
+                gameStore.resyncBoard();
             })
             .joining((user: { id: number }) => {
                 gameStore.markConnected(user.id);
@@ -25,28 +28,21 @@ export const useEchoStore = defineStore('echo', () => {
             .listen('GameCountdownStarted', (event: { duration_ms: number; server_time_ms?: number }) => {
                 gameStore.applyCountdown(event.duration_ms, event.server_time_ms);
             })
-            .listen('GameStarted', (event: { center_piles: { id: number; pile_index: number; top_card: Card | null }[]; players: OpponentState[] }) => {
-                gameStore.applyGameStarted(event.center_piles, event.players);
-                gameStore.confirmClientReady();
-            })
+            .listen(
+                'GameStarted',
+                (event: { center_piles: { id: number; pile_index: number; top_card: Card | null }[]; players: OpponentState[] }) => {
+                    gameStore.applyGameStarted(event.center_piles, event.players);
+                },
+            )
             .listen('GameActivated', () => {
                 gameStore.applyGameActivated();
             })
-            .listenForWhisper(
-                'center-card-swapped',
-                (event: { center_pile_id: number; center_pile_version: number; incoming_card: Card; outgoing_card_id: number }) => {
-                    gameStore.applyCenterCardSwapped(event.center_pile_id, event.center_pile_version, event.incoming_card);
-                },
-            )
-            .listenForWhisper('swap-cancelled', (event: { center_pile_id: number; previous_top_card: Card; previous_version: number }) => {
-                gameStore.applySwapCancelled(event.center_pile_id, event.previous_top_card, event.previous_version);
+            .listen('CenterPileSwapped', (event: { center_pile_id: number; version: number; top_card: Card }) => {
+                gameStore.applyCenterPileConfirmed(event.center_pile_id, event.version, event.top_card);
             })
-            .listen(
-                'PlayerPileCompleted',
-                (event: { game_player_id: number; pile_id: number; pile_index: number; cards: Card[] }) => {
-                    gameStore.applyPileCompleted(event.game_player_id, event.pile_id, event.cards);
-                },
-            )
+            .listen('PlayerPileCompleted', (event: { game_player_id: number; pile_id: number; pile_index: number; cards: Card[] }) => {
+                gameStore.applyPileCompleted(event.game_player_id, event.pile_id, event.cards);
+            })
             .listen('GameEnded', (event: { winner: GameWinner | null; forfeited_by: string | null }) => {
                 gameStore.applyGameEnded(event.winner, event.forfeited_by ?? undefined);
             })

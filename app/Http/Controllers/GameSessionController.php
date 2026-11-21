@@ -114,39 +114,8 @@ class GameSessionController extends Controller
                 ->values()
                 ->all();
 
-            $props['centerPiles'] = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
-                'id' => $pile->id,
-                'pile_index' => $pile->pile_index,
-                'version' => $pile->version,
-                'top_card' => $pile->pileCards->first() ? [
-                    'id' => $pile->pileCards->first()->card->id,
-                    'clothing_type' => $pile->pileCards->first()->card->clothing_type->value,
-                    'color' => $pile->pileCards->first()->card->color->value,
-                ] : null,
-            ])->values()->all();
-
-            $props['opponents'] = $game->gamePlayers()
-                ->where('id', '!=', $currentPlayer->id)
-                ->with('user', 'piles.pileCards.card')
-                ->get()
-                ->map(fn ($player) => [
-                    'id' => $player->id,
-                    'user_id' => $player->user_id,
-                    'name' => $player->user->name,
-                    'seat_index' => $player->seat_index,
-                    'piles' => $player->piles->map(fn (Pile $pile) => [
-                        'id' => $pile->id,
-                        'pile_index' => $pile->pile_index,
-                        'is_completed' => $pile->is_completed,
-                        // Completed piles are public — they're revealed by
-                        // PlayerPileCompleted the moment they finish. An
-                        // in-progress pile's contents stay private to its owner,
-                        // so only the completed ones surrender a clothing type.
-                        'completed_type' => $pile->is_completed
-                            ? $pile->pileCards->first()?->card->clothing_type->value
-                            : null,
-                    ])->values()->all(),
-                ])->values()->all();
+            $props['centerPiles'] = $game->centerPilesPayload();
+            $props['opponents'] = $game->opponentsPayload($currentPlayer);
         }
 
         return Inertia::render('Game/Show', $props);
@@ -246,14 +215,25 @@ class GameSessionController extends Controller
     {
         abort_unless($game->status === GameStatus::Countdown, 422, 'Game is not in the countdown phase.');
 
-        $game->gamePlayers()
-            ->where('user_id', auth()->id())
-            ->firstOrFail()
-            ->update(['is_game_ready' => true]);
+        // One transaction (and so, on SQLite, one writer at a time): of several
+        // players confirming at once, exactly one sees the table complete and
+        // starts the countdown. The client retries this until it lands, and a
+        // repeat from a player already marked ready changes nothing.
+        $startsCountdown = DB::transaction(function () use ($game): bool {
+            $player = $game->gamePlayers()
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
 
-        $allReady = $game->gamePlayers()->where('is_game_ready', false)->doesntExist();
+            if ($player->is_game_ready) {
+                return false;
+            }
 
-        if ($allReady) {
+            $player->update(['is_game_ready' => true]);
+
+            return $game->gamePlayers()->where('is_game_ready', false)->doesntExist();
+        }, 3);
+
+        if ($startsCountdown) {
             broadcast(new GameCountdownStarted($game, 3000));
             StartGameJob::dispatch($game)->delay(now()->addSeconds(3));
         }

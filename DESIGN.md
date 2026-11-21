@@ -185,7 +185,7 @@ lobby ──► countdown (3 s) ──► playing ──► verifying ──► 
 | `GameLobbyUpdated` | presence | Player joins, leaves, or toggles ready |
 | `GameCountdownStarted` | presence | Host triggers start |
 | `GameStarted` | presence + private | Countdown ends; private carries this player's 6 piles + card data |
-| `CenterCardSwapped` | presence | Successful swap; reveals the discarded card, hides the taken card |
+| `CenterPileSwapped` | presence | Successful swap committed; the centre pile's new top card and version (the authoritative result every screen converges on) |
 | `PlayerPileCompleted` | presence | Player's pile becomes a matching set (cards revealed) |
 | `GameEnded` | presence | Claim verified; includes winner info |
 | `GameResumed` | presence | Claim rejected; game continues |
@@ -208,6 +208,7 @@ DELETE /games/{game}/leave     → leave a session
 
 POST /games/{game}/client-ready → mark client fully loaded (all-ready gate for countdown)
 GET  /games/{game}/status      → poll current status (safety fallback for stuck clients)
+GET  /games/{game}/state       → full snapshot for this player: status, centre, own hand, opponents' progress (resync)
 
 POST /games/{game}/pickup      → pick up a card from one of your piles into your hand
 POST /games/{game}/swap        → swap the held card with a centre pile (atomic)
@@ -223,17 +224,30 @@ The most critical race condition: two players simultaneously grabbing the same c
 
 ### Strategy
 
-`CardSwapService` uses a `SELECT ... FOR UPDATE` on the specific centre pile row combined with an optimistic `version` column:
+`CardSwapService` checks an optimistic `version` column on the centre pile inside a transaction:
 
-1. Client sends `POST /games/{game}/swap` with `{ center_pile_id, center_card_id, my_card_id, expected_version }`.
-2. Server opens a transaction and locks the centre pile row (`FOR UPDATE`).
+1. Client sends `POST /games/{game}/swap` with `{ center_pile_id, center_card_id, expected_version }` (the held card is the one recorded by `pickup`).
+2. Server opens a transaction and reads the centre pile.
 3. If `pile.version !== expected_version`, the swap is stale — return **HTTP 409 Conflict**.
 4. Otherwise, move cards and increment `pile.version`.
-5. Broadcast `CenterCardSwapped` to all players (the discarded card is revealed; the taken card is not).
+5. After commit, broadcast `CenterPileSwapped` (pile id, new version, new top card) to everyone.
 
-On a 409 the client silently re-evaluates: the concurrent `CenterCardSwapped` event it already received shows the new centre pile state, so the player picks a different card.
+**SQLite.** `lockForUpdate()` is a no-op on SQLite; what serialises swaps is the database's single writer. The connection uses `transaction_mode: IMMEDIATE`, so a transaction takes the write lock at `BEGIN` and concurrent swaps queue (up to `busy_timeout`). Under the default deferred mode, a transaction that read and then tried to write after another connection committed failed at once with "database is locked", turning simultaneous swaps into 500s, even on different piles.
 
-Only the specific centre pile row is locked, so players can simultaneously interact with *different* centre piles without blocking each other.
+### Clients: the server is the authority
+
+- The swapping player's own screen shows the swap immediately (optimistic) and rolls back on a 409 or error.
+- No other screen shows a swap until `CenterPileSwapped` arrives. There are no client-to-client whispers: with several players swapping at once, whispered guesses and cancels arrive in any order and left screens disagreeing with the server.
+- A centre pile only ever moves forward: an event or resync applies if its version is at least the one shown, so late or out-of-order messages can't roll it back. At the same version, the server's card replaces a local guess.
+- On a 409 the client resyncs from `GET /games/{game}/state`.
+
+### Missed broadcasts
+
+Broadcasts aren't replayed, so a screen that subscribed late or dropped its connection catches up from `GET /games/{game}/state` instead: whenever the presence channel (re)subscribes (`here`), and every few seconds while the table is all ready in the lobby or counting down. A resync moves the screen forward to the server's phase, never back.
+
+`client-ready` is only sent once a screen has both the centre (`GameStarted`) and its own hand (`PlayerHandDealt`), and is retried until it lands; the server records it in one transaction and ignores repeats, so exactly one confirmation starts the countdown. The countdown waits for every player, so a single lost confirmation used to hold the whole table at "Get ready…".
+
+`tests/e2e/swap-race.spec.ts` plays a 10-player table racing for the centre, over HTTP (server consistency) and through ten browsers (every screen converges on the server's centre).
 
 ---
 

@@ -109,6 +109,60 @@ class GameSession extends Model
         ];
     }
 
+    /**
+     * The centre as every player sees it: each pile's top card and version.
+     *
+     * @return array<int, array{id: int, pile_index: int, version: int, top_card: array{id: int, clothing_type: int, color: int}|null}>
+     */
+    public function centerPilesPayload(): array
+    {
+        return $this->centerPiles()->with('pileCards.card')->get()->map(function (Pile $pile): array {
+            $topCard = $pile->pileCards->first()?->card;
+
+            return [
+                'id' => $pile->id,
+                'pile_index' => $pile->pile_index,
+                'version' => $pile->version,
+                'top_card' => $topCard ? [
+                    'id' => $topCard->id,
+                    'clothing_type' => $topCard->clothing_type->value,
+                    'color' => $topCard->color->value,
+                ] : null,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Everyone else at the table, as the given player may see them.
+     *
+     * Completed piles are public: they're revealed by PlayerPileCompleted the
+     * moment they finish. An in-progress pile's contents stay private to its
+     * owner, so only the completed ones surrender a clothing type.
+     *
+     * @return array<int, array{id: int, user_id: int, name: string, seat_index: int, piles: array<int, array{id: int, pile_index: int, is_completed: bool, completed_type: int|null}>}>
+     */
+    public function opponentsPayload(GamePlayer $viewer): array
+    {
+        return $this->gamePlayers()
+            ->where('id', '!=', $viewer->id)
+            ->with('user', 'piles.pileCards.card')
+            ->get()
+            ->map(fn (GamePlayer $player): array => [
+                'id' => $player->id,
+                'user_id' => $player->user_id,
+                'name' => $player->user->name,
+                'seat_index' => $player->seat_index,
+                'piles' => $player->piles->map(fn (Pile $pile): array => [
+                    'id' => $pile->id,
+                    'pile_index' => $pile->pile_index,
+                    'is_completed' => $pile->is_completed,
+                    'completed_type' => $pile->is_completed
+                        ? $pile->pileCards->first()?->card->clothing_type->value
+                        : null,
+                ])->values()->all(),
+            ])->values()->all();
+    }
+
     public function gamePlayers(): HasMany
     {
         return $this->hasMany(GamePlayer::class);

@@ -16,6 +16,10 @@ export const useGameStore = defineStore('game', () => {
     const myPiles = ref<PlayerPile[]>([]);
     const centerPiles = ref<CenterPile[]>([]);
     const opponents = ref<OpponentState[]>([]);
+    // Not reactive: bookkeeping for confirmClientReadyIfDealt(), never rendered.
+    let clientReadyConfirmed = false;
+    let clientReadyInFlight = false;
+    const CLIENT_READY_ATTEMPTS = 6;
     const countdownDurationMs = ref<number | null>(null);
     const countdownStartedAtLocalMs = ref<number | null>(null);
     // Server clock minus local clock at the moment GameCountdownStarted arrived.
@@ -114,11 +118,10 @@ export const useGameStore = defineStore('game', () => {
         opponents.value = opponentsData;
         // Reset presence — the fresh subscribe's .here() will repopulate.
         connectedUserIds.value = [];
+        clientReadyConfirmed = false;
         preloadGameCardArt();
         // Rejoin mid-countdown: data already dealt server-side, confirm immediately
-        if (gameData.status === GameStatus.Countdown && myPilesData.length > 0) {
-            confirmClientReady();
-        }
+        confirmClientReadyIfDealt();
     }
 
     function setConnectedUsers(userIds: number[]) {
@@ -166,18 +169,49 @@ export const useGameStore = defineStore('game', () => {
         }));
         opponents.value = allPlayers.filter((p) => p.id !== currentPlayer.value?.id);
         preloadGameCardArt();
+        confirmClientReadyIfDealt();
     }
 
     function applyHandDealt(piles: PlayerPile[]) {
         myPiles.value = piles;
         preloadGameCardArt();
+        confirmClientReadyIfDealt();
     }
 
-    async function confirmClientReady() {
-        if (!session.value) {
+    /**
+     * Tell the server this screen has everything it needs to play. The
+     * countdown waits for every player's confirmation, so it's only sent once
+     * both the centre and this player's hand have arrived (they come in
+     * separate broadcasts), and retried until the server takes it: one lost
+     * request would otherwise hold the whole table at "Get ready…".
+     */
+    async function confirmClientReadyIfDealt() {
+        const isDealt = centerPiles.value.length > 0 && myPiles.value.length > 0;
+        if (!session.value || session.value.status !== GameStatus.Countdown || !isDealt || clientReadyConfirmed || clientReadyInFlight) {
             return;
         }
-        await apiFetch(route('games.client-ready', { game: session.value.id }), { method: 'POST' });
+        clientReadyInFlight = true;
+        const gameId = session.value.id;
+        try {
+            for (let attempt = 1; attempt <= CLIENT_READY_ATTEMPTS; attempt++) {
+                try {
+                    const response = await apiFetch(route('games.client-ready', { game: gameId }), { method: 'POST' });
+                    if (response.ok) {
+                        clientReadyConfirmed = true;
+                        return;
+                    }
+                    // 422: the game has moved past the countdown; nothing left to confirm.
+                    if (response.status === 422) {
+                        return;
+                    }
+                } catch {
+                    // Network blip: fall through to the retry.
+                }
+                await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+            }
+        } finally {
+            clientReadyInFlight = false;
+        }
     }
 
     function applyGameActivated() {
@@ -244,9 +278,7 @@ export const useGameStore = defineStore('game', () => {
         myPickedUpPileId.value = null;
 
         try {
-            const response = await serializeGameplay(() =>
-                apiFetch(route('gameplay.release', { game: session.value!.id }), { method: 'POST' }),
-            );
+            const response = await serializeGameplay(() => apiFetch(route('gameplay.release', { game: session.value!.id }), { method: 'POST' }));
             if (!response.ok) {
                 myPickedUpCard.value = previousCard;
                 myPickedUpPileId.value = previousPileId;
@@ -284,13 +316,8 @@ export const useGameStore = defineStore('game', () => {
         centerPile.version = nextVersion;
         myPickedUpCard.value = null;
         myPickedUpPileId.value = null;
-
-        window.Echo.join(`game.${session.value.id}`).whisper('center-card-swapped', {
-            center_pile_id: centerPileId,
-            center_pile_version: nextVersion,
-            incoming_card: heldCard,
-            outgoing_card_id: centerCardId,
-        });
+        // Only this screen shows the swap before the server confirms it. Everyone
+        // else waits for CenterPileSwapped, so no screen ever shows a guess.
 
         const revert = () => {
             // Find the incoming card by id now rather than reusing heldCardIndex:
@@ -303,15 +330,14 @@ export const useGameStore = defineStore('game', () => {
             if (myPile && incomingIndex !== -1) {
                 myPile.cards.splice(incomingIndex, 1, heldCard);
             }
-            centerPile.top_card = centerCard;
-            centerPile.version = previousVersion;
+            // Only undo our own optimistic card. If the winner's swap has already
+            // been confirmed here, rolling back would bury it under a stale card.
+            if (centerPile.version === nextVersion && centerPile.top_card?.id === heldCard.id) {
+                centerPile.top_card = centerCard;
+                centerPile.version = previousVersion;
+            }
             myPickedUpCard.value = heldCard;
             myPickedUpPileId.value = myPile?.id ?? null;
-            window.Echo.join(`game.${session.value!.id}`).whisper('swap-cancelled', {
-                center_pile_id: centerPileId,
-                previous_top_card: centerCard,
-                previous_version: previousVersion,
-            });
         };
 
         try {
@@ -355,9 +381,7 @@ export const useGameStore = defineStore('game', () => {
         // landing mid-flight isn't thrown away by the rollback below.
         const snapshot = [...myPiles.value];
 
-        const reordered = orderedPileIds
-            .map((id) => myPiles.value.find((p) => p.id === id))
-            .filter((p): p is PlayerPile => p !== undefined);
+        const reordered = orderedPileIds.map((id) => myPiles.value.find((p) => p.id === id)).filter((p): p is PlayerPile => p !== undefined);
 
         if (reordered.length !== myPiles.value.length) {
             return;
@@ -397,52 +421,94 @@ export const useGameStore = defineStore('game', () => {
      * that ordering is what makes replacing myPiles wholesale safe, since no
      * optimistic mutation can still be waiting behind it.
      */
+    /**
+     * Catch up with the server's game: status, centre, hand and opponents.
+     *
+     * Broadcasts aren't replayed, so a screen that subscribed late, dropped
+     * its connection, or lost a swap race calls this instead of trusting what
+     * it has. It never moves a centre pile back to an older version (a newer
+     * CenterPileSwapped can overtake the response) or the game back a phase.
+     */
     async function resyncBoard() {
         if (resyncInFlight.value || !session.value) {
             return;
         }
         resyncInFlight.value = true;
+        const gameId = session.value.id;
         try {
-            const response = await serializeGameplay(() => apiFetch(route('gameplay.state', { game: session.value!.id })));
+            const response = await serializeGameplay(() => apiFetch(route('gameplay.state', { game: gameId })));
             if (!response.ok) {
                 return;
             }
             const fresh: {
-                center_piles: { id: number; pile_index: number; version: number; top_card: Card | null }[];
+                status: GameStatus;
+                center_piles: CenterPile[];
                 my_piles: PlayerPile[];
+                opponents: OpponentState[];
             } = await response.json();
 
-            for (const pile of fresh.center_piles) {
-                const existing = centerPiles.value.find((p) => p.id === pile.id);
-                if (existing) {
-                    existing.version = pile.version;
-                    existing.top_card = pile.top_card;
+            const sameCentre =
+                centerPiles.value.length === fresh.center_piles.length &&
+                fresh.center_piles.every((pile) => centerPiles.value.some((existing) => existing.id === pile.id));
+            if (!sameCentre) {
+                centerPiles.value = fresh.center_piles;
+            } else {
+                for (const pile of fresh.center_piles) {
+                    const existing = centerPiles.value.find((p) => p.id === pile.id)!;
+                    if (pile.version >= existing.version) {
+                        existing.version = pile.version;
+                        existing.top_card = pile.top_card;
+                    }
                 }
             }
 
             myPiles.value = fresh.my_piles;
+            if (fresh.opponents.length > 0) {
+                opponents.value = fresh.opponents;
+            }
+
+            await catchUpStatus(fresh.status);
+            preloadGameCardArt();
+            confirmClientReadyIfDealt();
         } catch {
-            // Silent — next swap or manual refresh will recover.
+            // Silent — the next trigger (swap, reconnect, watchdog) will recover.
         } finally {
             resyncInFlight.value = false;
         }
     }
 
-    function applyCenterCardSwapped(centerPileId: number, version: number, incomingCard: Card) {
-        const pile = centerPiles.value.find((p) => p.id === centerPileId);
-        if (pile) {
-            pile.version = version;
-            if (!pile.top_card || pile.top_card.id !== incomingCard.id) {
-                pile.top_card = incomingCard;
-            }
+    const PHASE_ORDER: GameStatus[] = [GameStatus.Lobby, GameStatus.Countdown, GameStatus.Playing, GameStatus.Ended];
+
+    /** Moves this screen forward to the server's phase if it missed the broadcast that would have. */
+    async function catchUpStatus(serverStatus: GameStatus) {
+        if (!session.value || serverStatus === session.value.status) {
+            return;
         }
+        // Verifying is a pause within Playing, in either direction.
+        const phase = (status: GameStatus) => PHASE_ORDER.indexOf(status === GameStatus.Verifying ? GameStatus.Playing : status);
+        if (phase(serverStatus) < phase(session.value.status)) {
+            return;
+        }
+        if (serverStatus === GameStatus.Ended) {
+            const status = await apiFetch(route('games.status', { game: session.value.id }));
+            const { winner: gameWinner } = (await status.json()) as { winner: GameWinner | null };
+            applyGameEnded(gameWinner);
+
+            return;
+        }
+        session.value.status = serverStatus;
     }
 
-    function applySwapCancelled(centerPileId: number, previousTopCard: Card, previousVersion: number) {
+    /**
+     * The server's committed result of a swap. It applies unless this screen
+     * already shows a newer version of the pile; at the same version it
+     * replaces this player's own unconfirmed swap, which lost the race.
+     */
+    function applyCenterPileConfirmed(centerPileId: number, version: number, topCard: Card) {
         const pile = centerPiles.value.find((p) => p.id === centerPileId);
-        if (pile) {
-            pile.top_card = previousTopCard;
-            pile.version = previousVersion;
+        if (pile && version >= pile.version) {
+            pile.version = version;
+            pile.top_card = topCard;
         }
     }
 
@@ -547,15 +613,14 @@ export const useGameStore = defineStore('game', () => {
         applyCountdown,
         applyGameStarted,
         applyHandDealt,
-        confirmClientReady,
+        confirmClientReadyIfDealt,
         applyGameActivated,
         pickUpCard,
         releaseCard,
         swapCard,
         reorderPiles,
         resyncBoard,
-        applyCenterCardSwapped,
-        applySwapCancelled,
+        applyCenterPileConfirmed,
         applyPileCompleted,
         applyGameEnded,
         applyGameResumed,
