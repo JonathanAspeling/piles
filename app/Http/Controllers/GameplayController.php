@@ -10,6 +10,7 @@ use App\Events\LobbyUpdated;
 use App\Events\PlayerPileCompleted;
 use App\Exceptions\StaleVersionException;
 use App\Http\Requests\ClaimPilesRequest;
+use App\Http\Requests\ReorderPileCardsRequest;
 use App\Http\Requests\ReorderPilesRequest;
 use App\Http\Requests\SwapCardRequest;
 use App\Models\Card;
@@ -175,6 +176,19 @@ class GameplayController extends Controller
             ->firstOrFail();
 
         $pileReorderService->reorder($game, $player, $request->input('pile_ids'));
+
+        return response()->noContent();
+    }
+
+    public function reorderPileCards(GameSession $game, Pile $pile, ReorderPileCardsRequest $request, PileReorderService $pileReorderService): Response
+    {
+        abort_unless($game->status === GameStatus::Playing, 422, 'Game is not in progress.');
+
+        $player = $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $pileReorderService->reorderCards($game, $player, $pile->id, $request->input('card_ids'));
 
         return response()->noContent();
     }

@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\GamePlayer;
 use App\Models\GameSession;
 use App\Models\Pile;
+use App\Models\PileCard;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class PileReorderService
 {
@@ -44,6 +46,43 @@ class PileReorderService
 
             foreach ($orderedPileIds as $position => $pileId) {
                 $piles[$pileId]->update(['pile_index' => $position]);
+            }
+        });
+    }
+
+    /**
+     * Rewrite the order of the cards within one of a player's piles.
+     *
+     * Like pile order it's presentational, but persisted so a refresh or a
+     * resync keeps it. The ids must be exactly the cards in the pile now: a
+     * swap that landed first changes them, which is a conflict (409) the
+     * client answers by resyncing, not a malformed request.
+     *
+     * @param  array<int, int>  $orderedCardIds
+     */
+    public function reorderCards(GameSession $game, GamePlayer $player, int $pileId, array $orderedCardIds): void
+    {
+        DB::transaction(function () use ($game, $player, $pileId, $orderedCardIds) {
+            $pile = Pile::where('id', $pileId)
+                ->where('game_session_id', $game->id)
+                ->where('game_player_id', $player->id)
+                ->firstOrFail();
+
+            abort_if($pile->is_completed, 422, 'A completed pile cannot be rearranged.');
+
+            $pileCards = $pile->pileCards()->get()->keyBy('card_id');
+
+            if (count($orderedCardIds) !== $pileCards->count() || $pileCards->keys()->diff($orderedCardIds)->isNotEmpty()) {
+                throw new ConflictHttpException('The pile has changed. Refresh and try again.');
+            }
+
+            // Positions are unique within a pile, so park every card clear of
+            // the final range before writing it.
+            foreach ($orderedCardIds as $position => $cardId) {
+                PileCard::whereKey($pileCards[$cardId]->id)->update(['position' => $position + 100]);
+            }
+            foreach ($orderedCardIds as $position => $cardId) {
+                PileCard::whereKey($pileCards[$cardId]->id)->update(['position' => $position]);
             }
         });
     }

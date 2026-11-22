@@ -16,8 +16,6 @@ const props = defineProps<{
     cardStyle: CardStyle;
     isOpen: boolean;
     disabled: boolean;
-    reorderMode: boolean;
-    isReorderSelected: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -25,10 +23,9 @@ const emit = defineEmits<{
 }>();
 
 const completedCard = computed(() => (props.pile.is_completed ? (props.pile.cards[0] ?? null) : null));
-// A completed pile is normally inert, but rearranging moves the slot rather
-// than its cards, so it has to be selectable while reorder mode is armed.
-const isInert = computed(() => props.disabled || (props.pile.is_completed && !props.reorderMode));
-const isRaised = computed(() => (props.isOpen && !props.reorderMode) || props.isReorderSelected);
+// A completed pile has nothing to open, but it stays enabled so it can still
+// be dragged to a new place in the row.
+const isRaised = computed(() => props.isOpen);
 
 const label = computed(() => {
     const name = `Pile ${props.pile.pile_index + 1}`;
@@ -37,7 +34,7 @@ const label = computed(() => {
 });
 
 function onClick() {
-    if (!isInert.value) {
+    if (!props.disabled && !props.pile.is_completed) {
         emit('open', props.pile.id);
     }
 }
@@ -46,7 +43,7 @@ function onClick() {
 <template>
     <button
         type="button"
-        :disabled="isInert"
+        :disabled="disabled"
         :aria-label="label"
         :aria-pressed="isOpen"
         class="flex h-[60px] flex-col items-center justify-center gap-1 rounded-[10px] border-2 transition-[transform,box-shadow,border-color,background-color] duration-150 active:scale-95 md:h-[72px] md:flex-row md:gap-3"
@@ -57,8 +54,7 @@ function onClick() {
                   ? 'border-[#F2B42B] bg-[#FDF4DC] dark:bg-[rgba(242,180,43,0.14)]'
                   : 'border-border bg-card hover:border-[#F2B42B]/60',
             isRaised ? '-translate-y-1 shadow-[0_8px_18px_rgba(0,0,0,0.12)]' : '',
-            reorderMode ? 'border-dashed' : '',
-            pile.is_completed && !reorderMode ? 'cursor-default' : '',
+            pile.is_completed ? 'cursor-grab' : '',
             disabled && !pile.is_completed ? 'opacity-50' : '',
         ]"
         @click="onClick"
