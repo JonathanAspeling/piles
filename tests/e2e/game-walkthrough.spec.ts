@@ -49,6 +49,10 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await shot(host, 'lobby-empty-desktop');
 
     await host.getByRole('button', { name: 'How to play' }).click();
+    // It teaches the current controls: dragging first, tapping as the alternative.
+    await expect(host.getByText(/onto a centre card to swap them/)).toBeVisible();
+    await expect(host.getByText(/Prefer tapping\?/)).toBeVisible();
+    await host.getByText(/arrange them however helps you/).scrollIntoViewIfNeeded();
     await shot(host, 'how-to-play-desktop', { fullPage: false });
     await host.getByRole('button', { name: 'Close' }).first().click();
 

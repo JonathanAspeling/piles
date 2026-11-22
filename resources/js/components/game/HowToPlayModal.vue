@@ -105,10 +105,21 @@ onUnmounted(() => {
                 <section>
                     <h3 class="mb-2 text-sm font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 sm:text-xs">Playing</h3>
                     <ul class="list-disc space-y-1.5 pl-5">
-                        <li>Tap one of your piles to open it, then tap a card to <strong>mark it for discard</strong> — it lifts out of the row.</li>
-                        <li>Then tap a centre pile to <strong>swap</strong> — your marked card goes down, the centre card comes up.</li>
-                        <li>Changed your mind? Tap the lifted card again to put it back, or tap a different card to mark that one instead.</li>
-                        <li>You may only mark <strong>one card at a time</strong>, and only swap with the centre — never with other players.</li>
+                        <li>Tap one of your piles to <strong>open it</strong>. Its four cards appear under the centre.</li>
+                        <li>
+                            <strong>Drag</strong> one of your cards onto a centre card to <strong>swap</strong> them, or drag a centre card
+                            onto one of yours. Let go anywhere else and the card goes back.
+                        </li>
+                        <li>
+                            Prefer tapping? Tap your card, then the centre card, or the centre card first, then yours. Tap a chosen card
+                            again to put it back.
+                        </li>
+                        <li>You only ever swap with the centre, never with other players, and one card at a time.</li>
+                        <li>
+                            Everyone plays at once. If someone takes the same centre card a moment before you, your card bounces back. Just try
+                            again.
+                        </li>
+                        <li>Drag your piles, or the cards in an open pile, to arrange them however helps you.</li>
                         <li>Once a pile is a complete set, it flips <strong>face-up</strong> and locks — no more changes.</li>
                     </ul>
                     <!-- Swap illustration -->
@@ -120,7 +131,7 @@ onUnmounted(() => {
                             >
                                 <CardArt :type="ClothingType.Jeans" :color="CardColor.Red" :theme="cardStyle.theme" />
                             </div>
-                            <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Your pick</span>
+                            <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Your card</span>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M8 3 4 7l4 4" />
@@ -135,7 +146,7 @@ onUnmounted(() => {
                             >
                                 <CardArt :type="ClothingType.Hoodie" :color="CardColor.Blue" :theme="cardStyle.theme" />
                             </div>
-                            <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Centre pile</span>
+                            <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Centre card</span>
                         </div>
                     </div>
                 </section>
