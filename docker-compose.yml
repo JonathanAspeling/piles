@@ -23,6 +23,8 @@ services:
       REVERB_HOST: ${REVERB_HOST}
       REVERB_PORT: ${REVERB_PORT:-443}
       REVERB_SCHEME: ${REVERB_SCHEME:-https}
+      # Umami analytics. Set it empty to switch tracking off (the e2e stack does).
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID-c9baf2ab-d42e-43e6-84e0-9b4663c8ca86}
     volumes:
       - piles-db:/data
       - piles-storage:/app/storage

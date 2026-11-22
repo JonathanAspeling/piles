@@ -28,6 +28,15 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    /*
+     * Umami page analytics. The tracker loads only when a website id is set,
+     * which docker-compose.yml does for production (the e2e stack blanks it).
+     */
+    'umami' => [
+        'script_url' => env('UMAMI_SCRIPT_URL', 'https://stats.johnodev.co.za/script.js'),
+        'website_id' => env('UMAMI_WEBSITE_ID'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
