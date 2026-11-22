@@ -107,6 +107,19 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await expect(host.getByText('Tap a card to pick it up')).toBeVisible();
     await shot(host, 'after-swap-desktop');
 
+    // The other way round: choose a centre card first, then the card to trade for it.
+    await centerPile(host, 2).click();
+    await expect(host.getByText(/chosen · tap it again to put it back/)).toBeVisible();
+    await expect(host.getByText('Tap a card to swap it in')).toBeVisible();
+    await shot(host, 'centre-chosen-desktop');
+    const traded = visiblePileCards(host).nth(2);
+    const tradedId = await traded.getAttribute('data-card-id');
+    const swapped = host.waitForResponse((response) => response.url().endsWith('/swap'));
+    await expectSwapFlightMatchesCards(host, () => traded.click());
+    expect((await swapped).status()).toBe(200);
+    await expect(centerPile(host, 2)).toHaveAttribute('data-card-id', tradedId!);
+    await expect(host.getByText('Tap a card to pick it up')).toBeVisible();
+
     await guest.getByRole('button', { name: /^Pile 3\b/ }).click();
     await shot(guest, 'pile-sheet-phone', { fullPage: false });
     await visiblePileCards(guest).nth(1).click();
