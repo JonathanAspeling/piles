@@ -436,9 +436,7 @@ async function claimPiles() {
                         :class="activePile ? 'bg-muted' : 'bg-transparent'"
                     >
                         <div class="flex h-[18px] items-center justify-between gap-3 md:h-6">
-                            <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground md:text-xs">
-                                {{ activePile ? `Pile ${activePile.pile_index + 1}` : 'Your cards' }}
-                            </h3>
+                            <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground md:text-xs">Your cards</h3>
                             <div class="flex min-w-0 items-center gap-2">
                                 <span v-if="justSwapped" class="text-[13px] font-semibold text-[#0E9C6B] md:text-[15px]">Swapped</span>
                                 <span v-else-if="pickedCard" class="truncate text-[13px] font-semibold text-muted-foreground md:text-[15px]">

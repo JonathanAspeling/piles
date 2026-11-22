@@ -7,9 +7,10 @@ import { completedSetFaceClasses } from '../../utils/cardArt';
 import CardArt from './CardArt.vue';
 
 /**
- * A slim tab for one of your piles: its number, plus a face-down back or the
- * finished set's art. Its cards are shown in the "Your cards" row above, not
- * here, so the tile only has to say which pile is which and which are done.
+ * A slim tab for one of your piles: a face-down back, or the finished set's
+ * art. Its cards are shown in the "Your cards" row above, not here. No visible
+ * number: piles can be dragged into any order, so a number would only renumber
+ * under you. Screen readers still hear "Pile n" by position.
  */
 const props = defineProps<{
     pile: PlayerPile;
@@ -46,7 +47,7 @@ function onClick() {
         :disabled="disabled"
         :aria-label="label"
         :aria-pressed="isOpen"
-        class="flex h-[60px] flex-col items-center justify-center gap-1 rounded-[10px] border-2 transition-[transform,box-shadow,border-color,background-color] duration-150 active:scale-95 md:h-[72px] md:flex-row md:gap-3"
+        class="flex h-[60px] items-center justify-center rounded-[10px] border-2 transition-[transform,box-shadow,border-color,background-color] duration-150 active:scale-95 md:h-[72px]"
         :class="[
             pile.is_completed
                 ? 'border-[#0E9C6B] bg-[#E5F4ED] dark:bg-[rgba(14,156,107,0.16)]'
@@ -60,20 +61,13 @@ function onClick() {
         @click="onClick"
     >
         <span
-            class="text-[13px] font-bold md:text-base"
-            :class="pile.is_completed ? 'text-[#0E9C6B]' : isRaised ? 'text-foreground' : 'text-muted-foreground'"
-        >
-            {{ pile.pile_index + 1 }}
-        </span>
-
-        <span
             v-if="completedCard"
-            class="flex h-7 w-7 items-center justify-center rounded md:h-10 md:w-10"
+            class="flex h-9 w-9 items-center justify-center rounded md:h-12 md:w-12"
             :class="cardStyle.theme === CardTheme.Classic ? completedSetFaceClasses(cardStyle.theme) : ''"
         >
             <CardArt :type="completedCard.clothing_type" :color="completedCard.color" :theme="cardStyle.theme" />
         </span>
-        <span v-else class="pile-back h-7 w-[22px] rounded md:h-10 md:w-[30px]" :class="isRaised ? 'shadow-[0_0_0_2px_#F2B42B]' : ''" />
+        <span v-else class="pile-back h-9 w-7 rounded md:h-12 md:w-9" :class="isRaised ? 'shadow-[0_0_0_2px_#F2B42B]' : ''" />
     </button>
 </template>
 
