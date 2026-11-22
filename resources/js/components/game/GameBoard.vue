@@ -3,9 +3,11 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import type { DragZone, DropContext } from '../../composables/useDragSort';
 import { useDragSort } from '../../composables/useDragSort';
 import { useGameStore } from '../../stores/game';
+import { useNotificationStore } from '../../stores/notification';
 import type { Card, CenterPile, GameSession } from '../../types/game';
 import { CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
 import { cardStyleFor } from '../../utils/cardArt';
+import ClaimPrompt from './ClaimPrompt.vue';
 import type { GameCardState } from './GameCard.vue';
 import GameCard from './GameCard.vue';
 import HowToPlayModal from './HowToPlayModal.vue';
@@ -21,6 +23,7 @@ const props = defineProps<{
 const cardStyle = computed(() => cardStyleFor(props.game));
 
 const gameStore = useGameStore();
+const notificationStore = useNotificationStore();
 
 const boardRoot = ref<HTMLElement | null>(null);
 const activePileId = ref<number | null>(null);
@@ -340,8 +343,15 @@ watch(isDisabled, (disabled) => {
     }
 });
 
+// Bumped to re-arm the claim prompt (its button and countdown) if a claim doesn't go through.
+const claimPromptKey = ref(0);
+
 async function claimPiles() {
-    await gameStore.claimPiles();
+    const accepted = await gameStore.claimPiles();
+    if (!accepted && readyToClaim.value) {
+        notificationStore.add('Could not call PILES! — tap to try again.', 'error');
+        claimPromptKey.value++;
+    }
 }
 </script>
 
@@ -520,15 +530,6 @@ async function claimPiles() {
                         <span v-if="!isDisabled" class="text-[13px] text-muted-foreground md:text-[15px]">Drag to rearrange</span>
                     </div>
 
-                    <button
-                        v-if="readyToClaim"
-                        type="button"
-                        class="claim-cta w-full rounded-[14px] bg-[#0E9C6B] px-4 py-3 text-lg font-black tracking-wider text-white shadow-lg transition-transform hover:bg-[#0B8A5E] active:scale-[0.98] md:py-4 md:text-xl"
-                        @click="claimPiles"
-                    >
-                        PILES!
-                    </button>
-
                     <!-- A plain row, not a TransitionGroup: dragging animates the move itself,
                          and a FLIP on top would replay it from the old slot. -->
                     <div ref="pilesRow" class="grid grid-cols-6 gap-1.5 md:gap-3" @pointerdown="drag.start(pilesZone, $event)">
@@ -548,6 +549,7 @@ async function claimPiles() {
             </div>
         </main>
 
+        <ClaimPrompt v-if="readyToClaim" :key="claimPromptKey" @claim="claimPiles" />
         <SwapFlight v-if="flights" :flights="flights" :card-style="cardStyle" @landed="onFlightLanded" />
         <HowToPlayModal v-if="showHowToPlay" :card-style="cardStyle" @close="showHowToPlay = false" />
     </div>
@@ -563,20 +565,6 @@ async function claimPiles() {
 @media (prefers-reduced-motion: reduce) {
     .rank-move {
         transition: none;
-    }
-}
-
-.claim-cta {
-    animation: claim-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes claim-pulse {
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(14, 156, 107, 0.55);
-    }
-    50% {
-        box-shadow: 0 0 0 12px rgba(14, 156, 107, 0);
     }
 }
 </style>

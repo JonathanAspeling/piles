@@ -200,14 +200,15 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await expect(guest.getByText('Your piles · 1/6')).toBeVisible();
     await shot(guest, 'pile-completed-phone', { fullPage: false });
 
-    // The host completes the last pile and calls PILES!
+    // The host completes the last pile. The PILES! prompt takes over, and
+    // even left alone it calls the win after a moment.
     await completePile(host, 6, 1);
-    const claim = host.getByRole('button', { name: 'PILES!' });
-    await expect(claim).toBeVisible();
-    await shot(host, 'ready-to-claim-desktop');
-    await claim.click();
+    const prompt = host.getByRole('dialog', { name: 'All six piles done!' });
+    await expect(prompt).toBeVisible();
+    await expect(prompt.getByRole('button', { name: 'PILES!' })).toBeFocused();
+    await shot(host, 'ready-to-claim-desktop', { fullPage: false });
 
-    await expect(host.getByRole('heading', { name: 'You won!' })).toBeVisible();
+    await expect(host.getByRole('heading', { name: 'You won!' })).toBeVisible({ timeout: 10_000 });
     await expect(guest.getByRole('heading', { name: 'Ada wins' })).toBeVisible();
     await shot(host, 'winner-desktop', { fullPage: false });
     await shot(guest, 'loser-phone', { fullPage: false });

@@ -179,7 +179,7 @@ onUnmounted(() => {
                     <p>
                         When all six of your piles are complete, the big
                         <span class="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-black tracking-wider text-white">PILES!</span>
-                        button appears — hit it to win. If you're wrong the game keeps going, so double-check before you claim.
+                        button pops up. Tap it to win, or it calls it for you after a moment. First to finish wins.
                     </p>
                 </section>
             </div>

@@ -619,11 +619,16 @@ export const useGameStore = defineStore('game', () => {
         return true;
     }
 
-    async function claimPiles() {
+    /** Call PILES! Resolves whether the server took the claim; the result itself arrives as GameEnded. */
+    async function claimPiles(): Promise<boolean> {
         if (!session.value) {
-            return;
+            return false;
         }
-        await apiFetch(route('gameplay.claim', { game: session.value.id }), { method: 'POST' });
+        try {
+            return (await apiFetch(route('gameplay.claim', { game: session.value.id }), { method: 'POST' })).ok;
+        } catch {
+            return false;
+        }
     }
 
     async function forfeit() {
