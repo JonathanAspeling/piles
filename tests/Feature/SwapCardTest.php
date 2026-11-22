@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\GameStatus;
+use App\Events\CenterPileSwapped;
 use App\Events\PlayerPileCompleted;
 use App\Models\Card;
 use App\Models\GamePlayer;
@@ -120,6 +121,58 @@ test('a stale expected version is rejected with 409 and leaves the pickup intact
         ->and(cardIdAt($centerPile, 0))->toBe($centerCard->id)
         ->and($centerPile->fresh()->version)->toBe(0)
         ->and($player->fresh()->picked_up_card_id)->toBe($myCardId);
+});
+
+test('a swap broadcasts the committed centre pile, so every screen can converge on it', function () {
+    Event::fake([CenterPileSwapped::class]);
+    $user = User::factory()->create();
+    [$game, $player, $pile, $centerPile, $centerCard] = seedSwapGame(
+        $user,
+        [[0, 0], [1, 1], [2, 2], [3, 3]],
+        [40, 0],
+    );
+
+    $myCardId = cardIdAt($pile, 3);
+    $player->update(['picked_up_card_id' => $myCardId, 'picked_up_pile_id' => $pile->id]);
+
+    $this->actingAs($user)
+        ->postJson(route('gameplay.swap', $game), [
+            'center_pile_id' => $centerPile->id,
+            'center_card_id' => $centerCard->id,
+            'expected_version' => 0,
+        ])
+        ->assertOk();
+
+    Event::assertDispatchedTimes(CenterPileSwapped::class, 1);
+    Event::assertDispatched(CenterPileSwapped::class, function (CenterPileSwapped $event) use ($centerPile, $myCardId) {
+        $payload = $event->broadcastWith();
+
+        return $payload['center_pile_id'] === $centerPile->id
+            && $payload['version'] === 1
+            && $payload['top_card']['id'] === $myCardId;
+    });
+});
+
+test('a swap that loses the race broadcasts nothing', function () {
+    Event::fake([CenterPileSwapped::class]);
+    $user = User::factory()->create();
+    [$game, $player, $pile, $centerPile, $centerCard] = seedSwapGame(
+        $user,
+        [[0, 0], [1, 1], [2, 2], [3, 3]],
+        [40, 0],
+    );
+
+    $player->update(['picked_up_card_id' => cardIdAt($pile, 3), 'picked_up_pile_id' => $pile->id]);
+
+    $this->actingAs($user)
+        ->postJson(route('gameplay.swap', $game), [
+            'center_pile_id' => $centerPile->id,
+            'center_card_id' => $centerCard->id,
+            'expected_version' => 3,
+        ])
+        ->assertStatus(409);
+
+    Event::assertNotDispatched(CenterPileSwapped::class);
 });
 
 test('a swap without a pickup is rejected', function () {

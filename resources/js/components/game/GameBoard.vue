@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useGameStore } from '../../stores/game';
 import type { Card, CenterPile, GameSession } from '../../types/game';
 import { CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
@@ -107,10 +107,29 @@ function flash(cardIds: number[]) {
     }, 700);
 }
 
-function onFlightLanded() {
-    const landedIds = flights.value?.map((flight) => flight.card.id) ?? [];
-    flights.value = null;
+/**
+ * Hands over from the flying copies to the real cards without a blink: the
+ * real cards are shown (art decoded) underneath first, then the copies go.
+ */
+async function onFlightLanded() {
+    const landedFlights = flights.value;
+    const landedIds = landedFlights?.map((flight) => flight.card.id) ?? [];
+
     hiddenCardIds.value = new Set();
+    await nextTick();
+    await Promise.all(
+        landedIds.map((cardId) =>
+            boardRoot.value
+                ?.querySelector<HTMLImageElement>(`[data-zone] [data-card-id="${cardId}"] img`)
+                ?.decode()
+                .catch(() => undefined),
+        ),
+    );
+
+    // A newer swap may have taken off meanwhile; its flight isn't ours to clear.
+    if (flights.value === landedFlights) {
+        flights.value = null;
+    }
     flash(landedIds);
 }
 
@@ -239,7 +258,10 @@ async function claimPiles() {
 </script>
 
 <template>
-    <div ref="boardRoot" class="flex min-h-full flex-1 flex-col md:flex-row">
+    <!-- Desktop: the board is exactly the viewport below the 48px header, so a
+         full table's opponents scroll in their own column instead of
+         stretching the page and pushing your piles below the fold. -->
+    <div ref="boardRoot" class="flex min-h-full flex-1 flex-col md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-none md:flex-row">
         <!-- Desktop: opponents get a column of their own. -->
         <aside class="hidden w-[300px] shrink-0 flex-col gap-[22px] border-r border-border bg-card px-6 py-7 md:flex">
             <div class="flex items-baseline justify-between gap-3">
@@ -272,8 +294,8 @@ async function claimPiles() {
             {{ coachText }}
         </p>
 
-        <main class="flex shrink-0 flex-col items-center px-4 pb-3 md:flex-1 md:justify-center md:px-10 md:py-8">
-            <div class="flex w-full flex-col gap-3.5 md:w-[660px] md:max-w-full md:gap-7">
+        <main class="flex shrink-0 flex-col items-center px-4 pb-3 md:flex-1 md:overflow-y-auto md:px-10 md:py-8">
+            <div class="flex w-full flex-col gap-3.5 md:my-auto md:w-[660px] md:max-w-full md:gap-7">
                 <div class="flex flex-col gap-2.5 md:gap-4">
                     <!-- Centre -->
                     <section

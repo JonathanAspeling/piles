@@ -79,7 +79,8 @@ onMounted(async () => {
                 v-for="(flight, index) in flights"
                 :key="flight.card.id"
                 ref="flyerElements"
-                class="absolute flex items-center justify-center rounded-[10px] border-[1.5px] px-[12%] py-[19%] md:rounded-[14px]"
+                :data-swap-flyer="flight.card.id"
+                class="absolute rounded-[10px] border-[1.5px] md:rounded-[14px]"
                 :class="[
                     cardFaceClasses(flight.card.clothing_type, flight.card.color, cardStyle),
                     // The card you lifted keeps its amber ring on the way out.
@@ -92,7 +93,11 @@ onMounted(async () => {
                     height: `${flight.from.height}px`,
                 }"
             >
-                <CardArt :type="flight.card.clothing_type" :color="flight.card.color" :theme="cardStyle.theme" />
+                <!-- Percentage padding resolves against the containing block's width: here
+                     that's this card, as it is for GameCard, not the full-screen overlay. -->
+                <div class="flex h-full w-full items-center justify-center px-[12%] py-[19%]">
+                    <CardArt :type="flight.card.clothing_type" :color="flight.card.color" :theme="cardStyle.theme" />
+                </div>
             </div>
         </div>
     </Teleport>

@@ -29,13 +29,39 @@ const gameStore = useGameStore();
 const echoStore = useEchoStore();
 const notificationStore = useNotificationStore();
 
-const isPlaying = computed(
-    () => gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying,
-);
+const isPlaying = computed(() => gameStore.session?.status === GameStatus.Playing || gameStore.session?.status === GameStatus.Verifying);
 const isEnded = computed(() => gameStore.session?.status === GameStatus.Ended);
 const isCountdown = computed(() => gameStore.session?.status === GameStatus.Countdown);
 const winner = computed(() => gameStore.winner);
 const iWon = computed(() => isEnded.value && !!winner.value && winner.value.user_id === props.currentPlayer?.user_id);
+
+/*
+ * Starting a game is a chain of broadcasts (countdown, the deal, activation),
+ * and a screen that misses one would wait forever. While the table is all
+ * ready in the lobby, or counting down, check in with the server every few
+ * seconds; resyncBoard() moves this screen on if it has fallen behind.
+ */
+const WATCHDOG_INTERVAL_MS = 4000;
+const isStarting = computed(
+    () =>
+        isCountdown.value ||
+        (gameStore.session?.status === GameStatus.Lobby && gameStore.players.length >= 2 && gameStore.players.every((p) => p.is_ready)),
+);
+let watchdog: ReturnType<typeof setInterval> | null = null;
+
+watch(
+    isStarting,
+    (starting) => {
+        if (watchdog) {
+            clearInterval(watchdog);
+            watchdog = null;
+        }
+        if (starting) {
+            watchdog = setInterval(() => gameStore.resyncBoard(), WATCHDOG_INTERVAL_MS);
+        }
+    },
+    { immediate: true },
+);
 
 // Fires only on the false→true transition, so a page reload during Ended
 // does not re-trigger confetti.
@@ -54,6 +80,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    if (watchdog) {
+        clearInterval(watchdog);
+    }
     stopCelebrating();
     if (props.currentPlayer) {
         echoStore.unsubscribe(props.game.id, props.currentPlayer.id);
@@ -129,7 +158,9 @@ function onBackToLobby() {
 
 .toast-enter-active,
 .toast-leave-active {
-    transition: opacity 200ms ease, transform 200ms ease;
+    transition:
+        opacity 200ms ease,
+        transform 200ms ease;
 }
 
 /* Taking the leaving toast out of flow lets the survivors slide up behind it

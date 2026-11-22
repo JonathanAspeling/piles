@@ -103,7 +103,7 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await shot(host, 'pile-open-desktop');
     await visiblePileCards(host).first().click();
     await shot(host, 'card-picked-up-desktop');
-    await centerPile(host, 1).click();
+    await expectSwapFlightMatchesCards(host, () => centerPile(host, 1).click());
     await expect(host.getByText('Tap a card to pick it up')).toBeVisible();
     await shot(host, 'after-swap-desktop');
 
@@ -157,7 +157,7 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
 
     await host.getByRole('button', { name: 'Play again' }).click();
     await expect(host.getByRole('heading', { name: 'Game Lobby' })).toBeVisible();
-    await expect(guest.getByText('2/10 players')).toBeVisible();
+    await expect(guest.getByText('Players · 2/10')).toBeVisible();
     await shot(host, 'rematch-lobby-desktop');
     await shot(guest, 'rematch-lobby-phone');
 
@@ -179,11 +179,11 @@ async function playAsGuest(page: Page, name: string) {
 }
 
 async function readGameCode(page: Page): Promise<string> {
-    const header = await page.getByText('Code:').locator('..').innerText();
-    const match = header.match(/[A-Z0-9]{6}/);
+    const text = await page.locator('[data-room-code]').innerText();
+    const match = text.match(/[A-Z0-9]{6}/);
 
     if (!match) {
-        throw new Error(`No game code in "${header}"`);
+        throw new Error(`No game code in "${text}"`);
     }
 
     return match[0];
@@ -212,7 +212,99 @@ async function completePile(page: Page, pileNumber: number, centerNumber: number
     const stray = titles.findIndex((title) => titles.filter((other) => other === title).length === 1);
 
     await cards.nth(stray).click();
-    await centerPile(page, centerNumber).click();
+    await expectSwapFlightMatchesCards(page, () => centerPile(page, centerNumber).click());
+}
+
+interface FlyerSize {
+    width: number;
+    height: number;
+    artWidth: number;
+    artHeight: number;
+}
+
+interface LandedSlot {
+    opacity: string;
+    artLoaded: boolean;
+}
+
+interface SwapFlightRecord {
+    flyers: FlyerSize[];
+    landed: LandedSlot[];
+    done: boolean;
+}
+
+/**
+ * Runs a swap and checks its animation, watching the DOM as it happens:
+ * - the moment the flying copies appear, each is exactly the size of a centre
+ *   card's slot, with its item art visible;
+ * - the moment they're removed, the real cards underneath are already fully
+ *   shown, art loaded, so the hand-off doesn't blink.
+ */
+async function expectSwapFlightMatchesCards(page: Page, swap: () => Promise<void>) {
+    await page.evaluate(() => {
+        const record: SwapFlightRecord = { flyers: [], landed: [], done: false };
+        (window as unknown as { __swapFlight: SwapFlightRecord }).__swapFlight = record;
+        new MutationObserver((mutations, observer) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (!(node instanceof HTMLElement)) {
+                        continue;
+                    }
+                    for (const flyer of node.querySelectorAll<HTMLElement>('[data-swap-flyer]')) {
+                        const { width, height } = flyer.getBoundingClientRect();
+                        const art = flyer.querySelector('img')?.getBoundingClientRect();
+                        record.flyers.push({ width, height, artWidth: art?.width ?? 0, artHeight: art?.height ?? 0 });
+                    }
+                }
+                for (const node of mutation.removedNodes) {
+                    if (!(node instanceof HTMLElement)) {
+                        continue;
+                    }
+                    for (const flyer of node.querySelectorAll<HTMLElement>('[data-swap-flyer]')) {
+                        const slot = document.querySelector<HTMLElement>(`[data-zone] [data-card-id="${flyer.dataset.swapFlyer}"]`);
+                        // A swap that completes the pile closes it, so that card has no slot left to show.
+                        if (!slot) {
+                            continue;
+                        }
+                        const art = slot.querySelector('img');
+                        record.landed.push({
+                            opacity: getComputedStyle(slot).opacity,
+                            artLoaded: !!art && art.complete && art.naturalWidth > 0,
+                        });
+                    }
+                }
+            }
+            if (
+                mutations.some((mutation) =>
+                    [...mutation.removedNodes].some((node) => node instanceof HTMLElement && node.querySelector('[data-swap-flyer]')),
+                )
+            ) {
+                record.done = true;
+                observer.disconnect();
+            }
+        }).observe(document.body, { childList: true, subtree: true });
+    });
+
+    const slot = await page.locator('[data-zone="centre"] button[data-card-id]').first().boundingBox();
+    await swap();
+
+    const recorded = await page.waitForFunction(() => {
+        const record = (window as unknown as { __swapFlight: SwapFlightRecord }).__swapFlight;
+
+        return record.done ? record : null;
+    });
+    const { flyers, landed } = (await recorded.jsonValue()) as SwapFlightRecord;
+
+    expect(flyers).toHaveLength(2);
+    for (const flyer of flyers) {
+        expect(flyer.width).toBeCloseTo(slot!.width, 0);
+        expect(flyer.height).toBeCloseTo(slot!.height, 0);
+        expect(flyer.artWidth * flyer.artHeight, 'the flying card shows its item').toBeGreaterThan(0);
+    }
+    expect(landed.length, 'at least the card sent to the centre still has a slot').toBeGreaterThan(0);
+    for (const slot of landed) {
+        expect(slot, 'the real cards are fully shown, art loaded, as the flyers go').toEqual({ opacity: '1', artLoaded: true });
+    }
 }
 
 function rigEndgame(code: string) {
