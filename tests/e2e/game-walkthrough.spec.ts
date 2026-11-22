@@ -49,6 +49,10 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await shot(host, 'lobby-empty-desktop');
 
     await host.getByRole('button', { name: 'How to play' }).click();
+    // It teaches the current controls: dragging first, tapping as the alternative.
+    await expect(host.getByText(/onto a centre card to swap them/)).toBeVisible();
+    await expect(host.getByText(/Prefer tapping\?/)).toBeVisible();
+    await host.getByText(/arrange them however helps you/).scrollIntoViewIfNeeded();
     await shot(host, 'how-to-play-desktop', { fullPage: false });
     await host.getByRole('button', { name: 'Close' }).first().click();
 
@@ -107,6 +111,59 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await expect(host.getByText('Tap a card to pick it up')).toBeVisible();
     await shot(host, 'after-swap-desktop');
 
+    // The other way round: choose a centre card first, then the card to trade for it.
+    await centerPile(host, 2).click();
+    await expect(host.getByText(/chosen · tap it again to put it back/)).toBeVisible();
+    await expect(host.getByText('Tap a card to swap it in')).toBeVisible();
+    await shot(host, 'centre-chosen-desktop');
+    const traded = visiblePileCards(host).nth(2);
+    const tradedId = await traded.getAttribute('data-card-id');
+    const swapped = host.waitForResponse((response) => response.url().endsWith('/swap'));
+    await expectSwapFlightMatchesCards(host, () => traded.click());
+    expect((await swapped).status()).toBe(200);
+    await expect(centerPile(host, 2)).toHaveAttribute('data-card-id', tradedId!);
+    await expect(host.getByText('Tap a card to pick it up')).toBeVisible();
+
+    // Drag a card along the pile: the others slide aside, and the new order sticks.
+    const before = await pileCardIds(host);
+    const reordered = host.waitForResponse((response) => response.url().endsWith('/cards/reorder'));
+    await mouseDrag(host, visiblePileCards(host).nth(0), visiblePileCards(host).nth(2), async () => {
+        // Mid-drag, the card it's passing has moved over to make room.
+        expect(await shiftOf(visiblePileCards(host).nth(1))).toBeLessThan(-20);
+        await shot(host, 'card-dragging-desktop');
+    });
+    expect((await reordered).status()).toBe(204);
+    const expectedOrder = [before[1], before[2], before[0], before[3]];
+    await expect.poll(() => pileCardIds(host)).toEqual(expectedOrder);
+    expect(await serverPileCardIds(host, 0)).toEqual(expectedOrder);
+
+    // Dropped somewhere that means nothing, it glides home and nothing is sent.
+    let sentReorder = false;
+    const watchReorders = (request: { url(): string }) => (sentReorder ||= request.url().includes('reorder'));
+    host.on('request', watchReorders);
+    await mouseDrag(host, visiblePileCards(host).nth(1), host.getByRole('heading', { name: 'Centre' }));
+    await expect.poll(() => shiftOf(visiblePileCards(host).nth(1))).toBe(0);
+    expect(await pileCardIds(host)).toEqual(expectedOrder);
+    host.off('request', watchReorders);
+    expect(sentReorder).toBe(false);
+
+    // Drag a card onto the centre to swap it.
+    const dragged = visiblePileCards(host).nth(3);
+    const draggedId = await dragged.getAttribute('data-card-id');
+    const dragSwap = host.waitForResponse((response) => response.url().endsWith('/swap'));
+    await expectSwapFlightMatchesCards(host, () => mouseDrag(host, dragged, centerPile(host, 3)));
+    expect((await dragSwap).status()).toBe(200);
+    await expect(centerPile(host, 3)).toHaveAttribute('data-card-id', draggedId!);
+
+    // And the other way: drag a centre card onto one of yours.
+    const incomingId = await centerPile(host, 4).getAttribute('data-card-id');
+    const outgoingId = await visiblePileCards(host).nth(0).getAttribute('data-card-id');
+    const reverseSwap = host.waitForResponse((response) => response.url().endsWith('/swap'));
+    await expectSwapFlightMatchesCards(host, () => mouseDrag(host, centerPile(host, 4), visiblePileCards(host).nth(0)));
+    expect((await reverseSwap).status()).toBe(200);
+    await expect(centerPile(host, 4)).toHaveAttribute('data-card-id', outgoingId!);
+    await expect(visiblePileCards(host).nth(0)).toHaveAttribute('data-card-id', incomingId!);
+
     await guest.getByRole('button', { name: /^Pile 3\b/ }).click();
     await shot(guest, 'pile-sheet-phone', { fullPage: false });
     await visiblePileCards(guest).nth(1).click();
@@ -117,10 +174,16 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await guest.getByRole('button', { name: 'Close pile' }).click();
     await released;
 
-    await guest.getByRole('button', { name: 'Rearrange piles' }).click();
-    await guest.getByRole('button', { name: /^Pile 1\b/ }).click();
-    await shot(guest, 'rearrange-phone', { fullPage: false });
-    await guest.getByRole('button', { name: 'Done rearranging' }).click();
+    // Rearranging piles is a touch drag on phone: pile 1 to the third place.
+    const pilesBefore = await pileTileIds(guest);
+    const pilesReordered = guest.waitForResponse((response) => response.url().endsWith('/piles/reorder'));
+    await touchDrag(guest, pileTile(guest, 1), pileTile(guest, 3), async () => {
+        await shot(guest, 'rearrange-phone', { fullPage: false });
+    });
+    expect((await pilesReordered).status()).toBe(204);
+    await expect.poll(() => pileTileIds(guest)).toEqual([pilesBefore[1], pilesBefore[2], pilesBefore[0], ...pilesBefore.slice(3)]);
+    // A drag isn't a tap: no pile opened.
+    await expect(guest.getByRole('button', { name: 'Close pile' })).toHaveCount(0);
 
     // Fast-forward to the endgame, then reload so both clients pick it up.
     rigEndgame(code);
@@ -137,14 +200,15 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await expect(guest.getByText('Your piles · 1/6')).toBeVisible();
     await shot(guest, 'pile-completed-phone', { fullPage: false });
 
-    // The host completes the last pile and calls PILES!
+    // The host completes the last pile. The PILES! prompt takes over, and
+    // even left alone it calls the win after a moment.
     await completePile(host, 6, 1);
-    const claim = host.getByRole('button', { name: 'PILES!' });
-    await expect(claim).toBeVisible();
-    await shot(host, 'ready-to-claim-desktop');
-    await claim.click();
+    const prompt = host.getByRole('dialog', { name: 'All six piles done!' });
+    await expect(prompt).toBeVisible();
+    await expect(prompt.getByRole('button', { name: 'PILES!' })).toBeFocused();
+    await shot(host, 'ready-to-claim-desktop', { fullPage: false });
 
-    await expect(host.getByRole('heading', { name: 'You won!' })).toBeVisible();
+    await expect(host.getByRole('heading', { name: 'You won!' })).toBeVisible({ timeout: 10_000 });
     await expect(guest.getByRole('heading', { name: 'Ada wins' })).toBeVisible();
     await shot(host, 'winner-desktop', { fullPage: false });
     await shot(guest, 'loser-phone', { fullPage: false });
@@ -191,6 +255,75 @@ async function readGameCode(page: Page): Promise<string> {
 
 async function waitForBoard(page: Page) {
     await expect(page.getByText(/Your piles · \d\/6|You're ready/)).toBeVisible({ timeout: 30_000 });
+}
+
+function pileTile(page: Page, number: number): Locator {
+    return page.locator('[data-pile-id]').nth(number - 1);
+}
+
+async function pileTileIds(page: Page): Promise<string[]> {
+    return page.locator('[data-pile-id]').evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute('data-pile-id') ?? ''));
+}
+
+async function pileCardIds(page: Page): Promise<string[]> {
+    return visiblePileCards(page).evaluateAll((cards) => cards.map((card) => card.getAttribute('data-card-id') ?? ''));
+}
+
+/** The open pile's card order as the server holds it. */
+async function serverPileCardIds(page: Page, pileIndex: number): Promise<string[]> {
+    const gameId = new URL(page.url()).pathname.split('/')[2];
+    const state = (await (await page.request.get(`/games/${gameId}/state`)).json()) as {
+        my_piles: { pile_index: number; cards: { id: number }[] }[];
+    };
+
+    return state.my_piles.find((pile) => pile.pile_index === pileIndex)!.cards.map((card) => String(card.id));
+}
+
+/** How far an element's inline drag transform has moved it sideways, in px. */
+async function shiftOf(locator: Locator): Promise<number> {
+    return locator.evaluate((element) => {
+        const transform = (element as HTMLElement).style.transform;
+
+        return transform ? new DOMMatrixReadOnly(getComputedStyle(element).transform).m41 : 0;
+    });
+}
+
+async function centreOf(locator: Locator): Promise<{ x: number; y: number }> {
+    const box = (await locator.boundingBox())!;
+
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** Press, move in small steps like a hand would, optionally look around mid-drag, then let go. */
+async function mouseDrag(page: Page, from: Locator, to: Locator, midway?: () => Promise<void>) {
+    const start = await centreOf(from);
+    const end = await centreOf(to);
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(end.x, end.y, { steps: 12 });
+    // Let the row's slide-aside transition finish before looking.
+    await page.waitForTimeout(300);
+    await midway?.();
+    await page.mouse.up();
+    await page.waitForTimeout(400);
+}
+
+/** The same, with a finger: real touch events, so touch-action and pointer handling are exercised. */
+async function touchDrag(page: Page, from: Locator, to: Locator, midway?: () => Promise<void>) {
+    const start = await centreOf(from);
+    const end = await centreOf(to);
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number, y: number) =>
+        cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+    await touch('touchStart', start.x, start.y);
+    for (let step = 1; step <= 12; step++) {
+        await touch('touchMove', start.x + ((end.x - start.x) * step) / 12, start.y + ((end.y - start.y) * step) / 12);
+    }
+    await page.waitForTimeout(300);
+    await midway?.();
+    await touch('touchEnd', end.x, end.y);
+    await page.waitForTimeout(400);
+    await cdp.detach();
 }
 
 /** The card buttons of the open pile, in the always-present "Your cards" row. */

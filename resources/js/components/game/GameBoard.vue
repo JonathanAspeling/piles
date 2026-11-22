@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import type { DragZone, DropContext } from '../../composables/useDragSort';
+import { useDragSort } from '../../composables/useDragSort';
 import { useGameStore } from '../../stores/game';
+import { useNotificationStore } from '../../stores/notification';
 import type { Card, CenterPile, GameSession } from '../../types/game';
 import { CLOTHING_TYPE_LABELS, GameStatus } from '../../types/game';
 import { cardStyleFor } from '../../utils/cardArt';
+import ClaimPrompt from './ClaimPrompt.vue';
 import type { GameCardState } from './GameCard.vue';
 import GameCard from './GameCard.vue';
 import HowToPlayModal from './HowToPlayModal.vue';
@@ -19,11 +23,10 @@ const props = defineProps<{
 const cardStyle = computed(() => cardStyleFor(props.game));
 
 const gameStore = useGameStore();
+const notificationStore = useNotificationStore();
 
 const boardRoot = ref<HTMLElement | null>(null);
 const activePileId = ref<number | null>(null);
-const reorderMode = ref(false);
-const reorderFirstPileId = ref<number | null>(null);
 const showHowToPlay = ref(false);
 
 const isDisabled = computed(() => gameStore.session?.status !== GameStatus.Playing);
@@ -31,6 +34,14 @@ const completedCount = computed(() => gameStore.myPiles.filter((p) => p.is_compl
 const activePile = computed(() => gameStore.myPiles.find((p) => p.id === activePileId.value) ?? null);
 const readyToClaim = computed(() => completedCount.value === 6 && gameStore.session?.status === GameStatus.Playing);
 const pickedCard = computed(() => gameStore.myPickedUpCard);
+/**
+ * Swaps work in either order: lift one of your cards then tap the centre, or
+ * tap a centre card first and then the card of yours to trade it for. The
+ * centre choice is local only — nothing reaches the server until the swap.
+ */
+const selectedCentrePileId = ref<number | null>(null);
+const selectedCentrePile = computed(() => gameStore.centerPiles.find((p) => p.id === selectedCentrePileId.value) ?? null);
+const canSwapFromHand = computed(() => !!activePile.value && !isDisabled.value && !activePile.value.is_completed);
 const pickedItemName = computed(() => (pickedCard.value ? CLOTHING_TYPE_LABELS[pickedCard.value.clothing_type].toLowerCase() : ''));
 
 // Ranked by piles done, so whoever is closest to winning is always first.
@@ -41,9 +52,6 @@ const handSlots = computed<(Card | null)[]>(() => activePile.value?.cards ?? [nu
 
 /** The phone's spare space above the board holds one line of guidance, only while there's nothing else to read. */
 const coachText = computed(() => {
-    if (reorderMode.value) {
-        return 'Tap two piles to swap their places.';
-    }
     if (activePile.value || completedCount.value > 0) {
         return '';
     }
@@ -76,11 +84,19 @@ function cardState(card: Card | null, baseState: GameCardState): GameCardState {
 }
 
 function handCardState(card: Card | null): GameCardState {
-    return cardState(card, card !== null && card.id === pickedCard.value?.id ? 'lifted' : 'idle');
+    if (card !== null && card.id === pickedCard.value?.id) {
+        return cardState(card, 'lifted');
+    }
+
+    return cardState(card, selectedCentrePile.value && canSwapFromHand.value ? 'target' : 'idle');
 }
 
-function centreCardState(card: Card | null): GameCardState {
-    return cardState(card, pickedCard.value && !isDisabled.value ? 'target' : 'idle');
+function centreCardState(pile: CenterPile): GameCardState {
+    if (pile.id === selectedCentrePileId.value) {
+        return cardState(pile.top_card, 'lifted');
+    }
+
+    return cardState(pile.top_card, pickedCard.value && !isDisabled.value ? 'target' : 'idle');
 }
 
 /** Where a slot's card sits at rest: a lifted card is drawn raised, but lands back level. */
@@ -152,55 +168,9 @@ watch(
     },
 );
 
-// Reorder mode must never outlive the game it belongs to.
-watch(isDisabled, (disabled) => {
-    if (disabled) {
-        reorderMode.value = false;
-        reorderFirstPileId.value = null;
-    }
-});
-
-// Arming closes the pile and drops any held card, so the two tap gestures —
-// open-a-pile and pick-two-piles — never overlap.
-async function toggleReorderMode() {
-    reorderMode.value = !reorderMode.value;
-    reorderFirstPileId.value = null;
-
-    if (reorderMode.value) {
-        activePileId.value = null;
-        await gameStore.releaseCard();
-    }
-}
-
-function onReorderTap(pileId: number) {
-    if (reorderFirstPileId.value === null) {
-        reorderFirstPileId.value = pileId;
-        return;
-    }
-
-    if (reorderFirstPileId.value === pileId) {
-        reorderFirstPileId.value = null;
-        return;
-    }
-
-    const ids = gameStore.myPiles.map((p) => p.id);
-    const from = ids.indexOf(reorderFirstPileId.value);
-    const to = ids.indexOf(pileId);
-    [ids[from], ids[to]] = [ids[to], ids[from]];
-
-    // Mode stays armed — rearranging is usually more than one swap.
-    reorderFirstPileId.value = null;
-    gameStore.reorderPiles(ids);
-}
-
 // A selection never survives leaving the pile it belongs to — every pile opens
 // with all four cards unselected.
 async function onOpenPile(pileId: number) {
-    if (reorderMode.value) {
-        onReorderTap(pileId);
-        return;
-    }
-
     activePileId.value = activePileId.value === pileId ? null : pileId;
     await gameStore.releaseCard();
 }
@@ -211,7 +181,16 @@ async function closePile() {
 }
 
 async function onSelectHandCard(card: Card) {
-    if (!activePileId.value || isDisabled.value || activePile.value?.is_completed) {
+    if (!activePileId.value || !canSwapFromHand.value) {
+        return;
+    }
+    const centrePile = selectedCentrePile.value;
+    if (centrePile?.top_card) {
+        // Centre first: pick this card up and swap straight away. The pickup is
+        // queued ahead of the swap (the store serialises gameplay requests), so
+        // the swap can start moving without waiting for it.
+        const pickup = gameStore.pickUpCard(card.id, activePileId.value);
+        await Promise.all([pickup, swapWithCentre(centrePile)]);
         return;
     }
     if (pickedCard.value?.id === card.id) {
@@ -224,26 +203,46 @@ async function onSelectHandCard(card: Card) {
 }
 
 async function onSelectCentre(centerPile: CenterPile) {
+    if (isDisabled.value || !centerPile.top_card) {
+        return;
+    }
+    if (pickedCard.value) {
+        await swapWithCentre(centerPile);
+        return;
+    }
+    // Nothing lifted yet: choose this centre card, or put it back if it's already chosen.
+    selectedCentrePileId.value = selectedCentrePileId.value === centerPile.id ? null : centerPile.id;
+}
+
+/**
+ * Swap the lifted card with a centre pile's top card, flying both between their
+ * slots. A drag-and-drop passes where it left the cards; a tap measures them.
+ */
+async function swapWithCentre(centerPile: CenterPile, dropped?: { hand: SlotPair; centre: SlotPair }) {
     const heldCard = pickedCard.value;
     const incomingCard = centerPile.top_card;
+    selectedCentrePileId.value = null;
     if (isDisabled.value || !heldCard || !incomingCard) {
         return;
     }
 
     // Measure both slots before the store swaps them (it does so synchronously).
+    // Each card flies from where it's drawn now (a chosen card sits raised) to
+    // where the other one rests.
     const heldElement = slotElement('hand', heldCard.id);
     const centreElement = slotElement('centre', incomingCard.id);
-    const handRect = heldElement ? restingRect(heldElement) : null;
-    const centreRect = centreElement ? restingRect(centreElement) : null;
+    const handFrom = dropped?.hand.from ?? (heldElement ? slotRect(heldElement.getBoundingClientRect()) : null);
+    const centreFrom = dropped?.centre.from ?? (centreElement ? slotRect(centreElement.getBoundingClientRect()) : null);
+    const handRect = dropped?.hand.rest ?? (heldElement ? restingRect(heldElement) : null);
+    const centreRect = dropped?.centre.rest ?? (centreElement ? restingRect(centreElement) : null);
 
     const swap = gameStore.swapCard(centerPile.id, incomingCard.id, centerPile.version);
 
-    if (handRect && centreRect && !prefersReducedMotion) {
+    if (handFrom && centreFrom && handRect && centreRect && !prefersReducedMotion) {
         hiddenCardIds.value = new Set([heldCard.id, incomingCard.id]);
         flights.value = [
-            // The lifted card leaves from where it's drawn, raised by -translate-y-3.
-            { card: heldCard, from: { ...handRect, top: handRect.top - 12 }, to: centreRect, bow: 1 },
-            { card: incomingCard, from: centreRect, to: handRect, bow: 1 },
+            { card: heldCard, from: handFrom, to: centreRect, bow: 1 },
+            { card: incomingCard, from: centreFrom, to: handRect, bow: 1 },
         ];
     } else {
         flash([heldCard.id, incomingCard.id]);
@@ -252,8 +251,107 @@ async function onSelectCentre(centerPile: CenterPile) {
     await swap;
 }
 
+function slotRect(rect: DOMRect): SlotRect {
+    return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+}
+
+interface SlotPair {
+    from: SlotRect;
+    rest: SlotRect;
+}
+
+// --- Drag and drop ---------------------------------------------------------
+// Dragging is the main way to move things; every drag has a tap equivalent.
+//  - a card in your open pile: along the row to rearrange the pile, or onto a centre card to swap;
+//  - a centre card: onto a card in your open pile to swap (the centre's order is shared, so it stays put);
+//  - a pile tile: along the row to rearrange your piles.
+
+const drag = useDragSort();
+const centreRow = ref<HTMLElement | null>(null);
+const handRow = ref<HTMLElement | null>(null);
+const pilesRow = ref<HTMLElement | null>(null);
+
+function rowItems(row: HTMLElement | null, selector: string): HTMLElement[] {
+    return row ? [...row.querySelectorAll<HTMLElement>(selector)] : [];
+}
+
+function centrePileFor(element: HTMLElement): CenterPile | null {
+    const index = Number(element.dataset.centreIndex) - 1;
+
+    return gameStore.centerPiles.find((pile) => pile.pile_index === index) ?? null;
+}
+
+const handZone: DragZone = {
+    items: () => rowItems(handRow.value, 'button[data-card-id]'),
+    idOf: (element) => Number(element.dataset.cardId) || null,
+    canDrag: () => canSwapFromHand.value && !flights.value,
+    onDragStart: () => (selectedCentrePileId.value = null),
+    onReorder: (orderedIds) => {
+        if (activePileId.value) {
+            gameStore.reorderPileCards(activePileId.value, orderedIds);
+        }
+    },
+    targets: () => rowItems(centreRow.value, 'button[data-card-id]'),
+    onDropOnTarget: (cardId, target, context) => {
+        const centerPile = centrePileFor(target);
+        if (!centerPile?.top_card || !activePileId.value || !canSwapFromHand.value) {
+            return;
+        }
+        if (pickedCard.value?.id !== cardId) {
+            gameStore.pickUpCard(cardId, activePileId.value);
+        }
+        swapWithCentre(centerPile, {
+            hand: { from: context.draggedRect, rest: context.draggedRest },
+            centre: { from: context.targetRect, rest: context.targetRest },
+        });
+    },
+};
+
+const centreZone: DragZone = {
+    items: () => rowItems(centreRow.value, 'button[data-card-id]'),
+    idOf: (element) => centrePileFor(element)?.id ?? null,
+    canDrag: () => !isDisabled.value && !flights.value,
+    onDragStart: () => (selectedCentrePileId.value = null),
+    targets: () => (canSwapFromHand.value ? rowItems(handRow.value, 'button[data-card-id]') : []),
+    onDropOnTarget: (centerPileId, target, context: DropContext) => {
+        const centerPile = gameStore.centerPiles.find((pile) => pile.id === centerPileId);
+        const cardId = Number(target.dataset.cardId);
+        if (!centerPile?.top_card || !activePileId.value || !canSwapFromHand.value) {
+            return;
+        }
+        if (pickedCard.value?.id !== cardId) {
+            gameStore.pickUpCard(cardId, activePileId.value);
+        }
+        swapWithCentre(centerPile, {
+            hand: { from: context.targetRect, rest: context.targetRest },
+            centre: { from: context.draggedRect, rest: context.draggedRest },
+        });
+    },
+};
+
+const pilesZone: DragZone = {
+    items: () => rowItems(pilesRow.value, '[data-pile-id]'),
+    idOf: (element) => Number(element.dataset.pileId) || null,
+    canDrag: () => !isDisabled.value,
+    onReorder: (orderedIds) => gameStore.reorderPiles(orderedIds),
+};
+
+// A drag never outlives the game it started in.
+watch(isDisabled, (disabled) => {
+    if (disabled) {
+        drag.cancel();
+    }
+});
+
+// Bumped to re-arm the claim prompt (its button and countdown) if a claim doesn't go through.
+const claimPromptKey = ref(0);
+
 async function claimPiles() {
-    await gameStore.claimPiles();
+    const accepted = await gameStore.claimPiles();
+    if (!accepted && readyToClaim.value) {
+        notificationStore.add('Could not call PILES! — tap to try again.', 'error');
+        claimPromptKey.value++;
+    }
 }
 </script>
 
@@ -261,7 +359,7 @@ async function claimPiles() {
     <!-- Desktop: the board is exactly the viewport below the 48px header, so a
          full table's opponents scroll in their own column instead of
          stretching the page and pushing your piles below the fold. -->
-    <div ref="boardRoot" class="flex min-h-full flex-1 flex-col md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-none md:flex-row">
+    <div ref="boardRoot" class="flex min-h-full flex-1 flex-col md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-none md:flex-row" @dragstart.prevent>
         <!-- Desktop: opponents get a column of their own. -->
         <aside class="hidden w-[300px] shrink-0 flex-col gap-[22px] border-r border-border bg-card px-6 py-7 md:flex">
             <div class="flex items-baseline justify-between gap-3">
@@ -301,7 +399,7 @@ async function claimPiles() {
                     <section
                         data-zone="centre"
                         class="rounded-[14px] border bg-muted p-3 transition-colors md:rounded-[18px] md:p-[18px]"
-                        :class="pickedCard && !isDisabled ? 'border-[#F2B42B]' : 'border-border'"
+                        :class="(pickedCard || selectedCentrePile) && !isDisabled ? 'border-[#F2B42B]' : 'border-border'"
                     >
                         <div class="flex h-[18px] items-center justify-between gap-3 md:h-6">
                             <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground md:text-xs">Centre</h3>
@@ -312,16 +410,30 @@ async function claimPiles() {
                                 <span class="md:hidden">Tap one to swap</span>
                                 <span class="hidden md:inline">Tap a card to swap it with your {{ pickedItemName }}</span>
                             </span>
+                            <span
+                                v-else-if="selectedCentrePile?.top_card && !isDisabled"
+                                class="truncate text-[13px] font-semibold text-muted-foreground md:text-[15px]"
+                            >
+                                <span class="md:hidden">Tap it again to cancel</span>
+                                <span class="hidden md:inline"
+                                    >{{ CLOTHING_TYPE_LABELS[selectedCentrePile.top_card.clothing_type] }} chosen · tap it again to put it back</span
+                                >
+                            </span>
                         </div>
-                        <div class="mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4">
+                        <div
+                            ref="centreRow"
+                            class="mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4"
+                            @pointerdown="drag.start(centreZone, $event)"
+                        >
                             <GameCard
                                 v-for="pile in gameStore.centerPiles"
                                 :key="pile.id"
                                 :data-centre-index="pile.pile_index + 1"
                                 :card="pile.top_card"
                                 :card-style="cardStyle"
-                                :state="centreCardState(pile.top_card)"
-                                :interactive="!!pickedCard && !isDisabled && !!pile.top_card"
+                                :state="centreCardState(pile)"
+                                :interactive="!isDisabled && !!pile.top_card"
+                                class="touch-none select-none"
                                 @select="onSelectCentre(pile)"
                             />
                         </div>
@@ -334,9 +446,7 @@ async function claimPiles() {
                         :class="activePile ? 'bg-muted' : 'bg-transparent'"
                     >
                         <div class="flex h-[18px] items-center justify-between gap-3 md:h-6">
-                            <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground md:text-xs">
-                                {{ activePile ? `Pile ${activePile.pile_index + 1}` : 'Your cards' }}
-                            </h3>
+                            <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground md:text-xs">Your cards</h3>
                             <div class="flex min-w-0 items-center gap-2">
                                 <span v-if="justSwapped" class="text-[13px] font-semibold text-[#0E9C6B] md:text-[15px]">Swapped</span>
                                 <span v-else-if="pickedCard" class="truncate text-[13px] font-semibold text-muted-foreground md:text-[15px]">
@@ -344,6 +454,12 @@ async function claimPiles() {
                                     <span class="hidden md:inline"
                                         >{{ CLOTHING_TYPE_LABELS[pickedCard.clothing_type] }} lifted · tap it again to put it back</span
                                     >
+                                </span>
+                                <span
+                                    v-else-if="selectedCentrePile && canSwapFromHand"
+                                    class="truncate text-[13px] font-semibold text-[#A86E00] dark:text-[#F2B42B] md:text-[15px]"
+                                >
+                                    Tap a card to swap it in
                                 </span>
                                 <span
                                     v-else-if="activePile && !isDisabled"
@@ -374,21 +490,26 @@ async function claimPiles() {
                                 </button>
                             </div>
                         </div>
-                        <div class="relative mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4">
+                        <div
+                            ref="handRow"
+                            class="relative mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4"
+                            @pointerdown="drag.start(handZone, $event)"
+                        >
                             <GameCard
                                 v-for="(card, index) in handSlots"
                                 :key="card?.id ?? `empty-${index}`"
                                 :card="card"
                                 :card-style="cardStyle"
                                 :state="handCardState(card)"
-                                :interactive="!!activePile && !isDisabled && !activePile.is_completed"
+                                :interactive="canSwapFromHand"
+                                class="touch-none select-none"
                                 @select="card && onSelectHandCard(card)"
                             />
                             <p
                                 v-if="!activePile"
                                 class="absolute inset-0 flex items-center justify-center px-3 text-center text-[13px] font-semibold text-muted-foreground md:text-[15px]"
                             >
-                                {{ reorderMode ? 'Tap two piles to swap their places' : 'Tap a pile below to look inside' }}
+                                {{ selectedCentrePile ? 'Open a pile below and tap the card to trade' : 'Tap a pile below to look inside' }}
                             </p>
                         </div>
                     </section>
@@ -406,65 +527,29 @@ async function claimPiles() {
                                 Your piles · <span class="text-foreground">{{ completedCount }}/6</span>
                             </template>
                         </h3>
-                        <button
-                            v-if="!isDisabled"
-                            type="button"
-                            :aria-pressed="reorderMode"
-                            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[13px] transition-colors active:scale-95 md:text-[15px]"
-                            :class="
-                                reorderMode
-                                    ? 'border-[#F2B42B] bg-[#F2B42B] font-semibold text-white'
-                                    : 'border-border text-muted-foreground hover:text-foreground'
-                            "
-                            @click="toggleReorderMode"
-                        >
-                            <svg
-                                v-if="!reorderMode"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-3.5 w-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                aria-hidden="true"
-                            >
-                                <polyline points="17 2 21 6 17 10" />
-                                <line x1="21" y1="6" x2="3" y2="6" />
-                                <polyline points="7 22 3 18 7 14" />
-                                <line x1="3" y1="18" x2="21" y2="18" />
-                            </svg>
-                            {{ reorderMode ? 'Done rearranging' : 'Rearrange piles' }}
-                        </button>
+                        <span v-if="!isDisabled" class="text-[13px] text-muted-foreground md:text-[15px]">Drag to rearrange</span>
                     </div>
 
-                    <button
-                        v-if="readyToClaim"
-                        type="button"
-                        class="claim-cta w-full rounded-[14px] bg-[#0E9C6B] px-4 py-3 text-lg font-black tracking-wider text-white shadow-lg transition-transform hover:bg-[#0B8A5E] active:scale-[0.98] md:py-4 md:text-xl"
-                        @click="claimPiles"
-                    >
-                        PILES!
-                    </button>
-
-                    <TransitionGroup name="pile" tag="div" class="grid grid-cols-6 gap-1.5 md:gap-3">
+                    <!-- A plain row, not a TransitionGroup: dragging animates the move itself,
+                         and a FLIP on top would replay it from the old slot. -->
+                    <div ref="pilesRow" class="grid grid-cols-6 gap-1.5 md:gap-3" @pointerdown="drag.start(pilesZone, $event)">
                         <PileTile
                             v-for="pile in gameStore.myPiles"
                             :key="pile.id"
+                            :data-pile-id="pile.id"
                             :pile="pile"
                             :card-style="cardStyle"
                             :is-open="activePileId === pile.id"
                             :disabled="isDisabled"
-                            :reorder-mode="reorderMode"
-                            :is-reorder-selected="reorderFirstPileId === pile.id"
+                            class="touch-none select-none"
                             @open="onOpenPile"
                         />
-                    </TransitionGroup>
+                    </div>
                 </section>
             </div>
         </main>
 
+        <ClaimPrompt v-if="readyToClaim" :key="claimPromptKey" @claim="claimPiles" />
         <SwapFlight v-if="flights" :flights="flights" :card-style="cardStyle" @landed="onFlightLanded" />
         <HowToPlayModal v-if="showHowToPlay" :card-style="cardStyle" @close="showHowToPlay = false" />
     </div>
@@ -477,28 +562,9 @@ async function claimPiles() {
     transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.pile-move {
-    transition: transform 250ms ease;
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .rank-move,
-    .pile-move {
+    .rank-move {
         transition: none;
-    }
-}
-
-.claim-cta {
-    animation: claim-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes claim-pulse {
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(14, 156, 107, 0.55);
-    }
-    50% {
-        box-shadow: 0 0 0 12px rgba(14, 156, 107, 0);
     }
 }
 </style>

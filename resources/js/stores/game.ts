@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/vue3';
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, toRaw } from 'vue';
 import { apiFetch } from '../composables/useFetch';
 import type { Card, CenterPile, GamePlayer, GameSession, GameWinner, LobbyPlayer, OpponentState, PlayerPile, RematchState } from '../types/game';
 import { GameStatus } from '../types/game';
@@ -415,6 +415,51 @@ export const useGameStore = defineStore('game', () => {
     }
 
     /**
+     * Rearrange the cards within one of your piles. Presentational like pile
+     * order, and persisted the same way. A swap that lands first changes the
+     * pile's cards, so the server answers 409 and the board resyncs.
+     */
+    async function reorderPileCards(pileId: number, orderedCardIds: number[]) {
+        const pile = myPiles.value.find((p) => p.id === pileId);
+        if (!session.value || !pile) {
+            return;
+        }
+
+        const reordered = orderedCardIds.map((id) => pile.cards.find((c) => c.id === id)).filter((c): c is Card => c !== undefined);
+        if (reordered.length !== pile.cards.length) {
+            return;
+        }
+
+        const snapshot = pile.cards;
+        pile.cards = reordered;
+
+        const revert = (message: string) => {
+            // Only undo our own order: if a swap has since changed the pile, the resync owns it.
+            if (toRaw(pile.cards) === reordered) {
+                pile.cards = snapshot;
+            }
+            notificationStore.add(message, 'error');
+        };
+
+        try {
+            const response = await serializeGameplay(() =>
+                apiFetch(route('gameplay.reorder-pile-cards', { game: session.value!.id, pile: pileId }), {
+                    method: 'POST',
+                    body: JSON.stringify({ card_ids: orderedCardIds }),
+                }),
+            );
+
+            if (response.status === 409) {
+                resyncBoard();
+            } else if (!response.ok) {
+                revert('Could not rearrange your cards — try again.');
+            }
+        } catch {
+            revert('Could not rearrange your cards — check your connection.');
+        }
+    }
+
+    /**
      * Replace the centre and the player's own hand with the server's view.
      *
      * Chained through serializeGameplay so it can't overtake a queued swap —
@@ -574,11 +619,16 @@ export const useGameStore = defineStore('game', () => {
         return true;
     }
 
-    async function claimPiles() {
+    /** Call PILES! Resolves whether the server took the claim; the result itself arrives as GameEnded. */
+    async function claimPiles(): Promise<boolean> {
         if (!session.value) {
-            return;
+            return false;
         }
-        await apiFetch(route('gameplay.claim', { game: session.value.id }), { method: 'POST' });
+        try {
+            return (await apiFetch(route('gameplay.claim', { game: session.value.id }), { method: 'POST' })).ok;
+        } catch {
+            return false;
+        }
     }
 
     async function forfeit() {
@@ -619,6 +669,7 @@ export const useGameStore = defineStore('game', () => {
         releaseCard,
         swapCard,
         reorderPiles,
+        reorderPileCards,
         resyncBoard,
         applyCenterPileConfirmed,
         applyPileCompleted,

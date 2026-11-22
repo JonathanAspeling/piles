@@ -212,6 +212,8 @@ GET  /games/{game}/state       → full snapshot for this player: status, centre
 
 POST /games/{game}/pickup      → pick up a card from one of your piles into your hand
 POST /games/{game}/swap        → swap the held card with a centre pile (atomic)
+POST /games/{game}/piles/reorder → rearrange your piles (full order; presentational)
+POST /games/{game}/piles/{pile}/cards/reorder → rearrange the cards in one of your piles (409 if a swap changed them first)
 POST /games/{game}/claim       → claim "PILES!" (verified server-side)
 POST /games/{game}/forfeit     → forfeit the game (ends the session)
 ```
