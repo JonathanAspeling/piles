@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Enums\GameStatus;
+use App\Events\CenterPileSwapped;
 use App\Events\GameEnded;
 use App\Events\GameResumed;
 use App\Events\LobbyUpdated;
 use App\Events\PlayerPileCompleted;
 use App\Exceptions\StaleVersionException;
 use App\Http\Requests\ClaimPilesRequest;
+use App\Http\Requests\ReorderPileCardsRequest;
 use App\Http\Requests\ReorderPilesRequest;
 use App\Http\Requests\SwapCardRequest;
+use App\Models\Card;
 use App\Models\GameSession;
 use App\Models\Pile;
 use App\Models\PileCard;
@@ -82,7 +85,7 @@ class GameplayController extends Controller
         $myPileId = $player->picked_up_pile_id;
 
         try {
-            $cardSwapService->swap(
+            $centerPile = $cardSwapService->swap(
                 $game,
                 $player,
                 $request->integer('center_pile_id'),
@@ -95,6 +98,8 @@ class GameplayController extends Controller
         }
 
         $player->update(['picked_up_card_id' => null, 'picked_up_pile_id' => null]);
+
+        broadcast(new CenterPileSwapped($game, $centerPile, Card::findOrFail($myCardId)));
 
         $playerPile = Pile::where('id', $myPileId)
             ->where('game_session_id', $game->id)
@@ -175,11 +180,26 @@ class GameplayController extends Controller
         return response()->noContent();
     }
 
+    public function reorderPileCards(GameSession $game, Pile $pile, ReorderPileCardsRequest $request, PileReorderService $pileReorderService): Response
+    {
+        abort_unless($game->status === GameStatus::Playing, 422, 'Game is not in progress.');
+
+        $player = $game->gamePlayers()
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $pileReorderService->reorderCards($game, $player, $pile->id, $request->input('card_ids'));
+
+        return response()->noContent();
+    }
+
     /**
-     * The authoritative board as this player is allowed to see it.
+     * The authoritative game as this player is allowed to see it.
      *
-     * Returns the centre alongside the player's own hand so a client that lost a
-     * swap race can replace both wholesale instead of trusting its own rollback.
+     * The client resyncs from this whenever it may have missed a broadcast:
+     * after losing a swap race, on (re)joining the game channel, or when a
+     * countdown runs long. So it carries everything the board needs: status,
+     * centre, the player's own hand and their opponents' progress.
      */
     public function state(GameSession $game): JsonResponse
     {
@@ -187,25 +207,16 @@ class GameplayController extends Controller
             ->where('user_id', auth()->id())
             ->firstOrFail();
 
-        $centerPiles = $game->centerPiles()->with('pileCards.card')->get()->map(fn (Pile $pile) => [
-            'id' => $pile->id,
-            'pile_index' => $pile->pile_index,
-            'version' => $pile->version,
-            'top_card' => $pile->pileCards->first() ? [
-                'id' => $pile->pileCards->first()->card->id,
-                'clothing_type' => $pile->pileCards->first()->card->clothing_type->value,
-                'color' => $pile->pileCards->first()->card->color->value,
-            ] : null,
-        ])->values()->all();
-
         $myPiles = $player->piles()->with('pileCards.card')->get()
             ->map(fn (Pile $pile) => $pile->toPlayerPayload())
             ->values()
             ->all();
 
         return response()->json([
-            'center_piles' => $centerPiles,
+            'status' => $game->status->value,
+            'center_piles' => $game->centerPilesPayload(),
             'my_piles' => $myPiles,
+            'opponents' => $game->opponentsPayload($player),
         ]);
     }
 

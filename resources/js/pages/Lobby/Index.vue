@@ -135,8 +135,8 @@ onUnmounted(() => {
 
         <template v-else>
             <div class="flex flex-1 flex-col gap-4 p-3 sm:gap-6 sm:p-6">
-                <!-- Top row: How to play trigger -->
-                <div class="flex justify-end">
+                <!-- Top row: How to play trigger. Padded on phone to clear the floating menu button. -->
+                <div class="flex justify-end pr-10 md:pr-0">
                     <button
                         @click="showHowToPlay = true"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary active:scale-95 sm:text-sm"
@@ -246,7 +246,7 @@ onUnmounted(() => {
                             <button
                                 type="submit"
                                 :disabled="isJoining || !joinCode"
-                                class="w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 sm:py-2"
+                                class="w-full rounded-lg border border-transparent bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-dashed disabled:border-border disabled:bg-transparent disabled:text-muted-foreground disabled:active:scale-100 sm:py-2"
                             >
                                 {{ isJoining && !joiningGameId ? 'Joining…' : 'Join Game' }}
                             </button>

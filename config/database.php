@@ -39,6 +39,12 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => 5000,
             'journal_mode' => 'wal',
+            // Take the write lock when a transaction begins, not at its first
+            // write. A deferred transaction that reads, then writes after another
+            // connection committed, fails at once with "database is locked" (the
+            // busy timeout can't help it), so simultaneous swaps errored instead
+            // of queueing. See tests/e2e/swap-race.spec.ts.
+            'transaction_mode' => 'IMMEDIATE',
             'synchronous' => null,
         ],
 

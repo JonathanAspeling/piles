@@ -1,5 +1,5 @@
 import cardArtSchemes from '../data/cardArtSchemes.json';
-import type { GameSession } from '../types/game';
+import type { Card, GameSession } from '../types/game';
 import { CARD_COLOR_CLASSES, CardColor, CardTheme, ClothingType } from '../types/game';
 
 /**
@@ -118,7 +118,8 @@ function faceColor(type: ClothingType, color: CardColor, style: CardStyle): Card
 }
 
 // The white face standard cards sit on; a light border keeps it off a white page.
-const STANDARD_FACE_CLASSES = 'bg-white border-slate-200 text-slate-700';
+// In dark mode a warm off-white, so a row of cards doesn't glare against near-black.
+const STANDARD_FACE_CLASSES = 'bg-white border-slate-200 text-slate-700 dark:border-[#F2EEE5] dark:bg-[#F2EEE5]';
 
 /**
  * Background, border and text colour for a card face.
@@ -176,4 +177,41 @@ export function cardSwatch(type: ClothingType, color: CardColor, style: CardStyl
         class: 'border-white/70',
         style: { backgroundColor: scheme.main },
     };
+}
+
+// Kept alive so a preloaded image stays decoded in memory, not just in the HTTP cache.
+const preloadedArt = new Map<string, HTMLImageElement>();
+
+/**
+ * Download and decode card art before it's first drawn, so cards don't pop in
+ * when the board appears. Each image is fetched once; repeat calls are free.
+ * Requests go out in the order given, so pass the most urgent faces first.
+ */
+export function preloadCardArt(faces: Pick<Card, 'clothing_type' | 'color'>[], theme: CardTheme): void {
+    for (const face of faces) {
+        const url = getCardArtUrl(face.clothing_type, face.color, theme);
+        if (url === undefined || preloadedArt.has(url)) {
+            continue;
+        }
+        const image = new Image();
+        image.decoding = 'async';
+        image.src = url;
+        image.decode().catch(() => undefined);
+        preloadedArt.set(url, image);
+    }
+}
+
+/**
+ * Preload a dealt game's art: first the faces on screen at GO (your cards and
+ * the centre's top cards), then every colourway of those items, since those
+ * are the cards you'll be collecting.
+ */
+export function preloadDealtCardArt(visibleCards: Pick<Card, 'clothing_type' | 'color'>[], theme: CardTheme): void {
+    preloadCardArt(visibleCards, theme);
+
+    const dealtTypes = [...new Set(visibleCards.map((card) => card.clothing_type))];
+    preloadCardArt(
+        dealtTypes.flatMap((clothingType) => ALL_CARD_COLORS.map((color) => ({ clothing_type: clothingType, color }))),
+        theme,
+    );
 }

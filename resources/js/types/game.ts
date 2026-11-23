@@ -171,6 +171,12 @@ export interface LobbyGame {
     hard_variant: boolean;
 }
 
+/** Who has moved on from an ended game to its "Play again" lobby. */
+export interface RematchState {
+    rematch_game_id: number | null;
+    user_ids: number[];
+}
+
 export interface GameWinner {
     game_player_id: number;
     user_id: number;

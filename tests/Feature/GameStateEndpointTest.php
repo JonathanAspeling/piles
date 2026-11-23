@@ -157,6 +157,48 @@ test('never returns another players piles', function () {
     expect(array_column($data, 'id'))->not->toContain($opponentPile->id);
 });
 
+test('includes the game status, so a client that missed a broadcast can catch up', function () {
+    $player = User::factory()->create();
+    $game = seedGameWithCenterPiles($player);
+
+    $this->actingAs($player)
+        ->get(route('gameplay.state', $game))
+        ->assertOk()
+        ->assertJsonPath('status', GameStatus::Playing->value);
+});
+
+test('includes opponents progress without revealing an unfinished pile', function () {
+    $player = User::factory()->create();
+    $game = seedGameWithCenterPiles($player);
+    $opponentPile = seedOpponentWithPile($game);
+
+    $opponents = $this->actingAs($player)
+        ->get(route('gameplay.state', $game))
+        ->assertOk()
+        ->json('opponents');
+
+    expect($opponents)->toHaveCount(1);
+    expect($opponents[0]['piles'])->toBe([[
+        'id' => $opponentPile->id,
+        'pile_index' => 0,
+        'is_completed' => false,
+        'completed_type' => null,
+    ]]);
+    expect(json_encode($opponents))->not->toContain('"cards"');
+});
+
+test('reveals the clothing type of an opponents completed pile', function () {
+    $player = User::factory()->create();
+    $game = seedGameWithCenterPiles($player);
+    $opponentPile = seedOpponentWithPile($game);
+    $opponentPile->update(['is_completed' => true]);
+
+    $this->actingAs($player)
+        ->get(route('gameplay.state', $game))
+        ->assertOk()
+        ->assertJsonPath('opponents.0.piles.0.completed_type', 9);
+});
+
 test('a user not in the game gets a 404', function () {
     $player = User::factory()->create();
     $outsider = User::factory()->create();

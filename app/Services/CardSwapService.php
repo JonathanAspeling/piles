@@ -15,6 +15,8 @@ class CardSwapService
     /**
      * Atomically swap one card from a player's held pile with a centre pile card.
      *
+     * Returns the centre pile as committed, its version bumped.
+     *
      * @throws StaleVersionException when another player concurrently modified the centre pile
      * @throws ModelNotFoundException
      */
@@ -25,8 +27,8 @@ class CardSwapService
         int $centerCardId,
         int $myCardId,
         int $expectedCenterVersion,
-    ): void {
-        DB::transaction(function () use ($game, $player, $centerPileId, $centerCardId, $myCardId, $expectedCenterVersion) {
+    ): Pile {
+        return DB::transaction(function () use ($game, $player, $centerPileId, $centerCardId, $myCardId, $expectedCenterVersion) {
             $centerPile = Pile::where('id', $centerPileId)
                 ->where('game_session_id', $game->id)
                 ->whereNull('game_player_id')
@@ -56,6 +58,8 @@ class CardSwapService
             $playerPileCard->update(['card_id' => $centerCardId]);
 
             $centerPile->increment('version');
+
+            return $centerPile;
         });
     }
 }

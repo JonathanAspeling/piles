@@ -24,12 +24,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/games/{game}/start', [GameSessionController::class, 'start'])->name('games.start');
     Route::post('/games/{game}/client-ready', [GameSessionController::class, 'clientReady'])->name('games.client-ready');
     Route::get('/games/{game}/status', [GameSessionController::class, 'status'])->name('games.status');
+    Route::post('/games/{game}/rematch', [GameSessionController::class, 'rematch'])->name('games.rematch');
     Route::delete('/games/{game}/leave', [GameSessionController::class, 'leave'])->name('games.leave');
 
     Route::post('/games/{game}/pickup', [GameplayController::class, 'pickup'])->name('gameplay.pickup');
     Route::post('/games/{game}/release', [GameplayController::class, 'release'])->name('gameplay.release');
     Route::post('/games/{game}/swap', [GameplayController::class, 'swap'])->name('gameplay.swap');
     Route::post('/games/{game}/piles/reorder', [GameplayController::class, 'reorderPiles'])->name('gameplay.reorder-piles');
+    Route::post('/games/{game}/piles/{pile}/cards/reorder', [GameplayController::class, 'reorderPileCards'])->name('gameplay.reorder-pile-cards');
     Route::get('/games/{game}/state', [GameplayController::class, 'state'])->name('gameplay.state');
     Route::post('/games/{game}/claim', [GameplayController::class, 'claimPiles'])->name('gameplay.claim');
     Route::post('/games/{game}/forfeit', [GameplayController::class, 'forfeit'])->name('gameplay.forfeit');

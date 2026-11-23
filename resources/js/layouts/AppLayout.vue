@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref } from 'vue';
+import ForfeitButton from '@/components/game/ForfeitButton.vue';
 import { useAppearance } from '@/composables/useAppearance';
 import type { SharedData, User } from '@/types';
 
@@ -11,6 +12,8 @@ withDefaults(defineProps<{ showVersion?: boolean }>(), { showVersion: true });
 const page = usePage<SharedData>();
 const user = page.props.auth.user as User;
 const appVersion = computed(() => page.props.appVersion);
+// "dev" is the fallback when no release tag was baked in; it means nothing to players.
+const isReleaseVersion = computed(() => Boolean(appVersion.value) && appVersion.value !== 'dev');
 
 const menuOpen = ref(false);
 
@@ -59,6 +62,7 @@ if (typeof window !== 'undefined') {
                 Piles!
             </Link>
             <div class="flex items-center gap-3">
+                <ForfeitButton variant="header" />
                 <span class="text-xs text-muted-foreground">{{ user.name }}</span>
                 <button
                     @click="toggleTheme"
@@ -159,6 +163,7 @@ if (typeof window !== 'undefined') {
                     </svg>
                     {{ isDark ? 'Light mode' : 'Dark mode' }}
                 </button>
+                <ForfeitButton variant="menu" />
                 <button
                     @click="logout"
                     class="rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
@@ -172,7 +177,7 @@ if (typeof window !== 'undefined') {
             <slot />
         </main>
 
-        <footer v-if="showVersion" class="shrink-0 py-2 text-center">
+        <footer v-if="showVersion && isReleaseVersion" class="shrink-0 py-2 text-center">
             <span class="text-[10px] tracking-wider text-muted-foreground/70 sm:text-xs">{{ appVersion }}</span>
         </footer>
     </div>

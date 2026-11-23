@@ -86,6 +86,23 @@ test('the final client-ready broadcasts GameCountdownStarted with duration_ms=30
     });
 });
 
+test('a repeated client-ready, as the client retries, starts the countdown only once', function () {
+    Event::fake([GameCountdownStarted::class]);
+    Queue::fake();
+
+    $host = User::factory()->create();
+    $joiner = User::factory()->create();
+    $game = createCountdownGame($host, $joiner);
+
+    $this->actingAs($host)->post(route('games.client-ready', $game))->assertNoContent();
+    $this->actingAs($joiner)->post(route('games.client-ready', $game))->assertNoContent();
+    $this->actingAs($joiner)->post(route('games.client-ready', $game))->assertNoContent();
+    $this->actingAs($host)->post(route('games.client-ready', $game))->assertNoContent();
+
+    Event::assertDispatchedTimes(GameCountdownStarted::class, 1);
+    Queue::assertPushed(StartGameJob::class, 1);
+});
+
 test('client-ready is rejected when the game is not in countdown', function () {
     $host = User::factory()->create();
     $joiner = User::factory()->create();
