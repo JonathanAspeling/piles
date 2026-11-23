@@ -102,6 +102,8 @@ export interface GameSession {
     status: GameStatus;
     host_user_id: number;
     variant: boolean;
+    /** Look-alike items always come in at least pairs. */
+    similar_items: boolean;
     theme: CardTheme;
     /** Standard theme only: card faces take the CardColor background instead of white. */
     hard_variant: boolean;
@@ -165,6 +167,8 @@ export interface LobbyGame {
     host_name: string;
     player_count: number;
     variant: boolean;
+    /** Look-alike items always come in at least pairs. */
+    similar_items: boolean;
     theme: CardTheme;
     hard_variant: boolean;
 }

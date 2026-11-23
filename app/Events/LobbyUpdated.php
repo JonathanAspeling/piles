@@ -33,6 +33,7 @@ class LobbyUpdated implements ShouldBroadcastNow
                 'host_name' => $game->host->name,
                 'player_count' => $game->gamePlayers->count(),
                 'variant' => $game->variant,
+                'similar_items' => $game->similar_items,
                 'theme' => $game->theme->value,
                 'hard_variant' => $game->hard_variant,
             ])

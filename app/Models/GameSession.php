@@ -20,6 +20,7 @@ class GameSession extends Model
         'status',
         'host_user_id',
         'variant',
+        'similar_items',
         'theme',
         'hard_variant',
         'sets_count',
@@ -36,6 +37,8 @@ class GameSession extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
+        'variant' => false,
+        'similar_items' => false,
         'theme' => 'standard',
         'hard_variant' => false,
     ];
@@ -68,6 +71,7 @@ class GameSession extends Model
         return [
             'status' => GameStatus::class,
             'variant' => 'boolean',
+            'similar_items' => 'boolean',
             'theme' => CardTheme::class,
             'hard_variant' => 'boolean',
             'background_seed' => 'integer',

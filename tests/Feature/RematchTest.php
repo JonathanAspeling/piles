@@ -39,7 +39,7 @@ test('the first player to ask for a rematch opens a lobby with the same settings
 
     $ada = User::factory()->create();
     $ben = User::factory()->create();
-    $game = createEndedGame([$ada, $ben], ['variant' => true, 'theme' => CardTheme::Classic, 'hard_variant' => true]);
+    $game = createEndedGame([$ada, $ben], ['variant' => true, 'similar_items' => true, 'theme' => CardTheme::Classic, 'hard_variant' => true]);
 
     $response = $this->actingAs($ben)
         ->postJson(route('games.rematch', $game))
@@ -51,19 +51,53 @@ test('the first player to ask for a rematch opens a lobby with the same settings
         ->and($rematch->status)->toBe(GameStatus::Lobby)
         ->and($rematch->host_user_id)->toBe($ben->id)
         ->and($rematch->variant)->toBeTrue()
+        ->and($rematch->similar_items)->toBeTrue()
         ->and($rematch->theme)->toBe(CardTheme::Classic)
         ->and($rematch->hard_variant)->toBeTrue()
         ->and($rematch->gamePlayers()->pluck('user_id')->all())->toBe([$ben->id])
         ->and($game->fresh()->rematch_game_session_id)->toBe($rematch->id);
 
     expect($response->json('current_player.user_id'))->toBe($ben->id)
-        ->and($response->json('current_player.seat_index'))->toBe(0);
+        ->and($response->json('current_player.seat_index'))->toBe(0)
+        ->and($response->json('game.variant'))->toBeTrue()
+        ->and($response->json('game.similar_items'))->toBeTrue()
+        ->and($response->json('game.theme'))->toBe('classic')
+        ->and($response->json('game.hard_variant'))->toBeTrue();
 
     Event::assertDispatched(RematchUpdated::class, fn (RematchUpdated $event) => $event->broadcastWith() === [
         'rematch_game_id' => $rematch->id,
         'user_ids' => [$ben->id],
     ]);
     Event::assertDispatched(GameLobbyUpdated::class, fn (GameLobbyUpdated $event) => $event->game->is($rematch));
+});
+
+test('a rematch carries settings that are off as well as on', function () {
+    Event::fake([GameLobbyUpdated::class, RematchUpdated::class]);
+
+    $ada = User::factory()->create();
+    $game = createEndedGame([$ada], ['variant' => false, 'similar_items' => false, 'theme' => CardTheme::Standard, 'hard_variant' => false]);
+
+    $rematch = GameSession::findOrFail($this->actingAs($ada)->postJson(route('games.rematch', $game))->assertOk()->json('game.id'));
+
+    expect($rematch->variant)->toBeFalse()
+        ->and($rematch->similar_items)->toBeFalse()
+        ->and($rematch->theme)->toBe(CardTheme::Standard)
+        ->and($rematch->hard_variant)->toBeFalse();
+});
+
+test('a rematch reshuffles the hard colour backgrounds with a fresh seed', function () {
+    Event::fake([GameLobbyUpdated::class, RematchUpdated::class]);
+
+    $ada = User::factory()->create();
+    $game = createEndedGame([$ada], ['hard_variant' => true]);
+
+    $response = $this->actingAs($ada)->postJson(route('games.rematch', $game))->assertOk();
+    $rematch = GameSession::findOrFail($response->json('game.id'));
+
+    expect($game->background_seed)->toBeGreaterThan(0)
+        ->and($rematch->background_seed)->toBeGreaterThan(0)
+        ->and($rematch->background_seed)->not->toBe($game->background_seed)
+        ->and($response->json('game.background_seed'))->toBe($rematch->background_seed);
 });
 
 test('later players join the same rematch lobby', function () {

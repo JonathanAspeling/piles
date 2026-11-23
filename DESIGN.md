@@ -55,6 +55,15 @@ The first player to have all 6 piles face-up (all sets complete) shouts **"PILES
 
 At any player count, the host can choose variant: it adds **one extra set** to the deck and deals **8 cards to the centre** instead of 4.
 
+### Similar items (hard mode)
+
+Not in the original rules, and independent of the variant: the variant sets the deck's size, Similar items only changes which items make it up. `App\Services\DeckBuilder` picks the items.
+
+- **Off (default):** the deck avoids look-alike items. It only adds an item with a look-alike already in the deck once no fully distinct item is left.
+- **On:** items are picked at random, with no preference for any group, but look-alikes always come in at least pairs. Whenever a picked item has no look-alike in the deck yet, one random look-alike joins it. The last slot only takes an item that won't be left on its own (an ungrouped item, or one whose look-alike is already in the deck), unless none is left. A group can still end up with 3 or more items by chance.
+
+The look-alike groups live in `App\Services\ClothingSimilarity::GROUPS`. Two items are similar when they share a group; an item can be in several groups or none.
+
 ---
 
 ## Architecture
@@ -93,6 +102,7 @@ At any player count, the host can choose variant: it adds **one extra set** to t
 | `status` | enum | `lobby`, `countdown`, `playing`, `verifying`, `ended` |
 | `host_user_id` | FK → users | |
 | `variant` | boolean | Chaos mode (8 centre cards) |
+| `similar_items` | boolean | Hard mode: look-alike items come in at least pairs |
 | `sets_count` | tinyint | Derived from player count at game start |
 | `winner_user_id` | FK → users, nullable | |
 | `started_at` | timestamp, nullable | |

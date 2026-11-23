@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\ClothingType;
+use App\Enums\DeckMode;
 use App\Exceptions\NotEnoughCardsException;
 use App\Models\Card;
 use App\Models\GameSession;
@@ -16,6 +18,8 @@ class GameDealerService
 
     private const PILES_PER_PLAYER = 6;
 
+    public function __construct(private readonly DeckBuilder $deckBuilder) {}
+
     /**
      * @throws NotEnoughCardsException when the card table cannot fill every pile
      */
@@ -27,7 +31,9 @@ class GameDealerService
             $centerCardCount = $game->centerCardCount($playerCount);
             $cardsNeeded = self::cardsNeeded($playerCount, $centerCardCount);
 
-            $cards = $this->drawDeck($cardsNeeded, $playerCount);
+            $deckMode = $game->similar_items ? DeckMode::SimilarItems : DeckMode::Distinct;
+
+            $cards = $this->drawDeck($cardsNeeded, $playerCount, $deckMode);
 
             // Create center piles — each holds exactly 1 card
             for ($i = 0; $i < $centerCardCount; $i++) {
@@ -75,7 +81,8 @@ class GameDealerService
     /**
      * Draw and shuffle enough cards to fill every centre and player pile.
      *
-     * Only clothing types holding a complete set of 4 are eligible. The deck is
+     * Only clothing types holding a complete set of 4 are eligible; DeckBuilder
+     * chooses which of them go in, according to the deck mode. The deck is
      * dealt in seat order, so any shortfall — a card table seeded before a set
      * expansion, a half-seeded set — would silently drain into the last seats'
      * piles and hand those players an unplayable game. Fail before dealing.
@@ -84,27 +91,29 @@ class GameDealerService
      *
      * @throws NotEnoughCardsException
      */
-    private function drawDeck(int $cardsNeeded, int $playerCount): Collection
+    private function drawDeck(int $cardsNeeded, int $playerCount, DeckMode $deckMode): Collection
     {
         $setsNeeded = (int) ceil($cardsNeeded / self::CARDS_PER_PILE);
 
-        $clothingTypes = Card::select('clothing_type')
+        /** @var list<ClothingType> $completeTypes */
+        $completeTypes = Card::select('clothing_type')
             ->groupBy('clothing_type')
             ->havingRaw('COUNT(*) = ?', [self::CARDS_PER_PILE])
-            ->inRandomOrder()
-            ->limit($setsNeeded)
-            ->pluck('clothing_type');
+            ->pluck('clothing_type')
+            ->map(fn (ClothingType|int $type) => $type instanceof ClothingType ? $type : ClothingType::from($type))
+            ->values()
+            ->all();
 
-        $deck = Card::whereIn('clothing_type', $clothingTypes)->get()->shuffle();
-
-        if ($deck->count() < $cardsNeeded) {
+        if (count($completeTypes) < $setsNeeded) {
             throw new NotEnoughCardsException(
                 "A {$playerCount}-player game needs {$setsNeeded} complete card sets ({$cardsNeeded} cards), "
-                ."but only {$clothingTypes->count()} complete sets are seeded."
+                .'but only '.count($completeTypes).' complete sets are seeded.'
             );
         }
 
-        return $deck;
+        $clothingTypes = $this->deckBuilder->pick($completeTypes, $setsNeeded, $deckMode);
+
+        return Card::whereIn('clothing_type', $clothingTypes)->get()->shuffle();
     }
 
     private static function cardsNeeded(int $playerCount, int $centerCardCount): int

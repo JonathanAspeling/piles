@@ -38,6 +38,9 @@ const settings = computed(() => {
         labels.push('Hard colours');
     }
     labels.push(props.game.variant ? '8 centre cards · variant' : '4 centre cards');
+    if (props.game.similar_items) {
+        labels.push('Similar items');
+    }
 
     return labels;
 });

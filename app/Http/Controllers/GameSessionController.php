@@ -35,6 +35,7 @@ class GameSessionController extends Controller
             'status' => GameStatus::Lobby,
             'host_user_id' => $request->user()->id,
             'variant' => $request->boolean('variant'),
+            'similar_items' => $request->boolean('similar_items'),
             'theme' => $request->enum('theme', CardTheme::class) ?? CardTheme::Standard,
             'hard_variant' => $request->boolean('hard_variant'),
         ]);
@@ -290,6 +291,7 @@ class GameSessionController extends Controller
                     'status' => GameStatus::Lobby,
                     'host_user_id' => auth()->id(),
                     'variant' => $locked->variant,
+                    'similar_items' => $locked->similar_items,
                     'theme' => $locked->theme,
                     'hard_variant' => $locked->hard_variant,
                 ]);
@@ -334,6 +336,7 @@ class GameSessionController extends Controller
                 'status' => $game->status->value,
                 'host_user_id' => $game->host_user_id,
                 'variant' => $game->variant,
+                'similar_items' => $game->similar_items,
                 'theme' => $game->theme->value,
                 'hard_variant' => $game->hard_variant,
                 'background_seed' => $game->background_seed,
