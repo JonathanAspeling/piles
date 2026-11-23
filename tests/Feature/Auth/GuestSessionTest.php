@@ -31,7 +31,7 @@ test('a signed-out visitor following a game link lands back on it after picking 
         'code' => 'GUEST1',
         'status' => GameStatus::Lobby,
         'host_user_id' => User::factory()->create()->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     $this->get(route('games.show', $game))->assertRedirect(route('home'));

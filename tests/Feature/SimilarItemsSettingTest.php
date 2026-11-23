@@ -39,13 +39,23 @@ test('a non-boolean similar items value is rejected', function () {
     expect(GameSession::count())->toBe(0);
 });
 
-test('the old variant setting is no longer accepted as similar items', function () {
+test('similar items and the variant are set independently', function (bool $variant, bool $similarItems) {
     $this->actingAs(User::factory()->create())
-        ->postJson(route('games.store'), ['variant' => true])
+        ->postJson(route('games.store'), ['variant' => $variant, 'similar_items' => $similarItems])
         ->assertOk()
-        ->assertJsonPath('game.similar_items', false)
-        ->assertJsonMissingPath('game.variant');
-});
+        ->assertJsonPath('game.variant', $variant)
+        ->assertJsonPath('game.similar_items', $similarItems);
+
+    $game = GameSession::sole();
+
+    expect($game->variant)->toBe($variant)
+        ->and($game->similar_items)->toBe($similarItems);
+})->with([
+    'neither' => [false, false],
+    'variant only' => [true, false],
+    'similar items only' => [false, true],
+    'both' => [true, true],
+]);
 
 test('players and the open games list see the similar items setting', function () {
     $host = User::factory()->create();
@@ -53,6 +63,7 @@ test('players and the open games list see the similar items setting', function (
         'code' => 'SIMLR1',
         'status' => GameStatus::Lobby,
         'host_user_id' => $host->id,
+        'variant' => false,
         'similar_items' => true,
     ]);
     $game->gamePlayers()->create(['user_id' => $host->id, 'seat_index' => 0, 'is_ready' => false]);
@@ -73,6 +84,5 @@ test('players and the open games list see the similar items setting', function (
         ->assertInertia(fn (AssertableInertia $page) => $page->where('games.0.similar_items', true));
 
     expect((new LobbyUpdated)->broadcastWith()['games'][0])
-        ->toMatchArray(['id' => $game->id, 'similar_items' => true])
-        ->not->toHaveKey('variant');
+        ->toMatchArray(['id' => $game->id, 'variant' => false, 'similar_items' => true]);
 });

@@ -8,7 +8,6 @@ use App\Events\PlayerHandDealt;
 use App\Models\Card;
 use App\Models\GameSession;
 use App\Models\User;
-use App\Services\GameDealerService;
 use Database\Seeders\CardSeeder;
 use Illuminate\Support\Facades\Event;
 
@@ -20,7 +19,7 @@ function makeStartableGame(int $playerCount): GameSession
         'code' => 'STRT'.str_pad((string) $playerCount, 2, '0', STR_PAD_LEFT),
         'status' => GameStatus::Lobby,
         'host_user_id' => $host->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     for ($i = 0; $i < $playerCount; $i++) {
@@ -74,7 +73,7 @@ test('starting a game twice does not deal a second hand', function () {
     $this->actingAs($game->host)->postJson(route('games.start', $game))->assertNoContent();
     $this->actingAs($game->host)->postJson(route('games.start', $game))->assertStatus(422);
 
-    expect($game->piles()->count())->toBe(8 * 6 + GameDealerService::CENTER_CARDS);
+    expect($game->piles()->count())->toBe(8 * 6 + $game->centerCardCount(8));
 });
 
 test('the host gets an error instead of a half dealt game when sets are missing', function () {

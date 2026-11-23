@@ -18,9 +18,6 @@ class GameDealerService
 
     private const PILES_PER_PLAYER = 6;
 
-    /** Face-up cards in the centre, at every player count. */
-    public const CENTER_CARDS = 4;
-
     public function __construct(private readonly DeckBuilder $deckBuilder) {}
 
     /**
@@ -31,13 +28,15 @@ class GameDealerService
         DB::transaction(function () use ($game) {
             $players = $game->gamePlayers()->orderBy('seat_index')->get();
             $playerCount = $players->count();
-            $cardsNeeded = self::cardsNeeded($playerCount);
+            $centerCardCount = $game->centerCardCount($playerCount);
+            $cardsNeeded = self::cardsNeeded($playerCount, $centerCardCount);
+
             $deckMode = $game->similar_items ? DeckMode::SimilarItems : DeckMode::Distinct;
 
             $cards = $this->drawDeck($cardsNeeded, $playerCount, $deckMode);
 
             // Create center piles — each holds exactly 1 card
-            for ($i = 0; $i < self::CENTER_CARDS; $i++) {
+            for ($i = 0; $i < $centerCardCount; $i++) {
                 $pile = Pile::create([
                     'game_session_id' => $game->id,
                     'game_player_id' => null,
@@ -117,12 +116,12 @@ class GameDealerService
         return Card::whereIn('clothing_type', $clothingTypes)->get()->shuffle();
     }
 
-    private static function cardsNeeded(int $playerCount): int
+    private static function cardsNeeded(int $playerCount, int $centerCardCount): int
     {
         if ($playerCount < 2 || $playerCount > 10) {
             throw new \InvalidArgumentException("Unsupported player count: {$playerCount}");
         }
 
-        return $playerCount * self::PILES_PER_PLAYER * self::CARDS_PER_PILE + self::CENTER_CARDS;
+        return $playerCount * self::PILES_PER_PLAYER * self::CARDS_PER_PILE + $centerCardCount;
     }
 }

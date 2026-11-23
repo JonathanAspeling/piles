@@ -16,7 +16,7 @@ function makeAbandonableGame(GameStatus $status, ?Carbon $updatedAt = null): Gam
         'code' => strtoupper(substr(md5(uniqid()), 0, 6)),
         'status' => $status,
         'host_user_id' => $host->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     $game->gamePlayers()->create([

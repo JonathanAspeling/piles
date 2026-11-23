@@ -18,7 +18,7 @@ function seedReorderGame(User $user): array
         'code' => 'RORDR1',
         'status' => GameStatus::Playing,
         'host_user_id' => $user->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     $player = $game->gamePlayers()->create([

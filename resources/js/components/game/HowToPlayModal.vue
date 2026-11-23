@@ -99,7 +99,7 @@ onUnmounted(() => {
                     <ul class="list-disc space-y-1 pl-5">
                         <li>Playable with <strong>2 to 10 players</strong>.</li>
                         <li>Each player is dealt <strong>6 piles of 4 cards</strong>, face-down.</li>
-                        <li><strong>4 extra cards</strong> are dealt <strong>face-up in the centre</strong>, shared by everyone.</li>
+                        <li>A few extra cards are dealt <strong>face-up in the centre</strong>, shared by everyone — 4 normally, 8 in variant mode.</li>
                         <li>With <strong>Similar items</strong> on, look-alike items, such as two jackets or two hats, always come in at least pairs, so sets are harder to tell apart.</li>
                         <li>When the countdown ends, everyone starts at once — <strong>no turns</strong>.</li>
                     </ul>

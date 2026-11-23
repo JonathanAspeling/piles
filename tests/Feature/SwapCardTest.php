@@ -24,7 +24,7 @@ function seedSwapGame(User $user, array $pileCards, array $centerCardSpec): arra
         'code' => 'SWAP01',
         'status' => GameStatus::Playing,
         'host_user_id' => $user->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     $player = $game->gamePlayers()->create([

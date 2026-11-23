@@ -17,7 +17,7 @@ function seedPlayableGameWithPile(User $player): array
         'code' => strtoupper(substr(md5(uniqid()), 0, 6)),
         'status' => GameStatus::Playing,
         'host_user_id' => $player->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     $gamePlayer = $game->gamePlayers()->create([

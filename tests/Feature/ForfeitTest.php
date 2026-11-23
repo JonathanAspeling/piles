@@ -13,7 +13,7 @@ function createActiveGame(User $host, User $joiner): GameSession
         'code' => 'TESTGM',
         'status' => GameStatus::Playing,
         'host_user_id' => $host->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     $game->gamePlayers()->create([
@@ -71,7 +71,7 @@ test('cannot forfeit a game in the lobby', function () {
         'code' => 'LOBBY1',
         'status' => GameStatus::Lobby,
         'host_user_id' => $host->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
     $game->gamePlayers()->create(['user_id' => $host->id, 'seat_index' => 0, 'is_ready' => false]);
 

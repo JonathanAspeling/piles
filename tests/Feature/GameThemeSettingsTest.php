@@ -19,7 +19,7 @@ function makeThemedLobbyGame(User $host, CardTheme $theme, bool $hardVariant): G
         'code' => strtoupper(substr(md5(uniqid()), 0, 6)),
         'status' => GameStatus::Lobby,
         'host_user_id' => $host->id,
-        'similar_items' => false,
+        'variant' => false,
         'theme' => $theme,
         'hard_variant' => $hardVariant,
     ]);
@@ -37,7 +37,7 @@ test('a new game defaults to the standard theme with hard colour variant off', f
     $host = User::factory()->create();
 
     $this->actingAs($host)
-        ->postJson(route('games.store'), ['similar_items' => false])
+        ->postJson(route('games.store'), ['variant' => false])
         ->assertOk()
         ->assertJsonPath('game.theme', 'standard')
         ->assertJsonPath('game.hard_variant', false);
@@ -55,7 +55,7 @@ test('a game created directly falls back to the column defaults', function () {
         'code' => 'DEFLT1',
         'status' => GameStatus::Lobby,
         'host_user_id' => $host->id,
-        'similar_items' => false,
+        'variant' => false,
     ]);
 
     expect($game->theme)->toBe(CardTheme::Standard)
@@ -69,7 +69,7 @@ test('the host picks the theme and hard colour variant when creating the game', 
 
     $this->actingAs($host)
         ->postJson(route('games.store'), [
-            'similar_items' => false,
+            'variant' => false,
             'theme' => $theme->value,
             'hard_variant' => $hardVariant,
         ])

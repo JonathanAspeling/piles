@@ -19,6 +19,7 @@ class GameSession extends Model
         'code',
         'status',
         'host_user_id',
+        'variant',
         'similar_items',
         'theme',
         'hard_variant',
@@ -67,6 +68,7 @@ class GameSession extends Model
     {
         return [
             'status' => GameStatus::class,
+            'variant' => 'boolean',
             'similar_items' => 'boolean',
             'theme' => CardTheme::class,
             'hard_variant' => 'boolean',
@@ -176,5 +178,15 @@ class GameSession extends Model
     public function centerPiles(): HasMany
     {
         return $this->hasMany(Pile::class)->whereNull('game_player_id')->orderBy('pile_index');
+    }
+
+    /**
+     * Centre cards for this game. The real game deals 4, or 8 with the variant
+     * (which adds one set to the deck), at every player count. The deck is then
+     * 6 sets per player plus 1 (or plus 2 with the variant).
+     */
+    public function centerCardCount(int $playerCount): int
+    {
+        return $this->variant ? 8 : 4;
     }
 }
