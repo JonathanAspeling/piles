@@ -100,14 +100,27 @@ test('similar items decks stay varied instead of being a few whole groups', func
 
 test('similar items mode only leaves an item without a partner when nothing else fits', function () {
     // One slot, and every eligible item is grouped with nothing of its kind in the deck yet.
-    $deck = seededDeckBuilder(3)->pick([ClothingType::Sneakers, ClothingType::Tie, ClothingType::Gloves], 1, DeckMode::SimilarItems);
+    $alone = [ClothingType::Sneakers, ClothingType::Tie, ClothingType::Gloves];
 
-    expect($deck)->toHaveCount(1);
+    foreach (range(1, 20) as $seed) {
+        $deck = seededDeckBuilder($seed)->pick($alone, 1, DeckMode::SimilarItems);
+
+        expect($deck)->toHaveCount(1)
+            ->and($deck[0])->toBeIn($alone);
+    }
 
     // With an ungrouped item available, the last slot takes it rather than an unpaired one.
     foreach (range(1, 20) as $seed) {
         expect(seededDeckBuilder($seed)->pick([ClothingType::Sneakers, ClothingType::Tie, ClothingType::Socks], 1, DeckMode::SimilarItems))
             ->toBe([ClothingType::Socks]);
+    }
+});
+
+test('similar items mode skips an item whose look-alikes are all missing while a pair still fits', function () {
+    foreach (range(1, 20) as $seed) {
+        $deck = seededDeckBuilder($seed)->pick([ClothingType::Sneakers, ClothingType::JoggingShoes, ClothingType::Tie, ClothingType::Socks], 3, DeckMode::SimilarItems);
+
+        expect($deck)->toEqualCanonicalizing([ClothingType::Sneakers, ClothingType::JoggingShoes, ClothingType::Socks], "seed {$seed}");
     }
 });
 

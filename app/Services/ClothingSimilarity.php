@@ -14,7 +14,8 @@ use App\Enums\ClothingType;
 class ClothingSimilarity
 {
     /**
-     * Look-alike groups, keyed by a human-readable name.
+     * Look-alike groups, keyed by a human-readable name. Socks, Sunglasses
+     * and Umbrella are unique and belong to no group.
      *
      * @var array<string, list<ClothingType>>
      */
@@ -40,7 +41,6 @@ class ClothingSimilarity
         'Neckwear' => [ClothingType::Tie, ClothingType::BowTie, ClothingType::Scarf],
         'Straps' => [ClothingType::Belt, ClothingType::Suspenders, ClothingType::Wristwatch],
         'Bags' => [ClothingType::Backpack, ClothingType::Handbag],
-        // Unique, in no group: Socks, Sunglasses, Umbrella.
     ];
 
     /** @var array<int, list<ClothingType>>|null */

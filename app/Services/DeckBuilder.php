@@ -17,9 +17,13 @@ use Random\Randomizer;
  * - SimilarItems: picks items at random, with no preference for any group, but
  *   look-alikes always come in at least pairs. When a picked item has no
  *   look-alike in the deck yet, one random look-alike joins it straight away.
- *   The last slot only takes an item that won't be left on its own (an
- *   ungrouped item, or one with a look-alike already in the deck), unless no
- *   such item is left.
+ *   Every slot only takes an item that won't be left on its own: an ungrouped
+ *   item, one with a look-alike already in the deck, or (with room for two)
+ *   one whose look-alike is still available. Only when no such item is left
+ *   does an item go in alone.
+ *
+ * The eligible items are shuffled once up front, so taking the first match in
+ * order is a random choice.
  *
  * All randomness, including tie-breaks, comes from the injected Randomizer.
  */
@@ -43,7 +47,6 @@ class DeckBuilder
             throw new InvalidArgumentException('Eligible items must not repeat.');
         }
 
-        // Shuffling once up front makes "first match in order" a random choice.
         $shuffled = $this->random->shuffleArray($eligible);
 
         return $mode === DeckMode::SimilarItems
@@ -95,11 +98,13 @@ class DeckBuilder
         $picked = [];
 
         while (count($picked) < $count) {
-            $isLastSlot = $count - count($picked) === 1;
+            $hasRoomForPair = $count - count($picked) >= 2;
 
-            $chosenIndex = $isLastSlot
-                ? $this->firstIndex($remaining, fn (ClothingType $type) => ! $this->wouldBeAlone($type, $picked)) ?? array_key_first($remaining)
-                : array_key_first($remaining);
+            $chosenIndex = $this->firstIndex(
+                $remaining,
+                fn (ClothingType $type) => ! $this->wouldBeAlone($type, $picked)
+                    || ($hasRoomForPair && $this->hasLookAlikeIn($type, $remaining)),
+            ) ?? array_key_first($remaining);
 
             $chosen = $remaining[$chosenIndex];
             $needsPartner = $this->wouldBeAlone($chosen, $picked);
@@ -137,6 +142,16 @@ class DeckBuilder
         }
 
         return true;
+    }
+
+    /**
+     * Whether any of the given items looks like this one.
+     *
+     * @param  array<int, ClothingType>  $items
+     */
+    private function hasLookAlikeIn(ClothingType $type, array $items): bool
+    {
+        return $this->firstIndex($items, fn (ClothingType $other) => ClothingSimilarity::areSimilar($type, $other)) !== null;
     }
 
     /**

@@ -7,8 +7,11 @@ use App\Models\Card;
 use App\Models\GameSession;
 use App\Models\User;
 use App\Services\ClothingSimilarity;
+use App\Services\DeckBuilder;
 use App\Services\GameDealerService;
 use Database\Seeders\CardSeeder;
+use Random\Engine\Mt19937;
+use Random\Randomizer;
 
 function makeDealtGame(int $playerCount, bool $variant = false, bool $similarItems = false): GameSession
 {
@@ -122,7 +125,9 @@ function dealtClothingTypes(GameSession $game): array
         ->all();
 }
 
-test('a 2-player deck has no look-alike items unless similar items is on', function (bool $variant) {
+test('a 2-player deck has no look-alike items unless similar items is on', function (bool $variant, int $seed) {
+    app()->instance(DeckBuilder::class, new DeckBuilder(new Randomizer(new Mt19937($seed))));
+
     $game = makeDealtGame(2, $variant);
 
     app(GameDealerService::class)->deal($game);
@@ -131,12 +136,14 @@ test('a 2-player deck has no look-alike items unless similar items is on', funct
 
     foreach ($types as $type) {
         foreach ($types as $other) {
-            expect(ClothingSimilarity::areSimilar($type, $other))->toBeFalse("{$type->name} and {$other->name}");
+            expect(ClothingSimilarity::areSimilar($type, $other))->toBeFalse("seed {$seed}: {$type->name} and {$other->name}");
         }
     }
-})->with(['without variant' => false, 'with variant' => true]);
+})->with(['without variant' => false, 'with variant' => true])->with(range(1, 5));
 
-test('with similar items on every grouped item is dealt with a look-alike', function (bool $variant) {
+test('with similar items on every grouped item is dealt with a look-alike', function (bool $variant, int $seed) {
+    app()->instance(DeckBuilder::class, new DeckBuilder(new Randomizer(new Mt19937($seed))));
+
     $game = makeDealtGame(3, $variant, similarItems: true);
 
     app(GameDealerService::class)->deal($game);
@@ -147,10 +154,10 @@ test('with similar items on every grouped item is dealt with a look-alike', func
         if (ClothingSimilarity::similarTo($type) !== []) {
             $lookAlikes = array_filter($types, fn (ClothingType $other) => ClothingSimilarity::areSimilar($type, $other));
 
-            expect($lookAlikes)->not->toBeEmpty("{$type->name} has no look-alike");
+            expect($lookAlikes)->not->toBeEmpty("seed {$seed}: {$type->name} has no look-alike");
         }
     }
-})->with(['without variant' => false, 'with variant' => true]);
+})->with(['without variant' => false, 'with variant' => true])->with(range(1, 5));
 
 test('dealing fails loudly rather than shorting the last seats when sets are missing', function () {
     // A card table seeded before the 16-set expansion holds 47 sets — two short
