@@ -47,7 +47,7 @@ const settings = computed(() => {
 
 const status = computed(() => {
     if (!hasEnoughPlayers.value) {
-        return 'Share the room code to get someone in.';
+        return 'Send the invite link, or the room code, to get someone in.';
     }
     if (allReady.value) {
         return isHost.value ? "Everyone's ready. Start when you like." : `Everyone's ready. Waiting for ${hostName.value} to start.`;
@@ -65,12 +65,23 @@ const status = computed(() => {
 const isActing = ref(false);
 const showHowToPlay = ref(false);
 const copied = ref(false);
+const inviteUrl = computed(() => route('games.invite', { code: props.game.code }));
+/** Phones get the share sheet (straight into a chat); everything else copies the link. */
+const canShare = typeof navigator !== 'undefined' && !!navigator.share && window.matchMedia('(pointer: coarse)').matches;
 const canCopy = typeof navigator !== 'undefined' && !!navigator.clipboard;
 let copiedTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function copyCode() {
+async function shareInvite() {
+    if (canShare) {
+        try {
+            await navigator.share({ title: 'Piles!', text: `Join my game of Piles! Room ${props.game.code}`, url: inviteUrl.value });
+        } catch {
+            // Closing the share sheet without picking anything isn't an error.
+        }
+        return;
+    }
     try {
-        await navigator.clipboard.writeText(props.game.code);
+        await navigator.clipboard.writeText(inviteUrl.value);
     } catch {
         return;
     }
@@ -152,11 +163,12 @@ async function leaveGame() {
                         }}</span>
                     </div>
                     <button
-                        v-if="canCopy"
+                        v-if="canShare || canCopy"
+                        data-invite-link
                         type="button"
                         class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-colors active:scale-95 md:text-sm"
                         :class="copied ? 'border-[#0E9C6B] text-[#0E9C6B]' : 'border-border bg-card text-muted-foreground hover:text-foreground'"
-                        @click="copyCode"
+                        @click="shareInvite"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -175,7 +187,7 @@ async function leaveGame() {
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                             </template>
                         </svg>
-                        {{ copied ? 'Copied' : 'Copy' }}
+                        {{ copied ? 'Link copied' : canShare ? 'Share link' : 'Copy invite link' }}
                     </button>
                 </div>
                 <ul class="flex flex-wrap gap-1.5">

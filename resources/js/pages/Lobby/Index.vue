@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import type { SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
 import GameView from '../../components/game/GameView.vue';
@@ -23,7 +24,8 @@ const theme = ref<CardTheme>(CardTheme.Standard);
 const hardVariant = ref(false);
 const cardThemes = Object.values(CardTheme);
 const joinCode = ref('');
-const joinError = ref('');
+// An invite link that couldn't be used (started, full, unknown) lands here with the reason.
+const joinError = ref(usePage<SharedData>().props.flash.joinError ?? '');
 const isCreating = ref(false);
 const isJoining = ref(false);
 const joiningGameId = ref<number | null>(null);

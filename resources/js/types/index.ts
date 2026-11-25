@@ -20,6 +20,7 @@ export interface SharedData {
     name: string;
     appVersion: string;
     quote: { message: string; author: string };
+    flash: { joinError: string | null };
     auth: Auth;
     ziggy: {
         location: string;

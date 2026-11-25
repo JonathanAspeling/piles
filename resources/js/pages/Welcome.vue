@@ -2,6 +2,11 @@
 import InputError from '@/components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
+defineProps<{
+    /** Set when a signed-out visitor followed an invite link: picking a name takes them into that game. */
+    inviteCode: string | null;
+}>();
+
 const form = useForm({
     name: '',
 });
@@ -16,7 +21,11 @@ const playAsGuest = () => {
     <div class="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-foreground">
         <main class="flex w-full max-w-sm flex-col items-center gap-8 text-center">
             <h1 class="text-6xl font-bold tracking-widest uppercase">Piles!</h1>
-            <p class="text-sm text-muted-foreground">A fast-paced card game.</p>
+            <p v-if="inviteCode && !$page.props.auth.user" class="text-sm text-muted-foreground">
+                You've been invited to game <span class="font-mono font-semibold tracking-[0.12em] text-foreground">{{ inviteCode }}</span>.
+                Pick a name to join.
+            </p>
+            <p v-else class="text-sm text-muted-foreground">A fast-paced card game.</p>
 
             <div v-if="$page.props.auth.user" class="flex w-full flex-col gap-3">
                 <Link
@@ -46,7 +55,7 @@ const playAsGuest = () => {
                         :disabled="form.processing"
                         class="rounded border border-foreground bg-foreground px-4 py-2 text-sm font-semibold uppercase tracking-wider text-background transition-colors hover:bg-transparent hover:text-foreground disabled:opacity-50"
                     >
-                        Play
+                        {{ inviteCode ? 'Join game' : 'Play' }}
                     </button>
                 </form>
 

@@ -17,12 +17,16 @@ use App\Jobs\StartGameJob;
 use App\Models\GamePlayer;
 use App\Models\GameSession;
 use App\Models\Pile;
+use App\Models\User;
 use App\Services\GameDealerService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class GameSessionController extends Controller
 {
@@ -58,29 +62,36 @@ class GameSessionController extends Controller
     {
         $game = GameSession::where('code', strtoupper($request->input('code')))->firstOrFail();
 
-        $player = DB::transaction(function () use ($game, $request) {
-            $locked = $this->lockGame($game);
-
-            abort_unless($locked->status === GameStatus::Lobby, 422, 'This game has already started.');
-
-            $alreadyJoined = $locked->gamePlayers()->where('user_id', $request->user()->id)->exists();
-
-            abort_if($alreadyJoined, 422, 'You are already in this game.');
-            abort_if($locked->gamePlayers()->count() >= 10, 422, 'This game is full.');
-
-            $nextSeat = $locked->gamePlayers()->max('seat_index') + 1;
-
-            return $locked->gamePlayers()->create([
-                'user_id' => $request->user()->id,
-                'seat_index' => $nextSeat,
-                'is_ready' => false,
-            ]);
-        }, 3);
-
-        broadcast(new GameLobbyUpdated($game));
-        broadcast(new LobbyUpdated);
+        $player = $this->seatPlayer($game, $request->user());
 
         return $this->joinedGameResponse($game, $player);
+    }
+
+    /**
+     * An invite link: takes a signed-in player straight to the game's room,
+     * seating them if they aren't at the table yet. Signed-out visitors are
+     * sent to the home page first and come back here once they've picked a
+     * name. A link that can't be used lands in the lobby with the reason.
+     */
+    public function invite(Request $request, string $code): RedirectResponse
+    {
+        $game = GameSession::where('code', strtoupper($code))->first();
+
+        if (! $game) {
+            return to_route('lobby.index')->with('joinError', "That invite link doesn't match a game.");
+        }
+
+        if ($game->gamePlayers()->where('user_id', $request->user()->id)->exists()) {
+            return to_route('games.show', $game);
+        }
+
+        try {
+            $this->seatPlayer($game, $request->user());
+        } catch (HttpException $exception) {
+            return to_route('lobby.index')->with('joinError', $exception->getMessage());
+        }
+
+        return to_route('games.show', $game);
     }
 
     public function show(GameSession $game): Response
@@ -327,6 +338,39 @@ class GameSessionController extends Controller
     }
 
     /** The game, your seat and the table: what the client needs to open a game's lobby. */
+    /**
+     * Gives a user the next seat at a table that's still in its lobby, and
+     * tells everyone watching the room and the lobby list.
+     *
+     * @throws HttpException 422 when the game has started, is full, or the user is already in it
+     */
+    private function seatPlayer(GameSession $game, User $user): GamePlayer
+    {
+        $player = DB::transaction(function () use ($game, $user) {
+            $locked = $this->lockGame($game);
+
+            abort_unless($locked->status === GameStatus::Lobby, 422, 'This game has already started.');
+
+            $alreadyJoined = $locked->gamePlayers()->where('user_id', $user->id)->exists();
+
+            abort_if($alreadyJoined, 422, 'You are already in this game.');
+            abort_if($locked->gamePlayers()->count() >= 10, 422, 'This game is full.');
+
+            $nextSeat = $locked->gamePlayers()->max('seat_index') + 1;
+
+            return $locked->gamePlayers()->create([
+                'user_id' => $user->id,
+                'seat_index' => $nextSeat,
+                'is_ready' => false,
+            ]);
+        }, 3);
+
+        broadcast(new GameLobbyUpdated($game));
+        broadcast(new LobbyUpdated);
+
+        return $player;
+    }
+
     private function joinedGameResponse(GameSession $game, GamePlayer $player): JsonResponse
     {
         return response()->json([
