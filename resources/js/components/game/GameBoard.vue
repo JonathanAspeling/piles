@@ -47,6 +47,9 @@ const pickedItemName = computed(() => (pickedCard.value ? CLOTHING_TYPE_LABELS[p
 // Ranked by piles done, so whoever is closest to winning is always first.
 const opponents = computed(() => gameStore.leaderboard.filter((row) => row.id !== gameStore.currentPlayer?.id));
 
+/** How many rows of four the centre takes: two in the variant's eight-card centre. */
+const centreRows = computed(() => Math.max(1, Math.ceil(gameStore.centerPiles.length / 4)));
+
 /** The open pile's four cards, or four empty slots: the row is always there, so opening a pile moves nothing. */
 const handSlots = computed<(Card | null)[]>(() => activePile.value?.cards ?? [null, null, null, null]);
 
@@ -388,17 +391,17 @@ async function claimPiles() {
                 class="min-w-[15rem] flex-1 snap-start"
             />
         </TransitionGroup>
-        <p class="flex flex-1 items-end justify-center px-7 pb-3.5 text-center text-base leading-snug text-muted-foreground md:hidden">
+        <p class="board-coach flex flex-1 items-end justify-center px-7 pb-3.5 text-center text-base leading-snug text-muted-foreground md:hidden">
             {{ coachText }}
         </p>
 
-        <main class="flex shrink-0 flex-col items-center px-4 pb-3 md:flex-1 md:overflow-y-auto md:px-10 md:py-8">
-            <div class="flex w-full flex-col gap-3.5 md:my-auto md:w-[660px] md:max-w-full md:gap-7">
-                <div class="flex flex-col gap-2.5 md:gap-4">
+        <main class="board-main flex shrink-0 flex-col items-center px-4 pb-3 md:flex-1 md:overflow-y-auto md:px-10 md:py-8">
+            <div class="board-column flex w-full flex-col gap-3.5 md:my-auto md:max-w-full md:gap-7" :style="{ '--centre-rows': centreRows }">
+                <div class="board-stack flex flex-col gap-2.5 md:gap-4">
                     <!-- Centre -->
                     <section
                         data-zone="centre"
-                        class="rounded-[14px] border bg-muted p-3 transition-colors md:rounded-[18px] md:p-[18px]"
+                        class="board-section rounded-[14px] border bg-muted p-3 transition-colors md:rounded-[18px] md:p-[18px]"
                         :class="(pickedCard || selectedCentrePile) && !isDisabled ? 'border-[#F2B42B]' : 'border-border'"
                     >
                         <div class="flex h-[18px] items-center justify-between gap-3 md:h-6">
@@ -422,7 +425,7 @@ async function claimPiles() {
                         </div>
                         <div
                             ref="centreRow"
-                            class="mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4"
+                            class="board-cards mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4"
                             @pointerdown="drag.start(centreZone, $event)"
                         >
                             <GameCard
@@ -442,7 +445,7 @@ async function claimPiles() {
                     <!-- Your cards: always reserved, filled by whichever pile is open -->
                     <section
                         data-zone="hand"
-                        class="rounded-[14px] border border-border p-3 transition-colors md:rounded-[18px] md:p-[18px]"
+                        class="board-section rounded-[14px] border border-border p-3 transition-colors md:rounded-[18px] md:p-[18px]"
                         :class="activePile ? 'bg-muted' : 'bg-transparent'"
                     >
                         <div class="flex h-[18px] items-center justify-between gap-3 md:h-6">
@@ -492,7 +495,7 @@ async function claimPiles() {
                         </div>
                         <div
                             ref="handRow"
-                            class="relative mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4"
+                            class="board-cards relative mx-auto mt-2.5 grid max-w-[576px] grid-cols-4 gap-2 md:mt-4 md:gap-4"
                             @pointerdown="drag.start(handZone, $event)"
                         >
                             <GameCard
@@ -556,6 +559,73 @@ async function claimPiles() {
 </template>
 
 <style scoped>
+/* The whole table has to fit on one screen, so the column's width is worked
+   out from the viewport's height. Cards are 33:43 and every card row is one
+   card tall, so the centre's rows plus your cards row share whatever height is
+   left once the fixed parts are taken out (--board-chrome: the header or the
+   opponents strip, the main's padding, both sections' padding, borders and
+   headings, the gaps and the piles row, plus a little slack). The width then
+   follows from four cards across plus the gaps between them and the section's
+   padding (--board-gutter). Very short screens stop at a floor and scroll
+   rather than shrink the cards to nothing. */
+.board-column {
+    --board-chrome: 340px;
+    --board-gutter: 50px;
+    --card-row-gap: 8px;
+    --card-height: calc((100dvh - var(--board-chrome) - (var(--centre-rows) - 1) * var(--card-row-gap)) / (var(--centre-rows) + 1));
+    max-width: max(240px, var(--card-height) * 132 / 43 + var(--board-gutter));
+}
+
+/* Tall phones keep the coach line above the board, so it's chrome too. */
+@media (max-width: 767px) and (min-height: 721px) {
+    .board-column {
+        --board-chrome: 404px;
+    }
+}
+
+/* Short phones: the coach line would only push the board off the bottom. */
+@media (max-width: 767px) and (max-height: 720px) {
+    .board-coach {
+        display: none;
+    }
+}
+
+@media (min-width: 768px) {
+    .board-column {
+        --board-chrome: 424px;
+        --board-gutter: 86px;
+        --card-row-gap: 16px;
+        width: clamp(360px, var(--card-height) * 132 / 43 + var(--board-gutter), 660px);
+        max-width: 100%;
+    }
+}
+
+/* Short laptop screens: tighter spacing, so the room goes to the cards. */
+@media (min-width: 768px) and (max-height: 860px) {
+    .board-main {
+        padding-top: 16px;
+        padding-bottom: 16px;
+    }
+
+    .board-column {
+        --board-chrome: 336px;
+        --board-gutter: 74px;
+        gap: 14px;
+    }
+
+    .board-stack {
+        gap: 10px;
+    }
+
+    .board-section {
+        padding: 12px;
+    }
+
+    .board-cards {
+        margin-top: 10px;
+    }
+}
+
 /* FLIP-based: nothing in plain CSS can animate a DOM reorder, and seeing the
    row travel is the point of ranking them. */
 .rank-move {
