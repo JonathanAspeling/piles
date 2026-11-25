@@ -22,7 +22,9 @@ class StartGameJob implements ShouldQueue
             return;
         }
 
-        $game->update(['status' => GameStatus::Playing]);
+        // Play time is measured from GO, not from the deal: loading and the
+        // countdown aren't part of how long the game took.
+        $game->update(['status' => GameStatus::Playing, 'started_at' => now()]);
 
         broadcast(new GameActivated($game));
     }

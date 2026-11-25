@@ -105,8 +105,8 @@ The look-alike groups live in `App\Services\ClothingSimilarity::GROUPS`. Two ite
 | `similar_items` | boolean | Hard mode: look-alike items come in at least pairs |
 | `sets_count` | tinyint | Derived from player count at game start |
 | `winner_user_id` | FK → users, nullable | |
-| `started_at` | timestamp, nullable | |
-| `ended_at` | timestamp, nullable | |
+| `started_at` | timestamp, nullable | Stamped at the deal, then reset at GO, so play time leaves out loading and the countdown |
+| `ended_at` | timestamp, nullable | Set by a win, a forfeit or the abandoned-game sweep |
 
 ### `game_players`
 

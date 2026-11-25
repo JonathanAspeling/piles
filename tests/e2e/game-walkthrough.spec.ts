@@ -225,6 +225,19 @@ test('a full game, start to finish', async ({ browser }, testInfo) => {
     await shot(host, 'rematch-lobby-desktop');
     await shot(guest, 'rematch-lobby-phone');
 
+    // Back in the lobby, both players' records include the game just played.
+    await host.goto('/lobby');
+    const hostHistory = host.locator('[data-game-history]');
+    await expect(hostHistory.locator('[data-history-game]').first()).toContainText('You won');
+    await expect(hostHistory.locator('[data-history-game]').first()).toContainText('vs Ben');
+    await expect(hostHistory.getByText('Played most with')).toBeVisible();
+    await hostHistory.scrollIntoViewIfNeeded();
+    await shot(host, 'lobby-history-desktop');
+    await guest.goto('/lobby');
+    await expect(guest.locator('[data-game-history] [data-history-game]').first()).toContainText('Ada won');
+    await guest.locator('[data-game-history]').scrollIntoViewIfNeeded();
+    await shot(guest, 'lobby-history-phone', { fullPage: false });
+
     await host.context().close();
     await guest.context().close();
 });
