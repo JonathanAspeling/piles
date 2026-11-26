@@ -209,6 +209,7 @@ lobby ──► countdown (3 s) ──► playing ──► verifying ──► 
 ```
 GET  /lobby                    → lobby index (Inertia)
 GET  /games/{game}             → game room (Inertia — lobby + board states)
+GET  /join/{code}              → invite link: seats you and opens the room (signed out → home page first, then back here)
 
 POST /games                    → create a new session
 POST /games/join               → join by 6-character code

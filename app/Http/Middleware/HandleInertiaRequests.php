@@ -46,6 +46,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'flash' => [
+                'joinError' => fn () => $request->session()->get('joinError'),
+            ],
         ]);
     }
 }

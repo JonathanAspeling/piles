@@ -19,6 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/games', [GameSessionController::class, 'store'])->name('games.store');
     Route::post('/games/join', [GameSessionController::class, 'join'])->name('games.join');
+    Route::get('/join/{code}', [GameSessionController::class, 'invite'])->name('games.invite');
     Route::get('/games/{game}', [GameSessionController::class, 'show'])->name('games.show');
     Route::post('/games/{game}/ready', [GameSessionController::class, 'ready'])->name('games.ready');
     Route::post('/games/{game}/start', [GameSessionController::class, 'start'])->name('games.start');
