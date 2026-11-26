@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useGameStore } from '../../stores/game';
 import { avatarColorClass } from '../../utils/avatar';
 
@@ -13,6 +13,31 @@ const emit = defineEmits<{
 
 const gameStore = useGameStore();
 const isRequesting = ref(false);
+
+/**
+ * This panel opens under the pointer of anyone still hammering PILES!, and on
+ * a short table "Leave room" sits about where that button was. So its buttons
+ * ignore clicks until the panel has been up long enough to be seen.
+ */
+const ARM_DELAY_MS = 1000;
+const isArmed = ref(false);
+let armTimer: ReturnType<typeof setTimeout> | null = null;
+
+onMounted(() => {
+    armTimer = setTimeout(() => (isArmed.value = true), ARM_DELAY_MS);
+});
+
+onBeforeUnmount(() => {
+    if (armTimer) {
+        clearTimeout(armTimer);
+    }
+});
+
+function leave() {
+    if (isArmed.value) {
+        emit('leave');
+    }
+}
 
 const myUserId = computed(() => gameStore.currentPlayer?.user_id ?? null);
 const winner = computed(() => gameStore.winner);
@@ -73,7 +98,7 @@ function ordinal(position: number): string {
 }
 
 async function playAgain() {
-    if (isRequesting.value) {
+    if (!isArmed.value || isRequesting.value) {
         return;
     }
     isRequesting.value = true;
@@ -104,7 +129,9 @@ async function playAgain() {
                 <p class="text-base text-muted-foreground">{{ subtitle }}</p>
             </div>
 
-            <ol class="flex flex-col overflow-hidden rounded-[14px] border border-border">
+            <!-- shrink-0: with overflow-hidden a flex item may shrink to nothing, so a 10-seat list got
+                 squeezed and clipped its last rows instead of letting the panel scroll. -->
+            <ol class="flex shrink-0 flex-col overflow-hidden rounded-[14px] border border-border">
                 <li
                     v-for="(row, index) in results"
                     :key="row.id"
@@ -158,17 +185,22 @@ async function playAgain() {
                 </li>
             </ul>
 
-            <div class="flex flex-col gap-2.5">
+            <div class="flex flex-col gap-2.5 transition-opacity duration-300" :class="isArmed ? 'opacity-100' : 'opacity-40'">
                 <button
                     type="button"
-                    :disabled="isRequesting"
+                    :disabled="!isArmed || isRequesting"
                     class="h-14 rounded-[14px] bg-[#0E9C6B] text-[19px] font-bold text-white transition-transform hover:bg-[#0B8A5E] active:scale-[0.98] disabled:opacity-70"
                     @click="playAgain"
                 >
                     {{ isRequesting ? 'Joining…' : 'Play again' }}
                 </button>
                 <p class="text-center text-[13px] text-muted-foreground">Same room, same players. The next round starts when everyone's in.</p>
-                <button type="button" class="h-11 text-[15px] font-semibold text-muted-foreground hover:text-foreground" @click="emit('leave')">
+                <button
+                    type="button"
+                    :disabled="!isArmed"
+                    class="h-11 text-[15px] font-semibold text-muted-foreground hover:text-foreground disabled:hover:text-muted-foreground"
+                    @click="leave"
+                >
                     Leave room
                 </button>
             </div>
