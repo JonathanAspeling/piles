@@ -69,10 +69,16 @@ for (const table of TABLES) {
         // The bots finish sets as they go: progress shows on the host's screen.
         await expect.poll(() => completedOpponentPiles(page), { timeout: 4 * 60_000, intervals: [2_000] }).toBeGreaterThan(0);
 
+        // Checked every frame, not with expect's backing-off retries, so the game-over buttons
+        // are still in their first second when expectGameOverPanelUsable() looks at them.
+        await page.waitForFunction(() => / wins$/.test(document.getElementById('game-over-title')?.textContent ?? ''), null, {
+            polling: 'raf',
+            timeout: 8 * 60_000,
+        });
         const winnerHeading = page.getByRole('heading', { name: / wins$/ });
-        await expect(winnerHeading).toBeVisible({ timeout: 8 * 60_000 });
         const winner = (await winnerHeading.innerText()).replace(/ wins$/, '');
         expect(await page.locator(`aside [data-opponent="${winner}"]`).innerText()).toContain('6');
+        await expectGameOverPanelUsable(page, table.seats);
         await page.screenshot({
             path: path.join(
                 'tests/e2e/screenshots',
@@ -86,6 +92,30 @@ for (const table of TABLES) {
 
         await page.context().close();
     });
+}
+
+/**
+ * The game-over panel opens under the pointer of anyone still racing for
+ * PILES!, so its buttons ignore clicks for a moment before they work. And its
+ * results list must show every seat: a 10-seat list once got squeezed and
+ * clipped its last rows instead of letting the panel scroll.
+ */
+async function expectGameOverPanelUsable(page: Page, seats: number) {
+    const panel = page.getByRole('dialog', { name: / wins$/ });
+    const leave = panel.getByRole('button', { name: 'Leave room' });
+
+    await expect(leave).toBeDisabled();
+    await expect(panel.getByRole('button', { name: 'Play again' })).toBeDisabled();
+    await expect(leave).toBeEnabled({ timeout: 3_000 });
+
+    const results = panel.locator('ol');
+    await expect(results.locator('li')).toHaveCount(seats);
+    const clipped = await results.evaluate((list) => list.scrollHeight - list.clientHeight);
+    expect(clipped, 'results rows hidden by the list clipping').toBeLessThanOrEqual(1);
+
+    const lastRow = results.locator('li').last();
+    await lastRow.scrollIntoViewIfNeeded();
+    await expect(lastRow).toBeInViewport({ ratio: 1 });
 }
 
 /** How many piles the opponents have laid down, read off the sidebar. */
