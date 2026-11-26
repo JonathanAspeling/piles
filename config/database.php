@@ -45,7 +45,12 @@ return [
             // busy timeout can't help it), so simultaneous swaps errored instead
             // of queueing. See tests/e2e/swap-race.spec.ts.
             'transaction_mode' => 'IMMEDIATE',
-            'synchronous' => null,
+            // NORMAL is safe in WAL mode: the database can't corrupt, though a
+            // power cut may drop the last few commits. FULL syncs the disk on
+            // every commit, so one slow sync (an SD card, a Docker volume on
+            // WSL) holds the write lock while every other writer's busy timeout
+            // runs out.
+            'synchronous' => env('DB_SYNCHRONOUS', 'normal'),
         ],
 
         'mysql' => [
