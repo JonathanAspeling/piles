@@ -33,7 +33,9 @@ const results = computed(() =>
 
 const myResult = computed(() => results.value.find((row) => row.isMe) ?? null);
 const myRank = computed(() => results.value.findIndex((row) => row.isMe) + 1);
-const otherPlayers = computed(() => results.value.filter((row) => !row.isMe));
+/** The other people at the table: bots don't decide, they come along with whoever starts the next round. */
+const otherPeople = computed(() => results.value.filter((row) => !row.isMe && !row.is_bot));
+const hasBots = computed(() => results.value.some((row) => row.is_bot));
 
 const title = computed(() => {
     if (gameStore.forfeitedBy) {
@@ -116,7 +118,15 @@ async function playAgain() {
                     >
                         {{ row.name.charAt(0).toUpperCase() }}
                     </span>
-                    <span class="min-w-0 flex-1 truncate text-base font-semibold">{{ row.name }}{{ row.isMe ? ' (you)' : '' }}</span>
+                    <span class="flex min-w-0 flex-1 items-center gap-2">
+                        <span class="truncate text-base font-semibold">{{ row.name }}{{ row.isMe ? ' (you)' : '' }}</span>
+                        <span
+                            v-if="row.is_bot"
+                            class="shrink-0 rounded-full border border-border px-1.5 py-px text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground"
+                        >
+                            Bot
+                        </span>
+                    </span>
                     <span class="flex gap-[3px]" aria-hidden="true">
                         <span
                             v-for="slot in 6"
@@ -129,8 +139,8 @@ async function playAgain() {
                 </li>
             </ol>
 
-            <ul v-if="otherPlayers.length" class="flex flex-col gap-1.5 text-[15px]">
-                <li v-for="row in otherPlayers" :key="row.id" class="flex items-center gap-2.5">
+            <ul v-if="otherPeople.length || hasBots" class="flex flex-col gap-1.5 text-[15px]">
+                <li v-for="row in otherPeople" :key="row.id" class="flex items-center gap-2.5">
                     <span
                         class="h-2.5 w-2.5 shrink-0 rounded-full"
                         :class="rematchUserIds.includes(row.user_id) ? 'bg-[#0E9C6B]' : 'bg-stone-300 dark:bg-zinc-600'"
@@ -141,6 +151,10 @@ async function playAgain() {
                             {{ rematchUserIds.includes(row.user_id) ? ' is ready for another round' : ' is deciding…' }}
                         </span>
                     </span>
+                </li>
+                <li v-if="hasBots" class="flex items-center gap-2.5 text-muted-foreground">
+                    <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0E9C6B]" />
+                    The bots come along for another round.
                 </li>
             </ul>
 

@@ -11,6 +11,7 @@ use App\Models\Pile;
 use App\Models\PileCard;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Random\Randomizer;
 
 class GameDealerService
 {
@@ -18,7 +19,10 @@ class GameDealerService
 
     private const PILES_PER_PLAYER = 6;
 
-    public function __construct(private readonly DeckBuilder $deckBuilder) {}
+    public function __construct(
+        private readonly DeckBuilder $deckBuilder,
+        private readonly Randomizer $random = new Randomizer,
+    ) {}
 
     /**
      * @throws NotEnoughCardsException when the card table cannot fill every pile
@@ -53,13 +57,16 @@ class GameDealerService
             // Deal 6 piles of 4 cards to each player
             foreach ($players as $player) {
                 for ($pileIndex = 0; $pileIndex < self::PILES_PER_PLAYER; $pileIndex++) {
+                    $pileCards = $cards->splice(0, self::CARDS_PER_PILE);
+
+                    // A pile can be dealt four of a kind. It starts face-up:
+                    // no swap will ever touch it, so nothing else would.
                     $pile = Pile::create([
                         'game_session_id' => $game->id,
                         'game_player_id' => $player->id,
                         'pile_index' => $pileIndex,
+                        'is_completed' => $pileCards->pluck('clothing_type')->unique()->count() === 1,
                     ]);
-
-                    $pileCards = $cards->splice(0, self::CARDS_PER_PILE);
 
                     foreach ($pileCards as $position => $card) {
                         PileCard::create([
@@ -113,7 +120,7 @@ class GameDealerService
 
         $clothingTypes = $this->deckBuilder->pick($completeTypes, $setsNeeded, $deckMode);
 
-        return Card::whereIn('clothing_type', $clothingTypes)->get()->shuffle();
+        return collect($this->random->shuffleArray(Card::whereIn('clothing_type', $clothingTypes)->get()->all()));
     }
 
     private static function cardsNeeded(int $playerCount, int $centerCardCount): int

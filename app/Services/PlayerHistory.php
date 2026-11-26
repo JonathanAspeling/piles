@@ -13,7 +13,8 @@ use Illuminate\Support\Collection;
  *
  * Only games that actually got going count: a game that ended in its lobby
  * was never played. Play time runs from GO to the end, so it is only known
- * for games that recorded both.
+ * for games that recorded both. Games with a bot at the table are practice:
+ * they show in the recent list, tagged, but never in the totals or rivals.
  */
 class PlayerHistory
 {
@@ -28,7 +29,7 @@ class PlayerHistory
      *     win_streak: int,
      *     fastest_win_seconds: int|null,
      *     rivals: list<array{name: string, games: int, my_wins: int, their_wins: int}>,
-     *     recent: list<array{id: int, code: string, ended_at: string|null, duration_seconds: int|null, result: string, winner_name: string|null, opponents: list<string>, variant: bool, similar_items: bool}>
+     *     recent: list<array{id: int, code: string, ended_at: string|null, duration_seconds: int|null, result: string, winner_name: string|null, opponents: list<string>, variant: bool, similar_items: bool, with_bots: bool}>
      * }
      */
     public function for(User $user): array
@@ -38,19 +39,20 @@ class PlayerHistory
             ->where('status', GameStatus::Ended)
             ->whereNotNull('started_at')
             ->whereHas('gamePlayers', fn ($query) => $query->where('user_id', $user->id))
-            ->with(['gamePlayers.user:id,name', 'winner:id,name'])
+            ->with(['gamePlayers.user:id,name,is_bot', 'winner:id,name'])
             ->orderByDesc('ended_at')
             ->orderByDesc('id')
             ->get();
 
-        $wins = $games->where('winner_user_id', $user->id);
+        $counted = $games->reject(fn (GameSession $game) => $this->hasBot($game));
+        $wins = $counted->where('winner_user_id', $user->id);
 
         return [
-            'played' => $games->count(),
+            'played' => $counted->count(),
             'won' => $wins->count(),
-            'win_streak' => $games->takeWhile(fn (GameSession $game) => $game->winner_user_id === $user->id)->count(),
+            'win_streak' => $counted->takeWhile(fn (GameSession $game) => $game->winner_user_id === $user->id)->count(),
             'fastest_win_seconds' => $wins->map(fn (GameSession $game) => $this->durationSeconds($game))->filter(fn (?int $seconds) => $seconds !== null)->min(),
-            'rivals' => $this->rivals($games, $user),
+            'rivals' => $this->rivals($counted, $user),
             'recent' => $games->take(self::RECENT_GAMES)->map(fn (GameSession $game) => [
                 'id' => $game->id,
                 'code' => $game->code,
@@ -70,6 +72,7 @@ class PlayerHistory
                     ->all(),
                 'variant' => (bool) $game->variant,
                 'similar_items' => (bool) $game->similar_items,
+                'with_bots' => $this->hasBot($game),
             ])->values()->all(),
         ];
     }
@@ -98,6 +101,11 @@ class PlayerHistory
             ->take(self::TOP_RIVALS)
             ->values()
             ->all();
+    }
+
+    private function hasBot(GameSession $game): bool
+    {
+        return $game->gamePlayers->contains(fn ($player) => $player->user->is_bot);
     }
 
     private function durationSeconds(GameSession $game): ?int

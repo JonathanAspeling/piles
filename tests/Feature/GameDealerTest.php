@@ -159,6 +159,23 @@ test('with similar items on every grouped item is dealt with a look-alike', func
     }
 })->with(['without variant' => false, 'with variant' => true])->with(range(1, 5));
 
+test('a pile dealt four of a kind starts complete, and no other does', function () {
+    // Seed 406 happens to deal one player pile whole.
+    $dealer = new GameDealerService(new DeckBuilder(new Randomizer(new Mt19937(1))), new Randomizer(new Mt19937(406)));
+    $game = makeDealtGame(2);
+
+    $dealer->deal($game);
+
+    $playerPiles = $game->piles()->whereNotNull('game_player_id')->with('pileCards.card')->get();
+    $isFourOfAKind = fn ($pile) => $pile->pileCards->pluck('card.clothing_type')->unique()->count() === 1;
+
+    expect($playerPiles->filter($isFourOfAKind))->toHaveCount(1);
+
+    foreach ($playerPiles as $pile) {
+        expect($pile->is_completed)->toBe($isFourOfAKind($pile), "pile {$pile->id}");
+    }
+});
+
 test('dealing fails loudly rather than shorting the last seats when sets are missing', function () {
     // A card table seeded before the 16-set expansion holds 47 sets — two short
     // of the 49 an 8-player game needs. The shortfall used to drain silently into

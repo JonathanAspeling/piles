@@ -21,7 +21,8 @@ const props = defineProps<{
 const gameStore = useGameStore();
 
 const completedCount = computed(() => props.player.piles.filter((pile) => pile.is_completed).length);
-const isOnline = computed(() => gameStore.connectedUserIds.includes(props.player.user_id));
+// Bots have no connection to lose.
+const isOnline = computed(() => props.player.is_bot || gameStore.connectedUserIds.includes(props.player.user_id));
 /** One pile from winning: the moment everyone else needs to notice. */
 const isClose = computed(() => completedCount.value === 5);
 const isStrip = computed(() => props.layout === 'strip');
@@ -50,12 +51,18 @@ const COMPLETED_SET_COLOR = CardColor.Red;
                     isStrip ? 'h-[26px] w-[26px] text-[13px]' : 'h-[34px] w-[34px] text-[15px]',
                     { 'opacity-50': !isOnline },
                 ]"
-                :title="isOnline ? 'Online' : 'Disconnected'"
+                :title="player.is_bot ? 'Bot' : isOnline ? 'Online' : 'Disconnected'"
             >
                 {{ player.name.charAt(0).toUpperCase() }}
             </span>
             <span class="min-w-0 truncate font-semibold" :class="[isStrip ? 'text-base' : 'flex-1 text-lg', { 'text-muted-foreground': !isOnline }]">
                 {{ player.name }}
+            </span>
+            <span
+                v-if="player.is_bot"
+                class="shrink-0 rounded-full border border-border px-1.5 py-px text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground"
+            >
+                Bot
             </span>
             <span v-if="isClose && isStrip" class="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#E0442F]">· 1 pile from winning</span>
             <span class="ml-auto shrink-0 font-bold tabular-nums" :class="[isStrip ? 'text-[19px]' : 'text-[22px]', isClose ? 'text-[#E0442F]' : '']">

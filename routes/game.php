@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GameBotController;
 use App\Http\Controllers\GameplayController;
 use App\Http\Controllers\GameSessionController;
 use App\Http\Controllers\LobbyController;
@@ -27,6 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/games/{game}/status', [GameSessionController::class, 'status'])->name('games.status');
     Route::post('/games/{game}/rematch', [GameSessionController::class, 'rematch'])->name('games.rematch');
     Route::delete('/games/{game}/leave', [GameSessionController::class, 'leave'])->name('games.leave');
+    Route::post('/games/{game}/bots', [GameBotController::class, 'store'])->name('games.bots.store');
+    Route::delete('/games/{game}/bots/{player}', [GameBotController::class, 'destroy'])->name('games.bots.destroy');
 
     Route::post('/games/{game}/pickup', [GameplayController::class, 'pickup'])->name('gameplay.pickup');
     Route::post('/games/{game}/release', [GameplayController::class, 'release'])->name('gameplay.release');
