@@ -147,6 +147,7 @@ class GameplayController extends Controller
             $game->update([
                 'status' => GameStatus::Ended,
                 'winner_user_id' => $player->user_id,
+                'ended_at' => now(),
             ]);
 
             broadcast(new GameEnded($game, $player));

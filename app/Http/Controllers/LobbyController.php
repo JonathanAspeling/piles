@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\GameStatus;
 use App\Models\GameSession;
+use App\Services\PlayerHistory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LobbyController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, PlayerHistory $history): Response
     {
         $games = GameSession::where('status', GameStatus::Lobby)
             ->with('host', 'gamePlayers')
@@ -43,6 +44,8 @@ class LobbyController extends Controller
                 'code' => $activeGame->code,
                 'status' => $activeGame->status,
             ] : null,
+            // Loaded after the lobby renders, so a long record never slows it down.
+            'history' => Inertia::defer(fn () => $history->for($request->user())),
         ]);
     }
 }

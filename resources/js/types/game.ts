@@ -173,6 +173,39 @@ export interface LobbyGame {
     hard_variant: boolean;
 }
 
+/** One finished game, from the viewing player's side. */
+export interface HistoryGame {
+    id: number;
+    code: string;
+    ended_at: string | null;
+    /** GO to the end; null for games that didn't record both. */
+    duration_seconds: number | null;
+    result: 'won' | 'lost' | 'no_winner';
+    winner_name: string | null;
+    opponents: string[];
+    variant: boolean;
+    similar_items: boolean;
+}
+
+/** Someone the viewing player has shared games with, and how those went. */
+export interface HistoryRival {
+    name: string;
+    games: number;
+    my_wins: number;
+    their_wins: number;
+}
+
+/** The viewing player's record across finished games, for the lobby. */
+export interface PlayerHistory {
+    played: number;
+    won: number;
+    /** Wins in a row, counting back from the latest game. */
+    win_streak: number;
+    fastest_win_seconds: number | null;
+    rivals: HistoryRival[];
+    recent: HistoryGame[];
+}
+
 /** Who has moved on from an ended game to its "Play again" lobby. */
 export interface RematchState {
     rematch_game_id: number | null;

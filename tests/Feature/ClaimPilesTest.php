@@ -81,6 +81,7 @@ test('a valid PILES claim ends the game and broadcasts a populated winner', func
     $game->refresh();
     expect($game->status)->toBe(GameStatus::Ended);
     expect($game->winner_user_id)->toBe($host->id);
+    expect($game->ended_at)->not->toBeNull();
 
     Event::assertDispatched(GameEnded::class, function (GameEnded $event) use ($host) {
         return $event->winner !== null

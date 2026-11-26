@@ -3,14 +3,17 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { apiFetch } from '../../composables/useFetch';
+import GameHistoryPanel from '../../components/game/GameHistoryPanel.vue';
 import GameView from '../../components/game/GameView.vue';
 import HowToPlayModal from '../../components/game/HowToPlayModal.vue';
-import type { CenterPile, GamePlayer, GameSession, LobbyGame, LobbyPlayer, OpponentState, PlayerPile } from '../../types/game';
+import type { CenterPile, GamePlayer, GameSession, LobbyGame, LobbyPlayer, OpponentState, PlayerHistory, PlayerPile } from '../../types/game';
 import { CARD_THEME_LABELS, CardTheme } from '../../types/game';
 
 const props = defineProps<{
     games: LobbyGame[];
     activeGame: { id: number; code: string; status: string } | null;
+    /** Deferred: undefined until it loads just after the lobby renders. */
+    history?: PlayerHistory;
 }>();
 
 const games = ref<LobbyGame[]>(props.games);
@@ -299,6 +302,8 @@ onUnmounted(() => {
                         </div>
                     </div>
                 </div>
+
+                <GameHistoryPanel :history="history" />
             </div>
         </template>
 
