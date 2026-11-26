@@ -66,6 +66,16 @@ The look-alike groups live in `App\Services\ClothingSimilarity::GROUPS`. Two ite
 
 ---
 
+## Bots
+
+The host can fill empty lobby seats with bots, so a game can be played alone. A bot is a `users` row with `is_bot` set; there is one reusable account per name in `User::BOT_NAMES`, so seating bots never grows the table. Bots sit down ready, are marked game-ready at the deal (the countdown never waits for them), come back for "Play again", and don't keep a room open once the last person leaves.
+
+At GO, `StartGameJob` queues a `BotMoveJob` per bot. Each beat it calls PILES! if all six piles are done, otherwise makes the swap `BotBrain` picks through the same `CardSwapService::move()` people use (so it can lose a race for a centre card like anyone), then queues the next beat 1.5–3 s later. The loop ends with the game.
+
+`BotBrain`: each pile collects the item it already holds most of (no two piles the same item); a useful centre card is noticed 85% of the time; with nothing useful it sometimes trades a spare card to keep the centre moving, never taking back the card it just gave, and a weak pile sometimes lets go of its item so two players can't wait on each other forever.
+
+Games with a bot at the table are practice: they show in the lobby's recent games, tagged, but never in the totals or rivals.
+
 ## Architecture
 
 ```
@@ -215,6 +225,8 @@ POST /games/join               → join by 6-character code
 POST /games/{game}/ready       → toggle ready state
 POST /games/{game}/start       → host starts countdown
 DELETE /games/{game}/leave     → leave a session
+POST /games/{game}/bots        → host seats a bot (lobby only, sits down ready)
+DELETE /games/{game}/bots/{player} → host removes a bot
 
 POST /games/{game}/client-ready → mark client fully loaded (all-ready gate for countdown)
 GET  /games/{game}/status      → poll current status (safety fallback for stuck clients)

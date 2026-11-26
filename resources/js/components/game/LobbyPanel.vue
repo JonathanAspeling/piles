@@ -97,6 +97,15 @@ function toggleReady() {
     return act(() => apiFetch(route('games.ready', { game: props.game.id }), { method: 'POST' }));
 }
 
+/** The host fills an empty seat with a computer player; it sits down ready. */
+function addBot() {
+    return act(() => apiFetch(route('games.bots.store', { game: props.game.id }), { method: 'POST' }));
+}
+
+function removeBot(player: LobbyPlayer) {
+    return act(() => apiFetch(route('games.bots.destroy', { game: props.game.id, player: player.id }), { method: 'DELETE' }));
+}
+
 function startGame() {
     return act(() => apiFetch(route('games.start', { game: props.game.id }), { method: 'POST' }));
 }
@@ -216,6 +225,12 @@ async function leaveGame() {
                             >
                                 Host
                             </span>
+                            <span
+                                v-if="player.is_bot"
+                                class="shrink-0 rounded-full border border-border bg-card px-2 py-px text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground"
+                            >
+                                Bot
+                            </span>
                         </span>
                         <span
                             class="flex shrink-0 items-center gap-2 text-sm font-semibold"
@@ -224,6 +239,29 @@ async function leaveGame() {
                             <span class="h-2.5 w-2.5 rounded-full" :class="player.is_ready ? 'bg-[#0E9C6B]' : 'bg-stone-300 dark:bg-zinc-600'" />
                             {{ player.is_ready ? 'Ready' : 'Not ready' }}
                         </span>
+                        <button
+                            v-if="isHost && player.is_bot"
+                            type="button"
+                            :aria-label="`Remove ${player.name}`"
+                            :disabled="isActing"
+                            class="-mr-1 shrink-0 rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground active:scale-95 disabled:opacity-50"
+                            @click="removeBot(player)"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                                <line x1="6" y1="18" x2="18" y2="6" />
+                            </svg>
+                        </button>
                     </li>
                     <!-- An open seat, until there's someone to play against. -->
                     <li v-if="!hasEnoughPlayers" class="flex items-center gap-3 bg-card px-3.5 py-3 text-[15px] text-muted-foreground">
@@ -231,6 +269,29 @@ async function leaveGame() {
                         Waiting for someone to join…
                     </li>
                 </ol>
+                <button
+                    v-if="isHost && players.length < MAX_PLAYERS"
+                    type="button"
+                    :disabled="isActing"
+                    class="flex items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-border px-3.5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground active:scale-[0.99] disabled:opacity-50"
+                    @click="addBot"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add a bot
+                </button>
             </section>
 
             <!-- Actions: one primary at a time -->

@@ -93,6 +93,7 @@ class GameSessionController extends Controller
             'id' => $player->id,
             'user_id' => $player->user_id,
             'name' => $player->user->name,
+            'is_bot' => $player->user->is_bot,
             'seat_index' => $player->seat_index,
             'is_ready' => $player->is_ready,
         ])->values()->all();
@@ -152,6 +153,8 @@ class GameSessionController extends Controller
 
                 $locked->update(['status' => GameStatus::Countdown]);
                 $locked->gamePlayers()->update(['is_game_ready' => false]);
+                // Bots have no screen to load, so the countdown never waits on them.
+                $locked->gamePlayers()->whereHas('user', fn ($query) => $query->where('is_bot', true))->update(['is_game_ready' => true]);
 
                 $dealer->deal($locked);
             }, 3);
@@ -171,18 +174,21 @@ class GameSessionController extends Controller
             ] : null,
         ])->all();
 
-        $allPlayers = $game->gamePlayers()->with('user', 'piles')->get()->map(fn ($player) => [
+        $allPlayers = $game->gamePlayers()->with('user', 'piles.pileCards.card')->get()->map(fn ($player) => [
             'id' => $player->id,
             'user_id' => $player->user_id,
             'name' => $player->user->name,
+            'is_bot' => $player->user->is_bot,
             'seat_index' => $player->seat_index,
             'piles' => $player->piles->map(fn (Pile $pile) => [
                 'id' => $pile->id,
                 'pile_index' => $pile->pile_index,
                 'is_completed' => $pile->is_completed,
-                // Nothing is complete at deal time; kept for shape parity with
-                // the payload Game/Show renders on a refresh.
-                'completed_type' => null,
+                // A pile dealt four of a kind starts complete, and complete
+                // piles are public.
+                'completed_type' => $pile->is_completed
+                    ? $pile->pileCards->first()?->card->clothing_type->value
+                    : null,
             ])->all(),
         ])->all();
 
@@ -254,7 +260,9 @@ class GameSessionController extends Controller
                 ->firstOrFail()
                 ->delete();
 
-            if ($locked->gamePlayers()->count() === 0) {
+            // Bots don't keep a room open on their own.
+            if ($locked->gamePlayers()->whereHas('user', fn ($query) => $query->where('is_bot', false))->doesntExist()) {
+                $locked->gamePlayers()->delete();
                 $locked->delete();
 
                 return false;
@@ -297,6 +305,17 @@ class GameSessionController extends Controller
                 ]);
 
                 $locked->update(['rematch_game_session_id' => $rematch->id]);
+
+                // The bots come back for another round, ready as before.
+                $locked->gamePlayers()
+                    ->whereHas('user', fn ($query) => $query->where('is_bot', true))
+                    ->orderBy('seat_index')
+                    ->get()
+                    ->each(fn (GamePlayer $bot, int $index) => $rematch->gamePlayers()->create([
+                        'user_id' => $bot->user_id,
+                        'seat_index' => $index + 1,
+                        'is_ready' => true,
+                    ]));
             } else {
                 $rematch = $this->lockGame($locked->rematchGame);
             }
@@ -310,7 +329,9 @@ class GameSessionController extends Controller
             abort_unless($rematch->status === GameStatus::Lobby, 422, 'That rematch has already started.');
             abort_if($rematch->gamePlayers()->count() >= 10, 422, 'That rematch is full.');
 
-            $nextSeat = $rematch->gamePlayers()->exists() ? $rematch->gamePlayers()->max('seat_index') + 1 : 0;
+            // The first person back takes the head of the table, even with bots already seated.
+            $hasPerson = $rematch->gamePlayers()->whereHas('user', fn ($query) => $query->where('is_bot', false))->exists();
+            $nextSeat = $hasPerson ? $rematch->gamePlayers()->max('seat_index') + 1 : 0;
 
             return [$rematch, $rematch->gamePlayers()->create([
                 'user_id' => auth()->id(),
@@ -354,27 +375,10 @@ class GameSessionController extends Controller
                 'id' => $p->id,
                 'user_id' => $p->user_id,
                 'name' => $p->user->name,
+                'is_bot' => $p->user->is_bot,
                 'seat_index' => $p->seat_index,
                 'is_ready' => $p->is_ready,
             ])->values()->all(),
         ])->header('X-Game-Id', (string) $game->id);
-    }
-
-    /**
-     * Claim the game row's write lock and return its freshly committed state.
-     *
-     * Must be called inside a transaction. Lobby transitions (join, start, leave)
-     * are otherwise a check-then-act race: a join that reads "lobby" microseconds
-     * before the host starts still inserts its player row, and if that row lands
-     * after the deal, that player sits in a live game holding no cards. SQLite
-     * ignores `SELECT ... FOR UPDATE`, so the row is claimed by writing to it —
-     * concurrent transactions then block here, and the read below is guaranteed
-     * to see committed state rather than the caller's stale snapshot.
-     */
-    private function lockGame(GameSession $game): GameSession
-    {
-        GameSession::whereKey($game->getKey())->update(['updated_at' => now()]);
-
-        return GameSession::whereKey($game->getKey())->firstOrFail();
     }
 }

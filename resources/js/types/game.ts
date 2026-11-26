@@ -127,6 +127,8 @@ export interface LobbyPlayer {
     id: number;
     user_id: number;
     name: string;
+    /** A computer player the host added. */
+    is_bot: boolean;
     seat_index: number;
     is_ready: boolean;
 }
@@ -157,6 +159,8 @@ export interface OpponentState {
     id: number;
     user_id: number;
     name: string;
+    /** A computer player: always at the table, never "disconnected". */
+    is_bot: boolean;
     seat_index: number;
     piles: OpponentPile[];
 }
@@ -185,6 +189,8 @@ export interface HistoryGame {
     opponents: string[];
     variant: boolean;
     similar_items: boolean;
+    /** Practice against bots: listed, but left out of the totals and rivals. */
+    with_bots: boolean;
 }
 
 /** Someone the viewing player has shared games with, and how those went. */

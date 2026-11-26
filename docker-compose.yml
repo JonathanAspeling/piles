@@ -67,7 +67,7 @@ services:
     volumes:
       - piles-db:/data
       - piles-storage:/app/storage
-    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--max-time=3600"]
     healthcheck:
       # Exec form, deliberately not CMD-SHELL: a shell wrapper carries the
       # pattern in its own cmdline, which `pgrep -f` then matches, so the

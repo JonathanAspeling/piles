@@ -2,24 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ClaimOutcome;
 use App\Enums\GameStatus;
-use App\Events\CenterPileSwapped;
 use App\Events\GameEnded;
-use App\Events\GameResumed;
 use App\Events\LobbyUpdated;
-use App\Events\PlayerPileCompleted;
 use App\Exceptions\StaleVersionException;
 use App\Http\Requests\ClaimPilesRequest;
 use App\Http\Requests\ReorderPileCardsRequest;
 use App\Http\Requests\ReorderPilesRequest;
 use App\Http\Requests\SwapCardRequest;
-use App\Models\Card;
 use App\Models\GameSession;
 use App\Models\Pile;
 use App\Models\PileCard;
 use App\Services\CardSwapService;
-use App\Services\GameVerifierService;
 use App\Services\PileReorderService;
+use App\Services\PilesClaimService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -85,39 +82,23 @@ class GameplayController extends Controller
         $myPileId = $player->picked_up_pile_id;
 
         try {
-            $centerPile = $cardSwapService->swap(
+            $cardSwapService->move(
                 $game,
                 $player,
                 $request->integer('center_pile_id'),
                 $request->integer('center_card_id'),
                 $myCardId,
+                $myPileId,
                 $request->integer('expected_version'),
             );
         } catch (StaleVersionException) {
             return response()->json(['message' => 'Stale version conflict.'], 409);
         }
 
-        $player->update(['picked_up_card_id' => null, 'picked_up_pile_id' => null]);
-
-        broadcast(new CenterPileSwapped($game, $centerPile, Card::findOrFail($myCardId)));
-
-        $playerPile = Pile::where('id', $myPileId)
-            ->where('game_session_id', $game->id)
-            ->where('game_player_id', $player->id)
-            ->with('pileCards.card')
-            ->firstOrFail();
-
-        $clothingTypes = $playerPile->pileCards->map(fn ($pc) => $pc->card->clothing_type->value)->unique();
-
-        if ($playerPile->pileCards->count() === 4 && $clothingTypes->count() === 1) {
-            $playerPile->update(['is_completed' => true]);
-            broadcast(new PlayerPileCompleted($game, $player, $playerPile));
-        }
-
         return response()->json(['message' => 'Swap successful.'], 200);
     }
 
-    public function claimPiles(GameSession $game, ClaimPilesRequest $request, GameVerifierService $verifier): JsonResponse
+    public function claimPiles(GameSession $game, ClaimPilesRequest $request, PilesClaimService $claims): JsonResponse
     {
         abort_unless($game->status === GameStatus::Playing, 422, 'Game is not in progress.');
 
@@ -126,35 +107,8 @@ class GameplayController extends Controller
             ->with('user')
             ->firstOrFail();
 
-        // Atomic transition — only the first simultaneous claim proceeds
-        $transitioned = GameSession::where('id', $game->id)
-            ->where('status', GameStatus::Playing)
-            ->update(['status' => GameStatus::Verifying]);
-
-        if (! $transitioned) {
+        if ($claims->claim($game, $player) === ClaimOutcome::AlreadyVerifying) {
             return response()->json(['message' => 'A claim is already being verified.'], 422);
-        }
-
-        // Resync so subsequent $game->update() calls treat Verifying as the
-        // baseline. Without this, Eloquent's dirty check treats a Verifying→Playing
-        // reset as no-op (original attribute was still Playing) and silently
-        // skips the SQL UPDATE, leaving the game stuck in Verifying.
-        $game->refresh();
-
-        $isValid = $verifier->verify($player);
-
-        if ($isValid) {
-            $game->update([
-                'status' => GameStatus::Ended,
-                'winner_user_id' => $player->user_id,
-                'ended_at' => now(),
-            ]);
-
-            broadcast(new GameEnded($game, $player));
-        } else {
-            $game->update(['status' => GameStatus::Playing]);
-
-            broadcast(new GameResumed($game, $player->user->name));
         }
 
         return response()->json(['message' => 'Claim processed.'], 200);

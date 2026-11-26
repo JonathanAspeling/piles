@@ -155,6 +155,7 @@ class GameSession extends Model
                 'id' => $player->id,
                 'user_id' => $player->user_id,
                 'name' => $player->user->name,
+                'is_bot' => $player->user->is_bot,
                 'seat_index' => $player->seat_index,
                 'piles' => $player->piles->map(fn (Pile $pile): array => [
                     'id' => $pile->id,

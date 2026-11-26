@@ -82,7 +82,7 @@ function resultClasses(game: HistoryGame): string {
             <div v-for="row in 3" :key="row" class="h-12 rounded-lg bg-muted" />
         </div>
 
-        <p v-else-if="history.played === 0" class="py-8 text-center text-sm text-muted-foreground">
+        <p v-else-if="history.recent.length === 0" class="py-8 text-center text-sm text-muted-foreground">
             No finished games yet. Your record shows up here after your first game.
         </p>
 
@@ -112,7 +112,12 @@ function resultClasses(game: HistoryGame): string {
             </div>
 
             <div class="flex flex-col gap-2">
-                <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Recent games</h3>
+                <div class="flex items-baseline justify-between gap-3">
+                    <h3 class="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Recent games</h3>
+                    <span v-if="history.recent.some((game) => game.with_bots)" class="text-xs text-muted-foreground"
+                        >Games with bots don't count</span
+                    >
+                </div>
                 <ol class="flex flex-col gap-2">
                     <li
                         v-for="game in history.recent"
@@ -127,6 +132,9 @@ function resultClasses(game: HistoryGame): string {
                             <span class="truncate text-sm"> <span class="text-muted-foreground">vs</span> {{ game.opponents.join(', ') }} </span>
                         </div>
                         <div class="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground sm:text-sm">
+                            <span v-if="game.with_bots" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide"
+                                >Bots</span
+                            >
                             <span v-if="game.variant" class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide"
                                 >Variant</span
                             >

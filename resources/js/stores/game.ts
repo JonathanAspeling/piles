@@ -56,6 +56,7 @@ export const useGameStore = defineStore('game', () => {
             id: me.id,
             user_id: me.user_id,
             name: players.value.find((p) => p.id === me.id)?.name ?? 'You',
+            is_bot: false,
             seat_index: me.seat_index,
             piles: myPiles.value.map((pile) => ({
                 id: pile.id,
